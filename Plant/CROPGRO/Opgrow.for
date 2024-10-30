@@ -11,6 +11,7 @@ C  06/19/2001 GH  Modified output format
 C  08/20/2002 GH  Modified for Y2K
 C  07/08/2003 CHP Changed senescence output.
 C  03/24/2004 CHP Added P stresses to PlantGro.out
+!  10/24/2024 CHP Added TRLV to PlantGro.OUT
 C-----------------------------------------------------------------------
 C  Called by: PLANT
 C  Calls:     None
@@ -23,8 +24,7 @@ C  Calls:     None
      &    RLV, RSTAGE, RTDEP, RTWT, SATFAC, SDWT, SEEDNO, 
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
-     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT) 
-!    &    EOP, TRWUP, WRDOTN)
+     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV) 
 
 !-----------------------------------------------------------------------
       USE ModuleDefs     !Definitions of constructed variable types, 
@@ -59,7 +59,7 @@ C  Calls:     None
       REAL PCCSDP, PCLSDP, PCNLP, PCNRTP, PCNSDP
       REAL PCNSHP, PCNSTP, RHOLP, RHOSP, SLAP
 
-      REAL RLV(NL)
+      REAL RLV(NL), TRLV
       REAL TGRO(TS)
 
       REAL WTNCAN,WTNLF,WTNST,WTNSD,WTNUP,WTNFX
@@ -152,7 +152,7 @@ C  Calls:     None
 !        IF (ISWPHO .NE. 'N') THEN
           WRITE (NOUTDG, 100) "Root Dens. (cm/cm3) by soil ",
      &      "depth (cm):",(SoilProp%LayerText(L), L=1,N_LYR)
-  100     FORMAT("!",244X,A,A,/,"!",239X,10A8) 
+  100     FORMAT("!",251X,A,A,/,"!",246X,10A8) 
 !        ELSE
 !          WRITE (NOUTDG,102) (SoilProp%LayerText(L), L=1,N_LYR)
 !  102     FORMAT("!",216X,"Soil Layer depths (cm):",/,"!",211X,10A8)
@@ -174,7 +174,7 @@ C  Calls:     None
         WRITE (NOUTDG,214, ADVANCE='NO')
   214   FORMAT('   EWSD    LN%D',
      &         '   SH%D   HIPD   PWDD   PWTD   SLAD   CHTD',
-     &         '   CWID   NWAD   RDPD')
+     &         '   CWID   NWAD   RDPD   RLAD')
 
           DO L = 1, N_LYR
             IF (L < 10) THEN
@@ -186,7 +186,6 @@ C  Calls:     None
 
         WRITE (NOUTDG,220)
   220   FORMAT('    SNW0C   SNW1C') !   SNW0D   SNW1D',
-!     &         '     EOP   TRWUP  WRDOTN')
 
 !-----------------------------------------------------------------------
 !       Initialize daily plant nitrogen output file
@@ -382,14 +381,15 @@ C-----------------------------------------------------------------------
           WRITE (NOUTDG,314, ADVANCE='NO') 
      &        EXW_AV, PCNLP, SHELPC, HIP, NINT(PODWTD*10.),
      &        NINT((PODWTD+PODWT)*10.), SLAP, CANHT, CANWH, (DWNOD*10.),
-     &        (RTDEP/100.), (RLV(I),I=1,N_LYR)
+     &        (RTDEP/100.), NINT(TRLV), (RLV(I),I=1,N_LYR)
   314     FORMAT (1X,F6.3,1X,F7.2,2(1X,F6.2),
-     &        2(1X,I6),1X,F6.1,2(1X,F6.2),1X,F6.1,1X,F6.2,11(1X,F7.2))
+     &        2(1X,I6),1X,F6.1,2(1X,F6.2),1X,F6.1,1X,F6.2,
+     &        I7,11(1X,F7.2))
 
           WRITE (NOUTDG,316) 
      &        NINT(CUMSENSURF), NINT(CUMSENSOIL)   !, SENSURFT, SENSOILT
 !     &        , EOP, TRWUP, WRDOTN
-  316     FORMAT (I8,1X,I7, 2F8.3, 3F8.4)
+  316       FORMAT (I8,1X,I7, F10.1)
           END IF   ! VSH
 !-----------------------------------------------------------------------
 !     VSH CSV output corresponding to PlantGro.OUT
