@@ -50,9 +50,8 @@ C=======================================================================
      &    WTNUP)                                          !Output
 
 !-----------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
-                         ! which contain control information, soil
-                         ! parameters, hourly weather data.
+      USE ModuleDefs
+      USE ModuleData
       IMPLICIT  NONE
       SAVE
 
@@ -71,6 +70,12 @@ C=======================================================================
       REAL, DIMENSION(NL) :: DLAYR, DUL, ESW, KG2PPM, LL, NH4, NO3
       REAL, DIMENSION(NL) :: RLV, RNO3U, RNH4U
       REAL, DIMENSION(NL) :: SAT, SNH4, SNO3, SW, UNO3, UNH4
+
+!     temp
+      INTEGER YRDOY
+      Type (ControlType) CONTROL
+      CALL GET(CONTROL)
+      YRDOY = CONTROL % YRDOY
 
 !***********************************************************************
 !***********************************************************************

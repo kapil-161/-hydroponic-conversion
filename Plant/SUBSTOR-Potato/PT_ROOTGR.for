@@ -40,7 +40,7 @@ C           growth in the soil - unitless value between 0 and 1
 C  L,L1   : Loop counter
 C=======================================================================
 
-      SUBROUTINE PT_ROOTGR (DYNAMIC, 
+      SUBROUTINE PT_ROOTGR (DYNAMIC, YRDOY,
      &    DLAYR, DS, DTT, DUL, FILEIO, GRORT, ISWNIT,     !Input
      &    LL, NH4, NLAYR, NO3, PLTPOP, SHF, SW, SWFAC,    !Input
      &    CUMDEP, RLV, RTDEP)                             !Output
@@ -56,6 +56,8 @@ C=======================================================================
       CHARACTER*30 FILEIO
 
       INTEGER DYNAMIC, L, L1, NLAYR
+!     TEMP CHP
+      INTEGER YRDOY
 
       REAL CUMDEP, DEP, DEPMAX, DTT, GRORT, PLTPOP
       REAL RLINIT, RLNEW, RLWR, RNFAC, RNLF, RTDEP, RTDEPI
