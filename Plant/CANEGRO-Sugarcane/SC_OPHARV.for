@@ -64,8 +64,8 @@ c     Define CANEGRO composite variables:
 
 !     Arrays which contain data for printing in SUMMARY.OUT file
 !       (OPSUM subroutine)
-      INTEGER, PARAMETER :: SUMNUM = 7
-      CHARACTER*4, DIMENSION(SUMNUM) :: LABEL
+      INTEGER, PARAMETER :: SUMNUM = 9
+      CHARACTER*5, DIMENSION(SUMNUM) :: LABEL
       REAL, DIMENSION(SUMNUM) :: VALUE
 
 !     Arrays which contain Simulated and Measured data for printing
@@ -432,13 +432,19 @@ c      LABEL(4) = 'TRSH'; VALUE(4) = TRSH
 c      LABEL(5) = 'LAIX'; VALUE(5) = MAXLAI
 c      LABEL(6) = 'HIAM'; VALUE(6) = HIAM
 
-      LABEL(1) = 'CWAM'; VALUE(1) = AELH * 1000.
-      LABEL(2) = 'HWAH'; VALUE(2) = SUCH * 1000.
-      LABEL(3) = 'SUCH'; VALUE(3) = SUCH
-      LABEL(4) = 'TRSH'; VALUE(4) = TRSH
-      LABEL(5) = 'LAIX'; VALUE(5) = MAXLAI
-      LABEL(6) = 'HIAM'; VALUE(6) = HIAM
-      LABEL(7) = 'EDAT'; VALUE(7) = FLOAT(YREMRG)
+      LABEL(1) = 'CWAM '; VALUE(1) = AELH * 1000.
+      LABEL(2) = 'HWAH '; VALUE(2) = SUCH * 1000.
+      LABEL(3) = 'SUCH '; VALUE(3) = SUCH
+      LABEL(4) = 'TRSH '; VALUE(4) = TRSH
+      LABEL(5) = 'LAIX '; VALUE(5) = MAXLAI
+      LABEL(6) = 'HIAM '; VALUE(6) = HIAM
+      LABEL(7) = 'EDAT '; VALUE(7) = FLOAT(YREMRG)
+
+!     2024-11-12 CHP added stalk mass harvested as economic yield in Summary.OUT
+      LABEL(8) = 'EYLDH';VALUE(8) = STKH   !Economic Yield (ton/ha)
+
+!     2024-11-12 CHP added fresh stalk mass at harvest as harvested fresh yield in Summary.OUT
+      LABEL(9) = 'HWAHF';VALUE(9) = Part%STKWM * 1000. 
 
       !Send labels and values to OPSUM
 c     MJ, Mar 08: I believe this line is used to pass information
