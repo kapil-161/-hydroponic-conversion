@@ -251,12 +251,11 @@ C-----------------------------------------------------------------------
            IF (NDEM .GT. 0.0) THEN           ! Luxury uptake.
               RATIO = AMIN1 (AVAILN/NDEM, 1.25)
               TNDEM = TNDEM * RATIO
-           !
-           ! Accumulate less N in the tubers under excess N conditions.
-           ! Don't allow any excess N to accumulate in the roots unless 
-           ! a provision is added to re-allocate excess N in the roots 
-           ! to other plant parts.
-           !
+!           
+!             Accumulate less N in the tubers under excess N conditions.
+!             Don't allow any excess N to accumulate in the roots unless 
+!             a provision is added to re-allocate excess N in the roots 
+!             to other plant parts.
               TUBDEM = TUBDEM * (1.0 + (RATIO - 1.0)*0.5)
             ELSE
               TNDEM  = 0.0
@@ -349,7 +348,6 @@ C     GRFN   = (GROTOP + GRORT + GROTUB)/PGROW ! Indicator of N stress
 C-----------------------------------------------------------------------
 C   Calculate factor (NUF) to reduce N uptake to level of demand
 C-----------------------------------------------------------------------
-
       IF (ANDEM .LE. 0.0) THEN
          TRNU  = 0.0
          NUF   = 0.0
@@ -380,25 +378,24 @@ C-----------------------------------------------------------------------
          TRNU    = TRNU   + UNO3(L)   + UNH4(L)       !kg[N]/ha
       END DO
 
-      TRNU = TRNU/(PLTPOP*10.0)                       !g[N]/plant
+      TRNU = TRNU/(PLTPOP*10.0)             !g[N]/plant
 
 !-----------------------------------------------------------------------
 C   Update stover and root N
 C-----------------------------------------------------------------------
-
       IF (NDEM .GT. TRNU) THEN
-         XNDEM  = TRNU
-         FACTOR = XNDEM / NDEM
-         NDEM   = XNDEM
-         TNDEM  = TNDEM  * FACTOR
-         RNDEM  = RNDEM  * FACTOR
-         TUBDEM = TUBDEM * FACTOR
+        XNDEM  = TRNU
+        FACTOR = XNDEM / NDEM
+        NDEM   = XNDEM
+        TNDEM  = TNDEM  * FACTOR
+        RNDEM  = RNDEM  * FACTOR
+        TUBDEM = TUBDEM * FACTOR
       ENDIF
 
-      !g[N]/plant
-      TOPSN  = TOPSN + TNDEM      
-      ROOTN  = ROOTN + RNDEM      
-      TUBN   = TUBN  + TUBDEM    
+!     g[N]/plant
+      TOPSN  = TOPSN + TNDEM
+      ROOTN  = ROOTN + RNDEM
+      TUBN   = TUBN  + TUBDEM
 
       WTNUP = WTNUP + TRNU * PLTPOP * 10.0        !kg[N]/ha
 
