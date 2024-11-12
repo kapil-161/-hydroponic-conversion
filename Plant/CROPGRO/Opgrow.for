@@ -399,7 +399,7 @@ C-----------------------------------------------------------------------
      &WTLF, STMWT, SDWT, RTWT, VWAD, TOPWT, SEEDNO, SDSIZE, HI, PODWT,
      &PODNO, SWF_AV, TUR_AV, NST_AV, PS1_AV, PS2_AV, KST_AV, EXW_AV,
      &PCNLP, SHELPC, HIP, PODWTD, SLAP, CANHT, CANWH,
-     &DWNOD, RTDEP, N_LYR, RLV, CUMSENSURF, CUMSENSOIL,
+     &DWNOD, RTDEP, TRLV, N_LYR, RLV, CUMSENSURF, CUMSENSOIL,
      &vCsvline, vpCsvline, vlngth)
      
          CALL Linklst(vCsvline)
