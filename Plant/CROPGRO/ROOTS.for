@@ -362,7 +362,7 @@ C     respiration, and update root length density for each layer.
 !                  cm2[soil]   cm[root]     m2         (g/m2)
 
       CumRootMass = CumRootMass + WRDOTN * 10. - SRDOT * 10. 
-           
+
 !***********************************************************************
 !***********************************************************************
 !     END OF DYNAMIC IF CONSTRUCT

@@ -194,11 +194,11 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL, DIMENSION(NL) :: SAEA  
 
 !      Variables added with new soil format:
+!        (NOT CURRENTLY USED)
         REAL ETDR, PONDMAX, SLDN, SLOPE
 !       REAL, DIMENSION(NL) :: RCLPF, RGIMPF
 
-      !Variables deleted with new soil format:
-      !Still needed for Ritchie hydrology
+!       Ritchie hydrology
         REAL CN, SWCON, U
         REAL, DIMENSION(NL) :: ADCOEF, TOTN, TotOrgN, WR
 
