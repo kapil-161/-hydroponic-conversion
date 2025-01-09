@@ -337,21 +337,20 @@ C     CHECK FOR BLANK LINES AND COMMENTS (DENOTED BY ! IN COLUMN 1)
       IF(CHARTEST(1:1).NE.'!' .AND. CHARTEST(1:1).NE.'@') THEN
 C       IF(CHARTEST.NE.BLANK)THEN
         Length = Len_Trim(CHARTEST)
-        
-C      Check if the first character is a tab
-C       IF(CHARTEST(1:1) .EQ. TAB) THEN
-C         ISECT = 4
-C         RETURN
-C       ENDIF
 
-C     TF (01/07/2025) - Reads each character in the line and 
-C     check if there are any TABs
-      DO I = 1, LEN(CHARTEST)
-        IF(CHARTEST(I:I) .EQ. TAB) THEN
-          ISECT = 4
-          RETURN
-        ENDIF
-      ENDDO
+C     TF (01/07/2025) - Reads each character in the line and
+C     check if there are any TABs      
+       IF(CHARTEST(1:1) .EQ. TAB) THEN
+         ISECT = 4
+         RETURN
+       ENDIF
+
+C      DO I = 1, LEN(CHARTEST)
+C        IF(CHARTEST(I:I) .EQ. TAB) THEN
+C          ISECT = 4
+C          RETURN
+C        ENDIF
+C      ENDDO
 
         IF (Length > 0) THEN
 C         FOUND A GOOD LINE TO READ
@@ -409,14 +408,19 @@ C        End of section encountered
          RETURN
       ENDIF
 
-C     TF (01/07/2025) - Reads each character in the line and 
-C     check if there are any TABs
-      DO I = 1, LEN(CHARTEST)
-        IF(CHARTEST(I:I) .EQ. TAB) THEN
-          ISECT = 45
-          RETURN
-        ENDIF
-      ENDDO      
+C     TF (01/07/2025) - Reads each character in the line and
+C     check if there are any TABs      
+       IF(CHARTEST(1:1) .EQ. TAB) THEN
+         ISECT = 4
+         RETURN
+       ENDIF
+
+C      DO I = 1, LEN(CHARTEST)
+C        IF(CHARTEST(I:I) .EQ. TAB) THEN
+C          ISECT = 45
+C          RETURN
+C        ENDIF
+C      ENDDO      
 
 C
 C     Check for blank lines and comments (denoted by ! in column 1)
