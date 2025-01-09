@@ -1,19 +1,19 @@
 C=======================================================================
 C  FOR_SENMOB Subroutine, S.J. Rymph, K.J. Boote, J.W. Jones and G. Hoogenboom
 C  Calculates leaf, stem, root, and STOR senescence only for tissues lost
-C  at "final" N concentration (due to natural aging, light stress, and 
-C  physiological maturity).  Also consolidates the calculation of 
+C  at "final" N concentration (due to natural aging, light stress, and
+C  physiological maturity).  Also consolidates the calculation of
 C  potential mining of C and N in one location.
 C-----------------------------------------------------------------------
 C  REVISION       HISTORY
-C  09/23/2005 SJR Created from parts of CROPGRO, DEMAND, ROOTS, SENES 
+C  09/23/2005 SJR Created from parts of CROPGRO, DEMAND, ROOTS, SENES
 C-----------------------------------------------------------------------
 C  Called : CROPGRO
 C  Calls  : ERROR, FIND, IGNORE
 C========================================================================
       SUBROUTINE FOR_SENMOB(
      &    FILECC, CLW, DLAYR, DTX, DUL, DXR57, FNINL,           !Input
-     &    FNINR, FNINS, FNINSR, ISWWAT, LL, NLAYR, NR5,         !Input 
+     &    FNINR, FNINS, FNINSR, ISWWAT, LL, NLAYR, NR5,         !Input
      &    NR7, NSTRES, PAR, PCNL, PCNRT, PCNSR, PCNST,          !Input
      &    PPMFAC, RLV, RTWT, SAT, SLAAD, STMWT,                 !Input
      &    STRWT, SW, SWFAC, TDUMX, TDUMX2, VSTAGE, WCRLF,       !Input
@@ -30,24 +30,25 @@ C========================================================================
      &    SSNDOT, SSDOT, SSRDOT, SSRMDOT, SSRNDOT, STCMINE,     !Output
      &    STSCMOB, STSNMOB, STLTSEN, STSENWT, TSCMOB,           !Output
      &    TSNMOB, VNMOBR,                                       !Output
-     &    DYNAMIC)                                              !Control
+     &    DYNAMIC,                                              !Control
+     &    TGRO)                                                 !Input DP
 
 !     2023-01-20 CHP Remove unused variables from argument list:
-!     DAYL, RHOL, WRDOTN, 
+!     DAYL, RHOL, WRDOTN,
 
 C-----------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
+      USE ModuleDefs     !Definitions of constructed variable types,
         ! which contain control information, soil
         ! parameters, hourly weather data.
       IMPLICIT NONE
       EXTERNAL GETLUN, FIND, ERROR, IGNORE, TIMDIF, TABEX, CURV
       SAVE
-      
+
       CHARACTER*1 ISWWAT
       CHARACTER*6  ERRKEY, SECTION
       CHARACTER*80 CHAR
       CHARACTER*92 FILECC
-      CHARACTER*3 TYPLMOB, TYPNMOB 
+      CHARACTER*3 TYPLMOB, TYPNMOB
 
       PARAMETER (ERRKEY = 'SENMOB')
 
@@ -58,8 +59,8 @@ C-----------------------------------------------------------------------
       INTEGER NSWAB
       PARAMETER (NSWAB = 5)
 
-      REAL DAYL_1, DAYL_2, LFSEN  !, SNSTAGE  DAYL, 
-      REAL DTX, PAR, SLAAD  !RHOL, 
+      REAL DAYL_1, DAYL_2, LFSEN  !, SNSTAGE  DAYL,
+      REAL DTX, PAR, SLAAD  !RHOL,
       REAL STMWT, VSTAGE, WTLF, XLAI
       REAL SLDOT, SSDOT, SRDOT
       REAL ICMP, KCAN, PORPT, SENDAY
@@ -78,40 +79,49 @@ C-----------------------------------------------------------------------
       INTEGER L, L1, NLAYR
       REAL DLAYR(NL), RLV(NL), RLSEN(NL)
       REAL DUL(NL), ESW(NL), LL(NL), SAT(NL), SW(NL)
-      REAL RNDOT(NL), RLNSEN(NL) 
+      REAL RNDOT(NL), RLNSEN(NL)
       REAL RFAC1, RFAC3, RLDSM, RTSEN
       REAL TRTDY, TRLSEN, RTWT  !, WRDOTN
 
-      REAL LFNSEN, SLMDOT, SRMDOT, SSMDOT, SSRMDOT 
+      REAL LFNSEN, SLMDOT, SRMDOT, SSMDOT, SSRMDOT
       REAL LFSCMOB, RTSCMOB, SRSCMOB, STSCMOB, TSCMOB
       REAL LFSNMOB, RTSNMOB, SRSNMOB, STSNMOB, TSNMOB
 
       REAL CMINELF, CMINERT, CMINESH, CMINESR, CMINEST
-      REAL NMINELF, NMINERT, NMINESR, NMINEST  !NMINESH, 
+      REAL NMINELF, NMINERT, NMINESR, NMINEST  !NMINESH,
 
       REAL CMINEP, LFCMINE, RTCMINE, SHCMINE, SRCMINE, STCMINE
       REAL NMINEP, LFNMINE, RTNMINE, SHNMINE, SRNMINE, STNMINE
       REAL DXR57, CMOBMX, CMOBSR, NMOBR, NMOBSR, PPMFAC
-      
-      REAL CMOBSRN, CMOBSRX, FNINL, FNINR, FNINS, 
-     &   FNINSR, LAIMOBR, NMOBMX, NMOBSRN, NMOBSRX, NSTRES, 
-     &   NVSMOB, SWFAC, TDUMX, TDUMX2, VEGNCMX, VEGNCNT,  
+
+      REAL CMOBSRN, CMOBSRX, FNINL, FNINR, FNINS,
+     &   FNINSR, LAIMOBR, NMOBMX, NMOBSRN, NMOBSRX, NSTRES,
+     &   NVSMOB, SWFAC, TDUMX, TDUMX2, VEGNCMX, VEGNCNT,
      &   VNMOBR, VNSTAT, XPOD
 
       REAL LRMOB(4), NRMOB(4)
 
       REAL CLW, RATTP, WSLOSS
-      REAL LFSENWT, SLNDOT, SSNDOT, 
+      REAL LFSENWT, SLNDOT, SSNDOT,
      &    SSRDOT, SSRNDOT, STLTSEN, STSENWT
 
       REAL PORMIN, RTSDF, RTEXF, SRNDOT, TRLNSEN
-      REAL RTSURV, SUMEX, SUMRL, SWDF, SWEXF 
+      REAL RTSURV, SUMEX, SUMRL, SWDF, SWEXF
 
       REAL SENCLV, SENCRV, SENCSV, SENCSRV
       REAL SENNLV, SENNRV, SENNSV, SENNSRV
 
       REAL CMINEO, NMINEO
       REAL CURV
+      REAL MOBTEM,TGRO(TS)
+*      INTEGER,dimension(6) :: IXFREQ
+      REAL,dimension(6) :: XMOTEM
+      REAL,dimension(6) :: YMOTEM
+      REAL MOBSWF
+
+      REAL,dimension(4) :: XMOSWF
+      REAL,dimension(4) :: YMOSWF
+
 
 !***********************************************************************
 !***********************************************************************
@@ -160,27 +170,27 @@ C-----------------------------------------------------------------------
         READ(CHAR,'(12X,F6.0,12X,F6.0)',IOSTAT=ERR)
      &    PROLFF,PROSTF
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
         READ(CHAR,'(12X,F6.0)',IOSTAT=ERR)
      &    PRORTF
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-  
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
 
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
         READ(CHAR,'(12X, F6.0)',IOSTAT=ERR)
-     &    PROSRF 
+     &    PROSRF
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
 
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
@@ -207,7 +217,7 @@ C-----------------------------------------------------------------------
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
         CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        READ(CHAR,'(2F6.0,6X,2F6.0)',IOSTAT=ERR) CMOBSRN, CMOBSRX, 
+        READ(CHAR,'(2F6.0,6X,2F6.0)',IOSTAT=ERR) CMOBSRN, CMOBSRX,
      &    NMOBSRN, NMOBSRX
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
 
@@ -315,6 +325,29 @@ C    Find and Read Roots section
       ENDIF
 
 C-----------------------------------------------------------------------
+C    Find and Read Surviving section  Added by Diego
+!-----------------------------------------------------------------------
+      LNUM = 1
+      SECTION = '!*SURVIVI'
+      CALL FIND(LUNCRP, SECTION, LNUM, FOUND)
+            IF (FOUND .EQ. 0) THEN
+            CALL ERROR(ERRKEY, 1, FILECC, LNUM)
+            ELSE
+            CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+            READ(CHAR,'(6F6.0)',IOSTAT=ERR) (XMOTEM(I),I=1,6)
+            IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
+            CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+            READ(CHAR,'(6F6.0)',IOSTAT=ERR) (YMOTEM(I),I=1,6)
+            IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
+            CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+            READ(CHAR,'(6F6.0)',IOSTAT=ERR) (XMOSWF(I),I=1,4)
+            IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
+            CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+            READ(CHAR,'(6F6.0)',IOSTAT=ERR) (YMOSWF(I),I=1,4)
+            IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
+      ENDIF
+
+C-----------------------------------------------------------------------
 C
 C     ***** READ Storage organ senescence parameters *****
 C
@@ -340,10 +373,10 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASINIT) THEN
 !-----------------------------------------------------------------------
-      SRDOT = 0.0    
-      SRNDOT = 0.0   
+      SRDOT = 0.0
+      SRNDOT = 0.0
       RLV   = 0.0
-!      RTDEP = 0.0       
+!      RTDEP = 0.0
 !      SENRT = 0.0
       SUMEX = 0.0
       SUMRL = 0.0
@@ -357,7 +390,7 @@ C-----------------------------------------------------------------------
       TSNMOB = 0.0
 
       CMINELF = 0.0
-      CMINEP = 0.0 
+      CMINEP = 0.0
       CMINERT = 0.0
       CMINESH = 0.0
       CMINESR = 0.0
@@ -391,7 +424,7 @@ C-----------------------------------------------------------------------
       STSCMOB = 0.0
       STSNMOB = 0.0
       TSCMOB = 0.0
-      TSNMOB = 0.0      
+      TSNMOB = 0.0
 
       SSDOT  = 0.0
       SLDOT  = 0.0
@@ -459,7 +492,7 @@ C-----------------------------------------------------------------------
       CMINERT = 0.0
       CMINESR = 0.0
       CMINEST = 0.0
-      
+
       LFCMINE = 0.0
       RTCMINE = 0.0
       SHCMINE = 0.0
@@ -474,7 +507,7 @@ C-----------------------------------------------------------------------
       NMINERT = 0.0
       NMINESR = 0.0
       NMINEST = 0.0
-      
+
       LFNMINE = 0.0
       RTNMINE = 0.0
       SHNMINE = 0.0
@@ -533,9 +566,9 @@ C-----------------------------------------------------------------------
 
 
 C-----------------------------------------------------------------------
-C     Calculate water-stress factors only when H2O optionis "on"      
+C     Calculate water-stress factors only when H2O optionis "on"
 C-----------------------------------------------------------------------
-      
+
       IF (ISWWAT .EQ. 'Y') THEN
 
         IF (SAT(L)-SW(L) .LT. PORMIN) THEN
@@ -578,20 +611,20 @@ C-----------------------------------------------------------------------
 C     Calculate root senescence, growth, maintenance and growth
 C     respiration, and update root length density for each layer.
 !-----------------------------------------------------------------------
- 
+
 !     SRDOT = (TRTDY + RLNEW - TRLV) * 10000.0 / RFAC3
-!     Sum RLSEN for total root senescence today. chp 11/13/00  
+!     Sum RLSEN for total root senescence today. chp 11/13/00
       SRMDOT = TRLSEN / RFAC3 * 10000.     !g/m2
       SRNDOT = TRLNSEN / RFAC3 * 10000. !g/m2
-      SRDOT = SRMDOT + SRNDOT     
+      SRDOT = SRMDOT + SRNDOT
 
 C-----------------------------------------------------------------------
 C     This section calculates natural senescence of storage organ tissue
 C      Thought about moving this below the IF...Then line but did not
 C      Don't want to senesce if seedling but do want to senesce mature
 C      stand after it has been cut or frozen back
-C-----------------------------------------------------------------------      
-      SSRMDOT = STRWT *  SENSR * DTX 
+C-----------------------------------------------------------------------
+      SSRMDOT = STRWT *  SENSR * DTX
       SSRMDOT = MIN(SSRMDOT,STRWT)
 C-----------------------------------------------------------------------
 C     Calculate STOR water-stress senescence.
@@ -619,19 +652,19 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C     09/18/05 SJR - Modify for forages Short harvest cycles prevent
 C     VSTAGE>5.0.  CLW gets too large relative to WTLF to be useful.
-C      Revise and simplify using one rate all the time, adjusted for 
-C      temperature.  Rate is now a proportion of tissue senesced 
+C      Revise and simplify using one rate all the time, adjusted for
+C      temperature.  Rate is now a proportion of tissue senesced
 C      per physiological day.
 C-----------------------------------------------------------------------
-!      IF (WTLF .GT. WTLF * (1 - RHOL) * LFSEN * DTX * 
+!      IF (WTLF .GT. WTLF * (1 - RHOL) * LFSEN * DTX *
 !     &  (1-EXP(-KCAN * XLAI))) THEN
-!            LFNSEN = WTLF * (1 - RHOL) * LFSEN * DTX * 
+!            LFNSEN = WTLF * (1 - RHOL) * LFSEN * DTX *
         IF (WTLF .GT. WTLF * LFSEN * DTX) THEN
         LFNSEN = WTLF * LFSEN * DTX
         ELSE
         LFNSEN = WTLF
         ENDIF
-       SLMDOT = LFNSEN  
+       SLMDOT = LFNSEN
 C-----------------------------------------------------------------------
 C     This section calculates senescence due to low light in lower
 C     canopy.  First compute LAI at which light compensation is reached
@@ -647,15 +680,15 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C     8/3/05 SJR Change LTSEN from leaf area senesced to the equivalent
 C      leaf mass senesced.  Moved conversion from SLDOT update equation.
-C      For ease of use in calculating DM, CH2O, and N lost in GROW 
+C      For ease of use in calculating DM, CH2O, and N lost in GROW
 C      subroutine
 C-----------------------------------------------------------------------
-       LTSEN = LTSEN * 10000. / SLAAD 
+       LTSEN = LTSEN * 10000. / SLAAD
 C-----------------------------------------------------------------------
 C     Convert area loss to biomass(m2 *10000cm2/m2)/(cm2/g)=g/m2
 C-----------------------------------------------------------------------
-!        SLDOT = SLDOT + LTSEN * 10000. / SLAAD 
-        SLDOT = LFNSEN + LTSEN 
+!        SLDOT = SLDOT + LTSEN * 10000. / SLAAD
+        SLDOT = LFNSEN + LTSEN
         SLDOT = MIN(WTLF,SLMDOT)
 
 C-----------------------------------------------------------------------
@@ -690,7 +723,7 @@ C-----------------------------------------------------------------------
         SSMDOT = MIN(SSMDOT,0.1*STMWT)
 
 C-----------------------------------------------------------------------
-C     10/04/05 SJR Link to SENMOB where natural senescence was already 
+C     10/04/05 SJR Link to SENMOB where natural senescence was already
 C                         calculated.  Calculate SSDOT in same way as SLDOT.
 C-----------------------------------------------------------------------
 
@@ -739,22 +772,22 @@ C-----------------------------------------------------------------------
 C     Calculate N available from today's senescence.
 C      Only Age, low-light and N-mobilization-based senescece are lost at
 C      less than current N and CH2O concentration.
-C      Senesced tissues will contain N and CH2O concentrations between 
-C      "final" and "current" levels - calculated as 
-C      PROLFF * 0.16+( SENNxV * PCNL/100 - PROLFF * 0.16) 
-C      so mobilization would be the difference between "current" N or C 
+C      Senesced tissues will contain N and CH2O concentrations between
+C      "final" and "current" levels - calculated as
+C      PROLFF * 0.16+( SENNxV * PCNL/100 - PROLFF * 0.16)
+C      so mobilization would be the difference between "current" N or C
 C      concentration and this calculated level at senescence.
 C-----------------------------------------------------------------------
-        LFSNMOB = SLMDOT * (PCNL/100 - 
-     &    (SENNLV * (PCNL / 100 - PROLFF*0.16) + PROLFF*0.16)) 
+        LFSNMOB = SLMDOT * (PCNL/100 -
+     &    (SENNLV * (PCNL / 100 - PROLFF*0.16) + PROLFF*0.16))
      &    + LTSEN * (PCNL / 100 - PROLFF * 0.16)
-        STSNMOB = SSMDOT * (PCNST/100 - 
-     &    (SENNSV * (PCNST / 100 - PROSTF*0.16) + PROSTF*0.16)) 
+        STSNMOB = SSMDOT * (PCNST/100 -
+     &    (SENNSV * (PCNST / 100 - PROSTF*0.16) + PROSTF*0.16))
      &    + STLTSEN * (PCNST / 100 - PROSTF * 0.16)
 
-        SRSNMOB = SSRMDOT * (PCNSR / 100 - 
+        SRSNMOB = SSRMDOT * (PCNSR / 100 -
      &    (SENNSRV * (PCNSR / 100 - PROSRF*0.16) + PROSRF*0.16))
-        RTSNMOB = SRMDOT * (PCNRT / 100 - 
+        RTSNMOB = SRMDOT * (PCNRT / 100 -
      &    (SENNRV * (PCNRT / 100 - PRORTF*0.16) + PRORTF*0.16))
 
 C     TAKE OUT FROM HERE TO
@@ -770,25 +803,25 @@ C     TAKE OUT FROM HERE TO
 
 
 
-!            LFSNMOB = LFSNMOB + LFSENWT * (PCNL/100 - 
-!     &              (SENNLV * (PCNL / 100 - PROLFF*0.16) + PROLFF*0.16)) 
+!            LFSNMOB = LFSNMOB + LFSENWT * (PCNL/100 -
+!     &              (SENNLV * (PCNL / 100 - PROLFF*0.16) + PROLFF*0.16))
 
-!            STSNMOB = STSNMOB + STSENWT * (PCNST/100 - 
-!     &              (SENNSV * (PCNST / 100 - PROSTF*0.16) + PROSTF*0.16)) 
+!            STSNMOB = STSNMOB + STSENWT * (PCNST/100 -
+!     &              (SENNSV * (PCNST / 100 - PROSTF*0.16) + PROSTF*0.16))
 
 C      HERE
-!            TSNMOB = LFSNMOB + STSNMOB + SRSNMOB + RTSNMOB 
+!            TSNMOB = LFSNMOB + STSNMOB + SRSNMOB + RTSNMOB
 
 C-----------------------------------------------------------------------
 C     Calculate CH2O available from today's senescence.
 C-----------------------------------------------------------------------
-!            LFSCMOB = (SLMDOT + LTSEN + LFSENWT) * (WCRLF / WTLF - 
-!     &              (SENCLV * (WCRLF / WTLF - PCHOLFF) + PCHOLFF)) 
-!            STSCMOB = (SSMDOT + STLTSEN + STSENWT) * (WCRST / STMWT - 
-!     &              (SENCSV * (WCRST / STMWT - PCHOSTF) + PCHOSTF)) 
-!            SRSCMOB = SSRMDOT * (WCRSR / STRWT - 
+!            LFSCMOB = (SLMDOT + LTSEN + LFSENWT) * (WCRLF / WTLF -
+!     &              (SENCLV * (WCRLF / WTLF - PCHOLFF) + PCHOLFF))
+!            STSCMOB = (SSMDOT + STLTSEN + STSENWT) * (WCRST / STMWT -
+!     &              (SENCSV * (WCRST / STMWT - PCHOSTF) + PCHOSTF))
+!            SRSCMOB = SSRMDOT * (WCRSR / STRWT -
 !     &              (SENCSRV * (WCRSR / STRWT - PCHOSRF) + PCHOSRF))
-!            RTSCMOB = SRMDOT * (WCRRT / RTWT - 
+!            RTSCMOB = SRMDOT * (WCRRT / RTWT -
 !     &              (SENCRV * (WCRRT / RTWT - PCHORTF) + PCHORTF))
 
 !            LFSCMOB = SLMDOT * ((WCRLF / WTLF) - PCHOLFF)
@@ -796,7 +829,7 @@ C-----------------------------------------------------------------------
 !            SRSCMOB = SSRMDOT * ((WCRSR / STRWT) - PCHOSRF)
 !            RTSCMOB = SRMDOT * ((WCRRT / RTWT) - PCHORTF)
 
-        TSCMOB = LFSCMOB + STSCMOB + SRSCMOB + RTSCMOB 
+        TSCMOB = LFSCMOB + STSCMOB + SRSCMOB + RTSCMOB
 
 C-----------------------------------------------------------------------
 C DSSAT4 code for CMINEP
@@ -822,11 +855,11 @@ C-----------------------------------------------------------------------
 C      Increase mobilization from storage if N status of plant is high.
 C-----------------------------------------------------------------------
 
-      VEGNCNT = PCNL/100*WTLF + PCNST/100*STMWT +  
+      VEGNCNT = PCNL/100*WTLF + PCNST/100*STMWT +
      &    PCNRT/100*RTWT + PCNSR/100*STRWT
       VEGNCMX = FNINL*WTLF + FNINS*STMWT + FNINR*RTWT + FNINSR*STRWT
       VNSTAT = MIN((VEGNCNT / VEGNCMX),  1.0)
-      
+
       VNMOBR = CURV(TYPNMOB,NRMOB(1),NRMOB(2),NRMOB(3),NRMOB(4),VNSTAT)
 C-----------------------------------------------------------------------
 C      Set N mobilization rate from storage
@@ -836,8 +869,8 @@ C      Reduce from either level depending on degree of dormancy
 C      Mobilization from storage is unaffected by water or N stress
 C      but is accelerated by low N status.
 C-----------------------------------------------------------------------
-C      Tried various equations - a straight multiplicative equation 
-C      doesn't work because LAIMOBR is usually 0.0 which forces 
+C      Tried various equations - a straight multiplicative equation
+C      doesn't work because LAIMOBR is usually 0.0 which forces
 C      mobilization to the minimum rate * PPMFAC.
 C-----------------------------------------------------------------------
 !      NMOBSR = (NMOBSRN + ((NMOBSRX-NMOBSRN)*VNMOBR * LAIMOBR)) * PPMFAC
@@ -849,8 +882,38 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C      Let the maximum of the two modifiers set the rate of mobilization.
 C-----------------------------------------------------------------------
+C      Modified to control mobilization to storage when low temperature
+C      and drought occurs to prevent plants to die (new parameters in SPE.)
+C      Diego Pequeno and Ken Boote (01-10-2024)
+C-----------------------------------------------------------------------
+      MOBSWF = TABEX (YMOSWF,XMOSWF,SWFAC,4)
+*      write(*,*) YRDOY,'YRDOY',MOBSWF,'MOBSWF'
+!       MOBSWF=1
+!      write(*,*) MOBSWF,'MOBSWF',SWFAC,'SWFAC'
+      MOBSWF = MAX(0.001,MOBSWF)
+      MOBTEM = 0.0
+      DO I = 1, 24
+        MOBTEM = MOBTEM + TABEX(YMOTEM,XMOTEM,TGRO(I),6)
+*        write(*,*) TGRO,'tgro'
+!     Cap negative values
+*      MOBTEM = MAX(0.1,MOBTEM)
+*      YMOTEM = MAX(0.1,YMOTEM)
+      ENDDO
+      MOBTEM = MOBTEM / 24.
+
+      !     Cap negative values
+      MOBTEM = MAX(0.001,MOBTEM)
+
       NMOBSR = (NMOBSRN + MAX(VNMOBR,LAIMOBR) *
-     &    (NMOBSRX - NMOBSRN)) * PPMFAC
+!     &    (NMOBSRX - NMOBSRN)) * PPMFAC
+     &    (NMOBSRX - NMOBSRN)) * PPMFAC * MOBTEM * MOBSWF
+!     Cap negative values
+!      NMOBSR = MAX(0.1,NMOBSR)
+!      MOBTEM = MAX(0.1,MOBTEM)
+!      MOBSWF = MAX(0.1,MOBSWF)
+
+      WRITE(8500,'(I8,2F6.3,1X,F6.3,1X,F6.3,1X,F6.3)') YRDOY,NMOBSR,
+     & MOBTEM, TGRO(TS), MOBSWF,SWFAC
 
 C-----------------------------------------------------------------------
 C      Set C mobilization rate from storage
@@ -868,8 +931,16 @@ C-----------------------------------------------------------------------
 !     &              (CMOBSRX - CMOBSRN)) * PPMFAC
 
       CMOBSR = (CMOBSRN + LAIMOBR *
-     &    (CMOBSRX - CMOBSRN)) * PPMFAC
-      
+!     &    (CMOBSRX - CMOBSRN)) * PPMFAC
+     &    (CMOBSRX - CMOBSRN)) * PPMFAC * MOBTEM * MOBSWF
+!     Cap negative values
+      CMOBSR = MAX(0.001,CMOBSR)
+!      MOBTEM = MAX(0.1,MOBTEM)
+!      MOBSWF = MAX(0.1,MOBSWF)
+
+
+      WRITE(8560,'(I8,8F6.3)') YRDOY,CMOBSR,CMOBSRN,LAIMOBR,CMOBSRX,
+     & CMOBSRN,PPMFAC,MOBTEM,MOBSWF
 C-----------------------------------------------------------------------
 C      Calculate potential N mobilization for the day
 C-----------------------------------------------------------------------
@@ -915,7 +986,7 @@ C-----------------------------------------------------------------------
       NMINEP = LFNMINE + STNMINE + RTNMINE + SRNMINE + SHNMINE
       NMINEO = NMINELF + NMINEST + NMINERT + NMINESR + SHNMINE
 
-      TSNMOB = LFSNMOB + STSNMOB + SRSNMOB + RTSNMOB 
+      TSNMOB = LFSNMOB + STSNMOB + SRSNMOB + RTSNMOB
 !      TSNMOB = LFNMINE + STNMINE + RTNMINE + SRNMINE + SHNMINE
 C      ADDITIONAL DM LOSS DUE TO N MOBILIZATION? SENRTE
 
@@ -934,20 +1005,41 @@ C      ADDITIONAL DM LOSS DUE TO N MOBILIZATION? SENRTE
 C-----------------------------------------------------------------------
 C      Calculate potential CH2O mobilization for the day
 C-----------------------------------------------------------------------
+C    Adding cold temperature and water stress to reduce mobilization
+C    1-12-2024 KJB and DP
       CMINELF = CMOBMX * (DTX + DXR57)* (WCRLF - WTLF * PCHOLFF)
+     & * MOBTEM * MOBSWF
+!     Cap negative values
+      MOBTEM = MAX(0.0,MOBTEM)
+      MOBSWF = MAX(0.0,MOBSWF)
+
       LFCMINE = MAX(LFSCMOB, CMINELF)
 
       CMINEST = CMOBMX * (DTX + DXR57)* (WCRST - STMWT * PCHOSTF)
+     & * MOBTEM * MOBSWF
+!     Cap negative values
+      MOBTEM = MAX(0.0,MOBTEM)
+      MOBSWF = MAX(0.0,MOBSWF)
+
       STCMINE = MAX(STSCMOB, CMINEST)
 
-      CMINERT = CMOBMX * (DTX + DXR57)* PPMFAC * 
+      CMINERT = CMOBMX * (DTX + DXR57)* PPMFAC *
      &    (WCRRT - RTWT * PCHORTF)
+     & * MOBTEM * MOBSWF
+!     Cap negative values
+      MOBTEM = MAX(0.0,MOBTEM)
+      MOBSWF = MAX(0.0,MOBSWF)
+
       RTCMINE = MAX(RTSCMOB, CMINERT)
 
       CMINESR = CMOBSR * (DTX + DXR57)* (WCRSR - STRWT * PCHOSRF)
       SRCMINE = MAX(SRSCMOB, CMINESR)
 
       SHCMINE = CMOBMX * (DTX + DXR57)* WCRSH
+     & * MOBTEM * MOBSWF
+!     Cap negative values
+      MOBTEM = MAX(0.0,MOBTEM)
+      MOBSWF = MAX(0.0,MOBSWF)
 
       CMINEP = LFCMINE + STCMINE + RTCMINE + SRCMINE + SHCMINE
       CMINEO = CMINELF + CMINEST + CMINERT + CMINESR + SHCMINE
@@ -963,7 +1055,7 @@ C-----------------------------------------------------------------------
 !***********************************************************************
 !     SENES VARIABLE DEFINITIONS:
 !-----------------------------------------------------------------------
-! CHAR      Contains the contents of last record read 
+! CHAR      Contains the contents of last record read
 ! CMINELF   Potential mobile CH2O avaialable today from leaf (g [CH2O] m-2)
 ! CMINEO        DSSAT4 potential CH2O mobilization from storage (g[CH2O] / m2 / d)
 ! CMINEP        Potential whole-plant CH2O mobilization from storage (g[CH2O] / m2 / d)
@@ -975,38 +1067,38 @@ C-----------------------------------------------------------------------
 ! DAYL_1    Yesterdays daylength (hours)
 ! DAYL_1    Daylength two days ago (hours)
 ! DLAYR(L)  Soil Depth in layer L (cm)
-! DTX       Thermal time that occurs in a real day based on vegetative 
+! DTX       Thermal time that occurs in a real day based on vegetative
 !             development temperature function (thermal days / day)
-! DYNAMIC   Module control variable; =RUNINIT, SEASINIT, RATE, EMERG, 
-!             INTEGR, OUTPUT, or SEASEND 
-! ERR       Error code for file operation 
-! FILECC    Path plus filename for species file (*.spe) 
-! FOUND     Indicator that good data was read from file by subroutine FIND 
-!             (0 - End-of-file encountered, 1 - NAME was found) 
-! ICMP      Light compensation point for senescence of lower leaves because 
+! DYNAMIC   Module control variable; =RUNINIT, SEASINIT, RATE, EMERG,
+!             INTEGR, OUTPUT, or SEASEND
+! ERR       Error code for file operation
+! FILECC    Path plus filename for species file (*.spe)
+! FOUND     Indicator that good data was read from file by subroutine FIND
+!             (0 - End-of-file encountered, 1 - NAME was found)
+! ICMP      Light compensation point for senescence of lower leaves because
 !             of excessive self-shading by crop canopy (moles / m2 / day)
-! ISECT     Data record code (0 - End of file encountered, 1 - Found a good 
-!             line to read, 2 - End of Section in file encountered, denoted 
+! ISECT     Data record code (0 - End of file encountered, 1 - Found a good
+!             line to read, 2 - End of Section in file encountered, denoted
 !             by * in column 1
-! KCAN      Canopy light extinction coefficient for daily PAR, for 
-!             equidistant plant spacing, modified when in-row and between 
-!             row spacings are not equal 
+! KCAN      Canopy light extinction coefficient for daily PAR, for
+!             equidistant plant spacing, modified when in-row and between
+!             row spacings are not equal
 ! LCMP      LAI at which today's light compensation (ICMP) is reached
 !             (m2[leaf] / m2[ground])
 ! LFCMINE        Today's maximum potential CH2O mobilization from leaf (g [CH2O] m-2)
 ! LFNMINE   Today's maximum potential N mobilization from leaf (g [N] m-2)
 ! LFNSEN        Defoliation from natural senescence (g [DM] m-2 d-1)
 ! LFSEN     Maximum rate of natural leaf senescence per physiological day
-! LFSCMOB   Mass of leaf CH2O mobilized from tissue lost to natural 
+! LFSCMOB   Mass of leaf CH2O mobilized from tissue lost to natural
 !              senescence (g [CH2O] m-2 d-1)
-! LFSNMOB   Mass of leaf N mobilized from tissue lost to natural  
+! LFSNMOB   Mass of leaf N mobilized from tissue lost to natural
 !              senescence (g [N] m-2 d-1)
-! LNUM      Current line number of input file 
+! LNUM      Current line number of input file
 ! LTSEN     Senescence of lower leaves due to self-shading of canopy
 !             (1/day) 8/3/05 now is g [DM] m-2 d-1
-! LUNCRP    Logical unit number for FILEC (*.spe file) 
-! NL        Maximum number of soil layers = 20 
-! NLAYR     Number of soil layers 
+! LUNCRP    Logical unit number for FILEC (*.spe file)
+! NL        Maximum number of soil layers = 20
+! NLAYR     Number of soil layers
 ! NMINELF   Potential mobile N avaialable today from leaf (g [N] m-2)
 ! NMINEO        DSSAT4 potential N mobilization from storage (g[N] / m2 / d)
 ! NMINEP        Potential whole-plant N mobilization from storage (g[N] / m2 / d)
@@ -1015,127 +1107,127 @@ C-----------------------------------------------------------------------
 ! NMINEST   Potential mobile N avaialable today from stem (g [N] m-2)
 ! NR7       Day when 50% of plants first have yellowing or maturing pods
 !             (days)
-! PAR       Daily photosynthetically active radiation or photon flux 
+! PAR       Daily photosynthetically active radiation or photon flux
 !             density (moles[quanta]/m2-d)
-! PORLFT    Proportion of leaf weight grown which will have been senesced 
-!             if no water stress has occurred prior to this V-stage 
-! PORPT     Ratio of petiole to leaf weight 
-! RATTP     Factor used in determining increased senescence due to water 
-!             stress 
+! PORLFT    Proportion of leaf weight grown which will have been senesced
+!             if no water stress has occurred prior to this V-stage
+! PORPT     Ratio of petiole to leaf weight
+! RATTP     Factor used in determining increased senescence due to water
+!             stress
 ! RFAC1     Root length per unit  root weight. (cm/g)
 ! RFAC3     Ratio of root length to root weight at the current time (cm/g)
 ! RHOL      Fraction of leaf which is carbohydrate (g [CH20] / g[leaf])
 ! RLV(L)    Root length density for soil layer L (cm[root] / cm3[soil])
 ! RTCMINE        Today's maximum potential CH2O mobilization from root (g [CH2O] m-2)
 ! RTNMINE   Today's maximum potential N mobilization from root (g [N] m-2)
-! RTSEN     Fraction of existing root length which can be senesced per 
+! RTSEN     Fraction of existing root length which can be senesced per
 !             physiological day. (fraction / ptd)
-! RTSCMOB   Mass of root CH2O mobilized from tissue lost to natural senescence 
+! RTSCMOB   Mass of root CH2O mobilized from tissue lost to natural senescence
 !              (g [CH2O] m-2 d-1)
-! RTSNMOB   Mass of root N mobilized from tissue lost to natural senescence 
+! RTSNMOB   Mass of root N mobilized from tissue lost to natural senescence
 !              (g [N] m-2 d-1)
 ! RTWT      Dry mass of root tissue, including C and N
 !             (g[root] / m2[ground])
-! SECTION   Section name in input file 
-! SENDAY    Maximum fraction of existing leaf weight which can be senesced 
-!             on day N as a function of severe water stress 4 days earlier. 
-! SENMAX(I) Maximum proportion of total leaf weight as a function of 
-!             V-stage (XSENMX(I)) which can be senesced due to water stress. 
-! SENCLV     Proportion used to calculate amount of CHO mobilized from leaves lost to 
+! SECTION   Section name in input file
+! SENDAY    Maximum fraction of existing leaf weight which can be senesced
+!             on day N as a function of severe water stress 4 days earlier.
+! SENMAX(I) Maximum proportion of total leaf weight as a function of
+!             V-stage (XSENMX(I)) which can be senesced due to water stress.
+! SENCLV     Proportion used to calculate amount of CHO mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENCRV     Proportion used to calculate amount of CHO mobilized from leaves lost to 
+! SENCRV     Proportion used to calculate amount of CHO mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENCSV     Proportion used to calculate amount of CHO mobilized from leaves lost to 
+! SENCSV     Proportion used to calculate amount of CHO mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENCSRV     Proportion used to calculate amount of CHO mobilized from leaves lost to 
+! SENCSRV     Proportion used to calculate amount of CHO mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENNLV     Proportion used to calculate amount of N mobilized from leaves lost to 
+! SENNLV     Proportion used to calculate amount of N mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENNRV     Proportion used to calculate amount of N mobilized from leaves lost to 
+! SENNRV     Proportion used to calculate amount of N mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENNSV     Proportion used to calculate amount of N mobilized from leaves lost to 
+! SENNSV     Proportion used to calculate amount of N mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENNSRV     Proportion used to calculate amount of N mobilized from leaves lost to 
+! SENNSRV     Proportion used to calculate amount of N mobilized from leaves lost to
 !               natural senescence, low-light senescence, and N-mobilization senescence
-!               Is a fraction of the difference between PCNL (current N concentration and 
+!               Is a fraction of the difference between PCNL (current N concentration and
 !               PROLFI*0.16 or "final" N concentration.
-! SENPOR(I) Proportion of leaf weight grown which will have been senesced 
-!             by a given V- stage (XSTAGE(I)) if no water stress has 
-!             occurred prior to this V-stage (XSTAGE(I)) -- normal 
-!             vegetative senescence does not occur if prior water stress 
-!             has already  reduced leaf  
-! SENRT2    Factor by which leaf weight is multiplied to determine 
+! SENPOR(I) Proportion of leaf weight grown which will have been senesced
+!             by a given V- stage (XSTAGE(I)) if no water stress has
+!             occurred prior to this V-stage (XSTAGE(I)) -- normal
+!             vegetative senescence does not occur if prior water stress
+!             has already  reduced leaf
+! SENRT2    Factor by which leaf weight is multiplied to determine
 !             senescence each day after NR7 (g(leaf) / g(protein loss))
-! SENRTE    Factor by which protein mined from leaves each day is 
+! SENRTE    Factor by which protein mined from leaves each day is
 !             multiplied to determine LEAF senescence.
 !             (g(leaf) / g(protein loss))
-! SENSR        Constant for senescence of storage organ tissue 
+! SENSR        Constant for senescence of storage organ tissue
 !                  (proportion of cumulative storage weight lost / physiological day)
 ! SENWT     Leaf senescence due to N mobilization (g[leaf] / m2[ground])
 ! SHCMINE   Potential mobile CH2O avaialable today from shell (g [CH2O] m-2)
 ! SHNMINE   Potential mobile N avaialable today from shell (g [N] m-2)
 ! SLAAD     Specific leaf area, excluding weight of C stored in leaves
 !             (cm2[leaf] / g[leaf])
-! SLMDOT    Defoliation due to daily leaf senescence that is lost at PROLFF, 
+! SLMDOT    Defoliation due to daily leaf senescence that is lost at PROLFF,
 !              hence, some fraction of the N content is subject to mobilization (g/m2/day)
 ! SRCMINE        Today's maximum potential CH2O mobilization from STOR (g [CH2O] m-2)
-! SRMDOT    Daily root senescence that is lost at PRORTF, 
+! SRMDOT    Daily root senescence that is lost at PRORTF,
 !              hence, some fraction of the N content is subject to mobilization (g/m2/day)
 ! SRNMINE   Today's maximum potential N mobilization from STOR (g [N] m-2)
-! SRSCMOB   Mass of STOR CH2O mobilized from tissue lost to natural senescence 
+! SRSCMOB   Mass of STOR CH2O mobilized from tissue lost to natural senescence
 !              (g [CH2O] m-2 d-1)
-! SRSNMOB   Mass of STOR N mobilized from tissue lost to natural senescence 
+! SRSNMOB   Mass of STOR N mobilized from tissue lost to natural senescence
 !              (g [N] m-2 d-1)
-! SSMDOT    Daily petiole senescence that is lost at PROSTF, 
+! SSMDOT    Daily petiole senescence that is lost at PROSTF,
 !              hence, some fraction of the N content is subject to mobilization (g/m2/day)
-! SSRMDOT   Daily STOR senescence that is lost at PROSRF, 
+! SSRMDOT   Daily STOR senescence that is lost at PROSRF,
 !              hence, some fraction of the N content is subject to mobilization (g/m2/day)
 ! STCMINE        Today's maximum potential CH2O mobilization from stem (g [CH2O] m-2)
 ! STMWT     Dry mass of stem tissue, including C and N
 !             (g[stem] / m2[ground)
 ! STNMINE   Today's maximum potential N mobilization from stem (g [N] m-2)
 ! STRWT     Dry mass of storage organ tissue, including C and N
-! STSCMOB   Mass of petiole CH2O mobilized from tissue lost to natural senescence 
+! STSCMOB   Mass of petiole CH2O mobilized from tissue lost to natural senescence
 !              (g [CH2O] m-2 d-1)
-! STSNMOB   Mass of petiole N mobilized from tissue lost to natural senescence 
+! STSNMOB   Mass of petiole N mobilized from tissue lost to natural senescence
 !              (g [N] m-2 d-1)
-! TABEX     Function subroutine - Lookup utility 
-! TCMP      Time constant for senescence of lower leaves because of 
+! TABEX     Function subroutine - Lookup utility
+! TCMP      Time constant for senescence of lower leaves because of
 !             excessive self-shading by crop canopy (thermal days)
-! TIMDIF    Integer function which calculates the number of days between 
+! TIMDIF    Integer function which calculates the number of days between
 !             two Julian dates (da)
 ! TRLSEN    Total root length density senesced today (cm[root]/ cm2[soil])
-! TRTDY     Total root length per square cm soil yesterday 
+! TRTDY     Total root length per square cm soil yesterday
 !             (cm[root]/cm2[soil])
-! TSCMOB    Total plant CH2O mobilized from tissue lost to natural and 
+! TSCMOB    Total plant CH2O mobilized from tissue lost to natural and
 !              low-light senescence (g [CH2O] m-2 d-1)
-! TSNMOB    Total plant N mobilized from tissue lost to natural and 
+! TSNMOB    Total plant N mobilized from tissue lost to natural and
 !              low-light senescence (g [N] m-2 d-1)
-! VSTAGE    Number of nodes on main stem of plant 
-! WRDOTN    Dry weight growth rate of new root tissue including N but not C 
+! VSTAGE    Number of nodes on main stem of plant
+! WRDOTN    Dry weight growth rate of new root tissue including N but not C
 !             reserves (g[root] / m2[ground]-d)
 ! WTLF      Dry mass of leaf tissue including C and N
 !             (g[leaf] / m2[ground])
 ! XLAI      Leaf area (one side) per unit of ground area
 !             (m2[leaf] / m2[ground])
-! XSENMX(I) V-stage at which maximum fraction of cumulative leaf growth 
+! XSENMX(I) V-stage at which maximum fraction of cumulative leaf growth
 !             vulnerable to loss due to water stress is SENMAX(I).
 !             (# leaf nodes)
-! XSTAGE(I) V-stage at which SENPOR(I) fraction of cumulative leaf growth 
+! XSTAGE(I) V-stage at which SENPOR(I) fraction of cumulative leaf growth
 !             will have been senesced if no water stress occurred.
 !             (# leaf nodes)
 ! YRDOY     Current day of simulation (YYDDD)

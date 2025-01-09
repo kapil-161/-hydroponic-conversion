@@ -27,7 +27,7 @@ C=======================================================================
      &  PUNCTR, PLTPOP, RPROAV, RTWT,                     !Input
      &  SDDES, SDNO, SDVAR, SHELN, SHVAR, SLDOT, SRDOT,   !Input
      &  SSDOT, SSRDOT, STMWT,                             !Input
-     &  TAVG, TDUMX, TGRO, TURFAC,                        !Input 
+     &  TAVG, TDUMX, TGRO, TURFAC,                        !Input
      &  VSTAGE, WCRLF, WCRRT, WCRST,                      !Input
      &  WTLF, WTNLF, WTNRT, WTNSR, WTNST, WTSD,           !Input
      &  WTSHE, YRDOY,                                     !Input
@@ -44,19 +44,19 @@ C=======================================================================
      &  FRSTRF, FRSTRM, FRSTRMX, LRMOB,                   !Output
      &  NMOBSRN, NMOBSRX, NRMOB, NVSTL, NVSTR, NVSTS,     !Output
      &  NVSTSR, TYPLMOB, TYPNMOB, XSTR, YSTOR)            !Output
-     
+
 ! 2023-01-18 CHP removed unused variables from argument list:
-!  LFSCMOB, LFSNMOB, PCNL, PCNRT, PCNST, RTSCMOB, RTSNMOB, SRSCMOB, 
-!  SRSNMOB, STSCMOB, STSNMOB, SWFAC, TDUMX2, WNRLF, WNRRT, WNRSH, 
-!  WNRST, XPOD, NR5, NMOBR, NMOBSR, PPMFAC, PCNSR, WLIDOT, WNRSR, XLAI, 
-!  
+!  LFSCMOB, LFSNMOB, PCNL, PCNRT, PCNST, RTSCMOB, RTSNMOB, SRSCMOB,
+!  SRSNMOB, STSCMOB, STSNMOB, SWFAC, TDUMX2, WNRLF, WNRRT, WNRSH,
+!  WNRST, XPOD, NR5, NMOBR, NMOBSR, PPMFAC, PCNSR, WLIDOT, WNRSR, XLAI,
+!
 
 C-----------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
+      USE ModuleDefs     !Definitions of constructed variable types,
         ! which contain control information, soil
         ! parameters, hourly weather data.
       IMPLICIT NONE
-      EXTERNAL FOR_IPDMND, FOR_SDCOMP, FIND, ERROR, IGNORE, GETLUN, 
+      EXTERNAL FOR_IPDMND, FOR_SDCOMP, FIND, ERROR, IGNORE, GETLUN,
      &  TABEX, TIMDIF, CURV
       SAVE
       CHARACTER*1 PLME
@@ -64,7 +64,7 @@ C-----------------------------------------------------------------------
       CHARACTER*3 TYPSDT
       CHARACTER*30 FILEIO
       CHARACTER*92 FILECC, FILEGC
-      
+
 !     CHARACTER*80  C80
       CHARACTER*6   SECTION
       CHARACTER*255 C255
@@ -72,9 +72,9 @@ C-----------------------------------------------------------------------
 
       INTEGER DYNAMIC, TIMDIF
       INTEGER NPP, I, NAGE, DAS, YRSIM
-      INTEGER YRDOY, NDLEAF, NR1, NR2, NR7, NVEG0  !NR5, 
-      
-      INTEGER LUNCRP, ERR, LNUM, FOUND, ISECT  !LUNIO, LUNECO, 
+      INTEGER YRDOY, NDLEAF, NR1, NR2, NR7, NVEG0  !NR5,
+
+      INTEGER LUNCRP, ERR, LNUM, FOUND, ISECT  !LUNIO, LUNECO,
 
       REAL FRLFM, FRSTMM, YY, XX, TMPFAC
       REAL REDPUN,TMPFCS,PAGE,REDSHL,SDMAX,CDMSH,GDMSH,ADDSHL
@@ -100,7 +100,7 @@ C-----------------------------------------------------------------------
      &  GROMAX, GRRAT1, LAGSD, LNGPEG, LNGSH,
      &  NDMNEW, NDMOLD, NDMREP,
      &  NDMSD, NDMSDR, NDMSH, NDMTOT, NDMVEG,
-     &  NMINEP, NMOBMX, NRCVR, NSTRES, !NMOBR, NRATIO, 
+     &  NMINEP, NMOBMX, NRCVR, NSTRES, !NMOBR, NRATIO,
      &  NVSMOB,
      &  PAR,   !PCNL, PCNRT, PCNST,
      &  PGAVL, PLIGSD, PLTPOP, PMINSD, POASD,
@@ -110,11 +110,11 @@ C-----------------------------------------------------------------------
      &  ROA, RPRO, RPROAV, RTWT, SDGR,
      &  SDLIP, SDPRO, SDVAR, SHLAG, SHVAR,
      &  SIZELF, SIZREF, SLAMN, SLAMX, SLAPAR,
-     &  SRMAX, STMWT, TAVG, TDUMX,  !SWFAC, 
+     &  SRMAX, STMWT, TAVG, TDUMX,  !SWFAC,
      &  SIZRAT, !TDUMX2,
      &  TURADD, TURFAC, TURSLA, TURXFR,
      &  VSSINK, VSTAGE, WCRLF, WCRRT, WCRST, !WNRLF,
-     &  WTLF, XFRMAX,  !WNRRT, WNRSH, WNRST, 
+     &  WTLF, XFRMAX,  !WNRRT, WNRSH, WNRST,
      &  XFRT, XFRUIT   !, XPOD
 
       REAL FNSDT(4)
@@ -123,7 +123,7 @@ C-----------------------------------------------------------------------
      &    XXFTEM(10), YXFTEM(10)
       REAL XLEAF(8), YLEAF(8), YSTEM(8)
       REAL TGRO(TS)
-      REAL SDDES(NCOHORTS), SDNO(NCOHORTS), SHELN(NCOHORTS) 
+      REAL SDDES(NCOHORTS), SDNO(NCOHORTS), SHELN(NCOHORTS)
       REAL WTSD(NCOHORTS), WTSHE(NCOHORTS)
       REAL PHTIM(365), PNTIM(365)
 
@@ -132,9 +132,9 @@ C-----------------------------------------------------------------------
       REAL NSLA                                       !Diego added
       REAL CUMNSF                                     !Diego added
 !     REAL NHGT                                       !Diego added
-      
+
 !CHP - puncture variables, not functional
-      REAL PUNCSD, PUNCTR, RPRPUN     
+      REAL PUNCSD, PUNCTR, RPRPUN
 !-----------------------------------------------------------------------
 C Variables for adjusting initial XLEAF for grass transplants
 !-----------------------------------------------------------------------
@@ -143,13 +143,13 @@ C Variables for adjusting initial XLEAF for grass transplants
 C Variables for adding storage organ and dormancy functions
 !-----------------------------------------------------------------------
 
-      REAL AGRSTR, FNINSR, FRSTR,   !WLIDOT, 
-     &    FRSTRF, FRSTRM, FRSTRMX, NMOBSRN, NMOBSRX,   !NMOBSR, 
-     &    NVSTSR, PPTFAC, PROSRF, PROSRI, !PCNSR, PPMFAC, 
-     &    STRWT, TFRLF, TFRSTM, TFRRT, WCRSR, !TFRSTR, WNRSR, 
-     &    XSTR, YSTOR(8)  !XLAI, 
+      REAL AGRSTR, FNINSR, FRSTR,   !WLIDOT,
+     &    FRSTRF, FRSTRM, FRSTRMX, NMOBSRN, NMOBSRX,   !NMOBSR,
+     &    NVSTSR, PPTFAC, PROSRF, PROSRI, !PCNSR, PPMFAC,
+     &    STRWT, TFRLF, TFRSTM, TFRRT, WCRSR, !TFRSTR, WNRSR,
+     &    XSTR, YSTOR(8)  !XLAI,
 
-      CHARACTER*3 TYPLMOB, TYPNMOB 
+      CHARACTER*3 TYPLMOB, TYPNMOB
       REAL LRMOB(4), NRMOB(4)
       REAL PHZACC(20), SDLEST
       REAL XLFEST(8), YLFEST(8), YSREST(8), YSTEST(8)
@@ -159,10 +159,18 @@ C Variables for apportioning NDMVEG and NDMOLD
 !-----------------------------------------------------------------------
       REAL CDMOLD, CHOPRO, FROLDA, KCOLD
       REAL SLDOT, SRDOT, SSDOT, SSRDOT
-!     REAL LFSCMOB, LFSNMOB, RTSCMOB, RTSNMOB, SRSCMOB, SRSNMOB, 
+!     REAL LFSCMOB, LFSNMOB, RTSCMOB, RTSNMOB, SRSCMOB, SRSNMOB,
 !    &   STSCMOB, STSNMOB
       REAL WTNLF, WTNRT, WTNSR, WTNST
       REAL PROLFR, PROSTR, PRORTR, PROSRR
+      REAL LFDELT
+
+      INTEGER LUNECO, LUNIO
+
+      CHARACTER*6   ERRKEY
+      CHARACTER*6   ECOTYP, ECONO
+
+      PARAMETER (ERRKEY = 'DEMAND')
 !***********************************************************************
 !***********************************************************************
 !     Run Initialization - Called once per simulation
@@ -211,12 +219,67 @@ C Variables for apportioning NDMVEG and NDMOLD
       FNINR  = 0.0
       NMINEP = 0.0
 
-      RPRPUN = 1.0 
+      RPRPUN = 1.0
       TMPFAC = 1.0
       CUMNSF = 1.0
-      
-      FNINSR=0.0
 
+      FNINSR=0.0
+      LFDELT=0.0
+
+!-----------------------------------------------------------------------
+      CALL GETLUN('FILEIO', LUNIO)
+      OPEN (LUNIO, FILE = FILEIO,STATUS = 'OLD',IOSTAT=ERR)
+      IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEIO,0)
+
+
+!-----------------------------------------------------------------------
+!    Read Planting Details Section
+!-----------------------------------------------------------------------
+      LNUM = 1
+        SECTION = '*PLANT'
+        CALL FIND(LUNIO, SECTION, LNUM, FOUND)
+
+!-----------------------------------------------------------------------
+C    Find and Read Field Section from FILEIO - previously read in IPIBS
+!       Look for the second section header beginning with '*CULTI'
+C-----------------------------------------------------------------------
+      LNUM = 50
+
+        SECTION = '*CULTI'
+        CALL FIND(LUNIO, SECTION, LNUM, FOUND)
+
+      IF (FOUND .EQ. 0) THEN
+        CALL ERROR(ERRKEY, 1, FILEIO, LNUM)
+      ELSE
+        READ(LUNIO,'(24X,A6)') ECONO
+      ENDIF
+
+      CLOSE (LUNIO)
+
+      CALL GETLUN('FILEE', LUNECO)
+      OPEN (LUNECO,FILE = FILEGC,STATUS = 'OLD',IOSTAT=ERR)
+
+      ISECT = 2
+      DO I=1,200
+        CALL IGNORE(LUNECO, LNUM, ISECT, C255)
+        IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,0)
+        IF ((ISECT .EQ. 1) .AND. (C255(1:1) .NE. ' ') .AND.
+     &    (C255(1:1) .NE. '*')) THEN
+      READ (C255,'(A6,145X,F6.0)',IOSTAT=ERR)
+     &    ECOTYP, LFDELT
+!      WRITE(*,*) LFDELT
+      IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,LNUM)
+        IF (ECOTYP .EQ. ECONO) THEN
+        EXIT
+        ENDIF
+        ELSE IF (ISECT .EQ. 0) THEN
+        IF (ECONO .EQ. 'DFAULT') CALL ERROR(ERRKEY,3,FILEGC,LNUM)
+        ECONO = 'DFAULT'
+        REWIND(LUNECO)
+        ENDIF
+      ENDDO
+
+      CLOSE (LUNECO)
 C-----------------------------------------------------------------------
 C     SET VARIETY SPECIFIC LEAF PARAMETERS
 C-----------------------------------------------------------------------
@@ -239,6 +302,13 @@ C-----------------------------------------------------------------------
         FRLF = TABEX(YLEAF,XLEAF,0.0,8)
         FRSTM = TABEX(YSTEM,XLEAF,0.0,8)
         FRSTR = TABEX(YSTOR,XLEAF,0.0,8)
+        FRLF = FRLF + LFDELT
+        FRSTM = FRSTM - LFDELT
+!     Cap negative values
+       LFDELT = MAX(0.1,LFDELT)
+       FRLF = MAX(0.1,FRLF)
+       FRSTM = MAX(0.1,FRSTM)
+
         FRRT = 1.0 - FRLF - FRSTM - FRSTR
 
 
@@ -266,23 +336,23 @@ C-----------------------------------------------------------------------
         PHTIM(NPP) = 0.
         PNTIM(NPP) = 0.
         END DO
-        FNINSD = SDPRO * 0.16   
-        FNINL  = PROLFI * 0.16  
-        FNINS  = PROSTI * 0.16  
-        FNINR  = PRORTI * 0.16  
+        FNINSD = SDPRO * 0.16
+        FNINL  = PROLFI * 0.16
+        FNINS  = PROSTI * 0.16
+        FNINR  = PRORTI * 0.16
         FNINSR = PROSRI * 0.16
         NVSTL = FNINL
         NVSTS = FNINS
         NVSTR = FNINR
         NVSTSR = FNINSR
 C-----------------------------------------------------------------------
-C     INITIALIZE PARTITIONING PARAMETERS for transplants adjusted for 
+C     INITIALIZE PARTITIONING PARAMETERS for transplants adjusted for
 C      SDAGE and growth temperature )
 C-----------------------------------------------------------------------
 
         IF (PLME .EQ. 'T') THEN
-      
-        IF (PHZACC(4) .GE. SDLEST) THEN 
+
+        IF (PHZACC(4) .GE. SDLEST) THEN
         FRLF = TABEX(YLFEST,XLFEST,VSTAGE,8)
         FRSTM = TABEX(YSTEST,XLFEST,VSTAGE,8)
         FRSTR = TABEX(YSREST,XLFEST,VSTAGE,8)
@@ -291,6 +361,13 @@ C-----------------------------------------------------------------------
         FRSTM = TABEX(YSTEM,XLEAF,VSTAGE,8)
         FRSTR = TABEX(YSTOR,XLEAF,VSTAGE,8)
         ENDIF
+        LFDELT = MAX(-0.05,MIN(0.05,LFDELT))
+        FRLF = FRLF + LFDELT
+        FRSTM = FRSTM - LFDELT
+!     Cap negative values
+       FRLF = MAX(0.001,FRLF)
+       FRSTM = MAX(0.001,FRSTM)
+
 
         FRRT = 1.0 - FRLF - FRSTM - FRSTR
         ENDIF
@@ -571,9 +648,9 @@ C-----------------------------------------------------------------------
         FRLFM  = TABEX (YLFEST, XLFEST, VSTAGE, 8)
         FRSTMM = TABEX (YSTEST, XLFEST, VSTAGE, 8)
         FRSTRM = TABEX (YSREST, XLFEST, VSTAGE, 8)
-        
 
-        YY = FRLFM - FRLFF 
+
+        YY = FRLFM - FRLFF
         XX = FRSTMM - FRSTMF
         XSTR = FRSTRM - FRSTRF
 
@@ -583,7 +660,7 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C     Calculate Pattern of Vegetative Partitioning, a function of V-STAGE
 C-----------------------------------------------------------------------
-        IF (PHZACC(4) .GE. SDLEST) THEN 
+        IF (PHZACC(4) .GE. SDLEST) THEN
         FRLF  = TABEX(YLFEST,XLFEST,VSTAGE,8)
         FRSTM = TABEX(YSTEST,XLFEST,VSTAGE,8)
         FRSTR = TABEX(YSREST,XLFEST,VSTAGE,8)
@@ -592,8 +669,19 @@ C-----------------------------------------------------------------------
         FRSTM = TABEX(YSTEM,XLEAF,VSTAGE,8)
         FRSTR = TABEX(YSTOR,XLEAF,VSTAGE,8)
         ENDIF
+        FRLF = FRLF + LFDELT
+        FRSTM = FRSTM - LFDELT
+!     Cap negative values
+       LFDELT = MAX(0.1,LFDELT)
+       FRLF = MAX(0.1,FRLF)
+       FRSTM = MAX(0.1,FRSTM)
+
 
       ELSE
+
+C-----------------------------------------------------------------------
+C If flower and seed set need to included LFDELT on leaf and stem
+C 1-12-2024 KJB and DP
 C-----------------------------------------------------------------------
 C     Partitioning between vegetative tissues depends on development
 C     as expressed by FRACDN, the relative development between R1 and NDLEAF
@@ -614,6 +702,8 @@ C-----------------------------------------------------------------------
 
 !      Location to insert code to increase partitioning to leaf
 !      in spring and summer but not fall.  Per Dr. Boote.
+      WRITE(8600,'(I8,3F6.3)') YRDOY,FRLF,FRSTM,LFDELT
+
 
       IF (PPTFAC .GT. 0.0) THEN
         FRSTR = (FRSTRMX - FRSTR) * PPTFAC + FRSTR
@@ -624,7 +714,6 @@ C-----------------------------------------------------------------------
        FRSTM=TFRSTM
        FRRT=1.0 - (FRLF + FRSTM + FRSTR)
       ENDIF
-
 !-----------------------------------------------------------------------
 C     Compute F, specific leaf area for new leaf weight
 C-----------------------------------------------------------------------
@@ -636,7 +725,7 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
       PARSLA = (SLAMN+(SLAMX-SLAMN)*EXP(SLAPAR*PAR))/SLAMX
       TURFSL = MAX(0.1, (1.0 - (1.0 - TURFAC)*TURSLA))
-      
+
       !Nitrogen effect added by Diego
 !-----------------------------------------------------------------------
 !    Find and Read Leaf Growth Section
@@ -649,7 +738,7 @@ C-----------------------------------------------------------------------
       !  CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
       !  READ(C80,'(4F6.0)',IOSTAT=ERR) FINREF, SLAREF, SIZREF, VSSINK
       !  IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-      !  
+      !
       !  CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
       !  READ(C80,'(24X,F6.3)',IOSTAT=ERR) NSLA
       !  IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
@@ -659,8 +748,8 @@ C-----------------------------------------------------------------------
         !CALL IGNORE(C80)
         !READ(C80,'(24X,F6.3)') NSLA
         !write(700,'(I7,F10.3)') YRDOY,NSLA
-C---------------------------------------------------------------- added by Diego      
-      CALL GETLUN('FILEC', LUNCRP)      
+C---------------------------------------------------------------- added by Diego
+      CALL GETLUN('FILEC', LUNCRP)
       OPEN (LUNCRP,FILE = FILECC, STATUS = 'OLD',IOSTAT=ERR)
         SECTION = '!*LEAF'
       CALL FIND(LUNCRP, SECTION, LNUM, FOUND)
@@ -671,17 +760,17 @@ C---------------------------------------------------------------- added by Diego
         CLOSE (LUNCRP)
 C-----------------------------------------------------------------
       if (NSLA .GT. 1.2) then     !To limit NSLA to 1.2
-          NSLA=1.2 
+          NSLA=1.2
           endif
-      NFSL   = MAX(0.1, (1.0 - (1.0 - NSTRES)*NSLA))       
-      CUMNSF = 0.75*CUMNSF + 0.25*NFSL  
+      NFSL   = MAX(0.1, (1.0 - (1.0 - NSTRES)*NSLA))
+      CUMNSF = 0.75*CUMNSF + 0.25*NFSL
 C-----------------------------------------------------------------------
 C     Compute overall effect of TMP, PAR, water stress on SLA (F), first
 C     for veg stages, then transition to rep stage from R1 to end leaf
 C     effect of PAR on SLA, COX PEANUT SCI. 5:27, 1978
 C-----------------------------------------------------------------------
       !* NFSL !NFSL added by Diego
-      FFVEG = FVEG * TPHFAC * PARSLA * TURFSL * CUMNSF   
+      FFVEG = FVEG * TPHFAC * PARSLA * TURFSL * CUMNSF
 !      WRITE(2500,'(F10.3)') CUMNSF
       F = FFVEG
       IF (XFRT*FRACDN .GE. 0.05) F = FFVEG * (1.0 - XFRT * FRACDN)
@@ -733,7 +822,7 @@ C-----------------------------------------------------------------------
 C     Compute CH2O cost per g of tissue, excluding cost for protein (AGRVG)
 C     and total CH2O cost per g of veg tissue (AGRVG2)
 C-----------------------------------------------------------------------
-      AGRVG = AGRLF * FRLF + AGRRT * FRRT + AGRSTM * FRSTM 
+      AGRVG = AGRLF * FRLF + AGRRT * FRRT + AGRSTM * FRSTM
      &    + AGRSTR * FRSTR
       AGRVG2 = AGRVG + (FRLF*PROLFI+FRRT*PRORTI+FRSTM*PROSTI+
      &    FRSTR*PROSRI)*RPROAV
@@ -772,15 +861,15 @@ C-----------------------------------------------------------------------
 !     &         + (STRWT - WCRSR) * MAX(0.0,(NVSTSR - PCNSR/100.))
 
 C-----------------------------------------------------------------------
-C    02/01/06 SJR  Adjust N refill capacity for today's DM and N lost 
+C    02/01/06 SJR  Adjust N refill capacity for today's DM and N lost
 C                        to natural senescence
 C-----------------------------------------------------------------------
 
-        NDMOLD = MAX(0.0,(WTLF - SLDOT - WCRLF) * PROLFR * 0.16  
-     &    - WTNLF) 
+        NDMOLD = MAX(0.0,(WTLF - SLDOT - WCRLF) * PROLFR * 0.16
+     &    - WTNLF)
      &    + MAX(0.0,(STMWT - SSDOT - WCRST) * PROSTR * 0.16
      &    - WTNST)
-     &    + MAX(0.0,(RTWT  - SRDOT - WCRRT) * PRORTR * 0.16 
+     &    + MAX(0.0,(RTWT  - SRDOT - WCRRT) * PRORTR * 0.16
      &    - WTNRT)
      &    + MAX(0.0,(STRWT - SSRDOT - WCRSR) * PROSRR * 0.16
      &    - WTNSR)
@@ -793,7 +882,7 @@ C-----------------------------------------------------------------------
 
 C-----------------------------------------------------------------------
 C      KJB/SJR New code to minimize/fix situation of overspending PGAVL on
-C      N demand.  Original code uses all PGAVL for CDMREP and CDMVEG 
+C      N demand.  Original code uses all PGAVL for CDMREP and CDMVEG
 C      then goes ahead and calculates NDMOLD using CDMVEG again.
 C      Get to N uptake and can potentially take up more N than have CHO
 C      to reduce.  Contributes to NLEAK.
@@ -801,9 +890,9 @@ C-----------------------------------------------------------------------
       IF (NDMOLD .GT. 0.0) THEN
 
         CHOPRO = NDMOLD * 6.25 * RNO3C
-      
+
         FROLDA = 1-EXP(-KCOLD * (CDMVEG / CHOPRO))
-      
+
         CDMOLD = CHOPRO * FROLDA
 
         NDMOLD = FROLDA * NDMOLD
@@ -828,7 +917,7 @@ C-----------------------------------------------------------------------
 C    Compute Total Demand for C, and Max. C that Could be Mined
 !     CDMTOT not used - chp
 C-----------------------------------------------------------------------
-      CDMTOT = CDMREP + CDMVEG + NDMOLD*RNO3C/0.16 
+      CDMTOT = CDMREP + CDMVEG + NDMOLD*RNO3C/0.16
       GDMSD = GDMSDO
 C-----------------------------------------------------------------------
 C    At this point, PGAVL will be used entirely, assuming that N can be
@@ -876,7 +965,7 @@ C     &  YTRFAC, YVREF, YXFTEM,                           !Output
      &  NMOBSRX, NRMOB, PLME, PROLFR, PRORTR, PROSRF,     !Output
      &  PROSRI, PROSRR, PROSTR,                           !Output
      &  SDAGPL, TYPLMOB, TYPNMOB, YSREST, YSTOR, KCOLD )  !Output
-        
+
 !-----------------------------------------------------------------------
       IMPLICIT NONE
       EXTERNAL GETLUN, FIND, ERROR, IGNORE
@@ -913,11 +1002,11 @@ C     &  YTRFAC, YVREF, YXFTEM,                           !Output
 
       REAL  FRSTRF, FRSTRMX, NMOBSRN, NMOBSRX, PROSRF, PROSRI,
      &  SDAGPL  !, CLAIT
-      REAL YSTOR(8)   
+      REAL YSTOR(8)
       REAL KCOLD
       REAL PROLFR, PROSTR, PRORTR, PROSRR
 
-      CHARACTER*3 TYPLMOB, TYPNMOB 
+      CHARACTER*3 TYPLMOB, TYPNMOB
 
       REAL LRMOB(4), SDLEST
       REAL NRMOB(4)  !, VEGNPCT, VEGNPMX, VNMOBR, VNSTAT
@@ -1018,7 +1107,7 @@ C-----------------------------------------------------------------------
         CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
         READ(C80,'(24X,F6.0)',IOSTAT=ERR) PMINSD
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-      
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
         READ(C80,'(F6.0,6X,F6.0)',IOSTAT=ERR) PROSRI,PROSRF
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
@@ -1145,7 +1234,7 @@ C-----------------------------------------------------------------------
         CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
         READ(C80,'(4F6.0)',IOSTAT=ERR) FINREF, SLAREF, SIZREF, VSSINK
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-        
+
         CALL IGNORE(LUNCRP,LNUM,ISECT,C80)
         READ(C80,'(4F6.0)',IOSTAT=ERR) SLAMAX, SLAMIN, SLAPAR, TURSLA
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
@@ -1248,20 +1337,20 @@ C-----------------------------------------------------------------------
 ! ADDSHL    Today's growth demand for shells of age NPP (g[shell] / m2 / d)
 ! AGRLF     Mass of CH2O required for new leaf growth (g[CH2O] / g[leaf])
 ! AGRRT     Mass of CH2O required for new root growth (g[CH2O] / g[root])
-! AGRSD1    CH2O requirement for seed growth, excluding cost for protein 
+! AGRSD1    CH2O requirement for seed growth, excluding cost for protein
 !             content (g[CH2O] / g[seed])
-! AGRSD2    CH2O requirement for seed growth, including cost for protein 
+! AGRSD2    CH2O requirement for seed growth, including cost for protein
 !             content (g[CH2O] / g[seed])
-! AGRSH2    CH2O requirement for shell growth, including cost for protein 
+! AGRSH2    CH2O requirement for shell growth, including cost for protein
 !             content (g[CH2O] / g[shell])
 ! AGRSTM    Mass of CH2O required for new stem growth (g[CH2O] / g[stem])
-! AGRVG     Mass of CH2O required for vegetative tissue growth including 
+! AGRVG     Mass of CH2O required for vegetative tissue growth including
 !             stoichiometry and respiration (g[CH2O] / g[tissue])
 ! AGRVG2    Total mass of CH2O required for vegetative tissue growth
 !             (g[CH2O] / g[tissue])
-! AGRSTR    Mass of CH2O required for new storage organ growth 
+! AGRSTR    Mass of CH2O required for new storage organ growth
 !                  (g[CH2O] / g[storage])
-! CARMIN    Minimum carbohydrate fraction 
+! CARMIN    Minimum carbohydrate fraction
 ! CAVTOT    Total potential available CH2O for reproductive growth
 !             (g[CH2O] / m2)
 ! CDMREP    Total CH2O needed for potential reproductive growth
@@ -1276,72 +1365,72 @@ C-----------------------------------------------------------------------
 !             (g[CH2O] / m2 / d)
 ! CDMTOT    Total CH2O demand (g[CH2O] / m2 / d)
 ! CDMVEG    Carbon demand for vegetative growth (g[CH2O] / m2 / d)
-! CHOPRO        CHO required for uptake and reduction of N to fully 
+! CHOPRO        CHO required for uptake and reduction of N to fully
 !             refill old tissue N (g[CH2O] / m2 / d)
 ! CNOLD     Available CH2O after reproductive growth (g[CH2O] / m2 / d)
-! CROP      Crop identification code 
+! CROP      Crop identification code
 ! DAS       Days after start of simulation (days)
 ! DRPP      Photoperiod days which occur in a real day
 !             (photoperiod days / day)
-! DXR57     Relative time between first seed (NR5) and physiological 
-!             maturity (NR7) 
-! ECONO     Ecotype code - used to match ECOTYP in .ECO file 
-! ECOTYP    Ecotype code for this simulation 
+! DXR57     Relative time between first seed (NR5) and physiological
+!             maturity (NR7)
+! ECONO     Ecotype code - used to match ECOTYP in .ECO file
+! ECOTYP    Ecotype code for this simulation
 ! F         Specific leaf area of new leaf tissue growth, including N
 !             (cm2[leaf] / g[leaf])
 ! FFVEG     Specific leaf area of new leaf tissue growth (interim value)
 !             (cm2[leaf] / g[leaf])
-! FILECC    Path plus filename for species file (*.spe) 
-! FILEGC    Pathname plus filename for ECO file 
-! FILEIO    Filename for INP file (e.g., IBSNAT35.INP) 
-! FINREF    Specific leaf area (SLA) of leaves of standard crop cultivar 
+! FILECC    Path plus filename for species file (*.spe)
+! FILEGC    Pathname plus filename for ECO file
+! FILEIO    Filename for INP file (e.g., IBSNAT35.INP)
+! FINREF    Specific leaf area (SLA) of leaves of standard crop cultivar
 !             when plants emerge (cm2[leaf] / g[leaf])
 ! FNINL     Maximum fraction of N for growing leaf tissue (g[N] / g[leaf])
 ! FNINR     Maximum fraction of N for growing root tissue (g[N] / g[root])
 ! FNINS     Maximum fraction of N for growing stem tissue (g[N] / g[stem])
-! FNINSD    Maximum fraction of N for growing seed tissue based on 
+! FNINSD    Maximum fraction of N for growing seed tissue based on
 !             temperature (g[N] / g[seed])
 ! FNINSH    Maximum fraction of N for growing shell tissue
 !             (g[N] / g[shell])
-! FNINSR    Maximum fraction of N for growing storage tissue 
+! FNINSR    Maximum fraction of N for growing storage tissue
 !                  (g[N] / g[storage])
-! FNSDT(I)  Temperature values which describe function for modifying seed 
+! FNSDT(I)  Temperature values which describe function for modifying seed
 !             growth rate with temperature (°C)
-! FRACDN    Relative time between flowering (NR1) and last leaf appearance 
-!             (NDLEAF) 
-! FRLF      Fraction of vegetative tissue growth that goes to leaves on a 
+! FRACDN    Relative time between flowering (NR1) and last leaf appearance
+!             (NDLEAF)
+! FRLF      Fraction of vegetative tissue growth that goes to leaves on a
 !             day (g[leaf] / g[veg])
-! FRLFF     Fraction of daily increase in vegetative weight which goes to 
-!             leaves after the day on which the maximum number of V-stages 
+! FRLFF     Fraction of daily increase in vegetative weight which goes to
+!             leaves after the day on which the maximum number of V-stages
 !             occurs (NDVSTG). (g[leaf] / g[veg])
-! FRLFM     Fraction of growth going to leaves, decreases linearly between 
+! FRLFM     Fraction of growth going to leaves, decreases linearly between
 !             R1 and NDLEAF (g[leaf] / g[veg])
 ! FRLFMX    Maximum leaf partitioning (g[leaf] / g[veg])
-! FRNLFT    A quadratic function of the progress from NR5 to NR7 (DXR57), 
-!             used to compute the change in maximum tissue N content 
-!             between its maximum value and a fractional value (NRCVR) 
-!             between the minimum and maximum tissue  N concentrations 
+! FRNLFT    A quadratic function of the progress from NR5 to NR7 (DXR57),
+!             used to compute the change in maximum tissue N content
+!             between its maximum value and a fractional value (NRCVR)
+!             between the minimum and maximum tissue  N concentrations
 ! FROLDA    Fraction of max potential NDMOLD allowed to be met given
 !           today's level of CDMVEG.  Prevents refilling old tissue
 !           without allowing any new growth due to low PG.
-! FRRT      Fraction of vegetative tissue growth that goes to roots on a 
+! FRRT      Fraction of vegetative tissue growth that goes to roots on a
 !             day (g[root] / g[veg])
-! FRSTM     Fraction of vegetative tissue growth that goes to stems on a 
+! FRSTM     Fraction of vegetative tissue growth that goes to stems on a
 !             day (g[stem] / g[veg])
-! FRSTMF    Fraction of daily dry weight increase in vegetative plant parts 
-!             which goes to stems after the day on which the maximum number 
+! FRSTMF    Fraction of daily dry weight increase in vegetative plant parts
+!             which goes to stems after the day on which the maximum number
 !             of V-stages occurs (NDVSTG). (g[stem] / g[veg])
-! FRSTMM    Fraction of growth going to stems, decreases linearly between 
+! FRSTMM    Fraction of growth going to stems, decreases linearly between
 !             R1 and NDLEAF (g[stem] / g[veg])
-! FRSTR     Fraction of vegetative tissue growth that goes to storage organ 
+! FRSTR     Fraction of vegetative tissue growth that goes to storage organ
 !             on a day (g[storage] / g[veg])
-! FRSTRF    Fraction of daily dry weight increase in vegetative plant parts 
-!             which goes to storage organ after the day on which the maximum 
+! FRSTRF    Fraction of daily dry weight increase in vegetative plant parts
+!             which goes to storage organ after the day on which the maximum
 !             number of V-stages occurs (NDVSTG). (g[storage] / g[veg])
-! FRSTRM    Fraction of growth going to storage organ decreases linearly 
+! FRSTRM    Fraction of growth going to storage organ decreases linearly
 !             between  R1 and NDLEAF (g[stem] / g[veg])
 ! FRSTRMX   Maximum storage organ partitioning (g[storage] / g[veg])
-! FVEG      Specific leaf area prior to computing effects of temperature, 
+! FVEG      Specific leaf area prior to computing effects of temperature,
 !             PAR, water stress (cm2[leaf] / g[leaf])
 ! GAINNW    Leaf area added (prior to VSSINK) (cm2[leaf] / m2[ground])
 ! GAINWT    Leaf weight added (prior to VSSINK and after NDLEAF)
@@ -1349,13 +1438,13 @@ C-----------------------------------------------------------------------
 ! GDMSD     Seed growth demand based on temperature and photoperiod
 !             (g[seed] / m2 / d)
 ! GDMSDO    Seed growth demand (temporary value) (g[seed] / m2 / d)
-! GDMSDR    Potential seed growth from NDMSDR (amount of Mobilized N which 
+! GDMSDR    Potential seed growth from NDMSDR (amount of Mobilized N which
 !             can be used for seed growth) (g[seed] / m2 / d)
 ! GDMSH     Growth demand for shells (g[shell] / m2 / d)
-! GROMAX    Maximum leaf area which can be added per plant between 
-!             emergence and day of simulation as a function of V-stage on 
+! GROMAX    Maximum leaf area which can be added per plant between
+!             emergence and day of simulation as a function of V-stage on
 !             day of simulation (cm2[leaf] / plant)
-! GROYES    Maximum leaf area which could have been added per plant between 
+! GROYES    Maximum leaf area which could have been added per plant between
 !             emergence and yesterday as a function of V-stage
 !             (cm2[leaf] / plant)
 ! GRRAT1    Maximum growth per individual shell (g / shell / d)
@@ -1365,13 +1454,13 @@ C-----------------------------------------------------------------------
 !             (Photo-thermal days)
 ! LIPOPT    Temperature above which lipid composition is at a maximum (°C)
 ! LIPTB     Temperature below which lipid composition is zero (°C)
-! LNGPEG    Time between start of peg and rapid shell formation (for 
+! LNGPEG    Time between start of peg and rapid shell formation (for
 !             peanuts only).  Defines slow growth period. (Photo-thermal days)
 ! LNGSH     Time required for shell growth (Photo-thermal days)
 ! LRMOB(4)  CURV response of mobilization to current LAI
-! LUNCRP    Logical unit number for FILEC (*.spe file) 
-! LUNECO    Logical unit number for FILEE (*.eco file) 
-! LUNIO     Logical unit number for FILEIO 
+! LUNCRP    Logical unit number for FILEC (*.spe file)
+! LUNECO    Logical unit number for FILEE (*.eco file)
+! LUNIO     Logical unit number for FILEIO
 ! NAGE      Age of cohort (days)
 ! NDLEAF    Day when leaf expansion ceased (days)
 ! NDMNEW    Total N demand for new growth (g[N] / m2 / d)
@@ -1383,87 +1472,87 @@ C-----------------------------------------------------------------------
 !             (g[N] / m2 / d)
 ! NDMSH     Total N demand to grow shell demand (GDMSH) (g[N] / m2 / d)
 ! NDMTOT    Total N demand (g[N] / m2 / d)
-! NDMVEG    N required for vegetative growth if all PGAVL is used as 
+! NDMVEG    N required for vegetative growth if all PGAVL is used as
 !             computed (g[N] / m2 / d)
 ! NMINEP    Potential N mobilization from storage (g[N] / m2 / d)
-! NMOBMX    Maximum fraction of N which can be mobilized in a day 
-! NMOBR     Stage-dependent potential N mining rate expressed as a 
+! NMOBMX    Maximum fraction of N which can be mobilized in a day
+! NMOBR     Stage-dependent potential N mining rate expressed as a
 !             fraction of the maximum rate (NMOBMX)
-! NMOBSR    Stage-dependent potential N mining rate from storage organ 
+! NMOBSR    Stage-dependent potential N mining rate from storage organ
 !             expressed as a fraction of the maximum rate (NMOBSRX)
 ! NMOBSRN   Minimum/ "normal" fraction of N which can be mobilized from
-!                  storage organ in a day 
+!                  storage organ in a day
 ! NMOBSRX   Maximum fraction of N which can be mobilized from
-!                  storage organ in a day 
-! NPP       Cohort number used as index in loops 
+!                  storage organ in a day
+! NPP       Cohort number used as index in loops
 ! NR1       Day when 50% of plants have at least one flower (days)
 ! NR2       Day when 50% of plants have one peg (peanuts only) (days)
 ! NR5       Day when 50% of plants have pods with beginning seeds (days)
 ! NR7       Day when 50% of plants first have yellowing or maturing pods
 !             (days)
-! NRCVR     Fractional value between minimum and maximum tissue N values 
-!             (0-1) 
-! NRMOB(4)  CURV response of mobilization to current vegetative N status 
+! NRCVR     Fractional value between minimum and maximum tissue N values
+!             (0-1)
+! NRMOB(4)  CURV response of mobilization to current vegetative N status
 !              of plant relative to maximum N concentration
-! NSTRES    Nitrogen stress factor (1=no stress, 0=max stress) 
+! NSTRES    Nitrogen stress factor (1=no stress, 0=max stress)
 ! NVEG0     Day of emergence (days)
-! NVSMOB    Relative rate of N mining during vegetative stage to that in 
-!             reproductive stage 
+! NVSMOB    Relative rate of N mining during vegetative stage to that in
+!             reproductive stage
 ! NVSTL     N content in leaves (fraction)
 ! NVSTR     N content in roots (fraction)
 ! NVSTS     N content in stems (fraction)
 ! NVSTSR    N content in storage tissue (fraction)
 ! PAGE      Photothermal age of each cohort (Photo-thermal days)
-! PAR       Daily photosynthetically active radiation or photon flux 
+! PAR       Daily photosynthetically active radiation or photon flux
 !             density (moles[quanta]/m2-d)
-! PARSLA    Effect of PAR on specific leaf area 
+! PARSLA    Effect of PAR on specific leaf area
 ! PCNL      Percentage of N in leaf tissue (100 g[N] / g[leaf])
 ! PCNRT     Percent N in root tissue (100 g[N] / g[root])
 ! PCNSR     Percent N in storage organ tissue (100 g[N] / g[storage])
 ! PCNST     Percent N in stem tissue (100 g[N] / g[stem])
 ! PGAVL     Total available CH2O available for growth & respiration
 !             (g[CH2O] / m2)
-! PHTIM(I)  Cumulative photothermal time ages of seeds and shells 
+! PHTIM(I)  Cumulative photothermal time ages of seeds and shells
 ! PLIGSD    Proportion of seed tissue that is lignin (fraction)
 ! PLTPOP    Plant population (# plants / m2)
 ! PMINSD    Proportion of seed tissue that is mineral (fraction)
-! PNTIM(I)  Photothermal days from first flower when flowers in age group I 
+! PNTIM(I)  Photothermal days from first flower when flowers in age group I
 !             formed (p-t-d)
 ! POASD     Proportion of seed tissue that is organic acid (fraction)
 ! POTCAR    Potential carbohydrate composition of seed based on temperature
 !             (fraction)
 ! POTLIP    Potential lipid composition of seed based on temperature
 !             (fraction)
-! PPMFAC    Reduction in mobilization from storage organ due to photoperiod 
+! PPMFAC    Reduction in mobilization from storage organ due to photoperiod
 !                  induced dormancy
-! PPTFAC    Reduction in partitioning to shoot due to photoperiod 
+! PPTFAC    Reduction in partitioning to shoot due to photoperiod
 !                  induced dormancy
 ! PROLFF    Minimum leaf protein composition after N mining
 !             ( g[protein] / g[leaf])
-! PROLFI    Maximum protein composition in leaves during growth with 
+! PROLFI    Maximum protein composition in leaves during growth with
 !             luxurious supply of N (g[protein] / g[leaf tissue])
 ! PRORTF    Minimum root protein composition after N mining
 !             ( g[protein] / g[root])
-! PRORTI    Maximum protein composition in roots during growth with 
+! PRORTI    Maximum protein composition in roots during growth with
 !             luxurious supply of N (g[protein] / g[root])
 ! PROSRF    Minimum storage organ protein composition after N mining
 !             (g[protein] / g[storage])
-! PROSRI    Maximum protein composition in storage organ during growth  
+! PROSRI    Maximum protein composition in storage organ during growth
 !             with luxurious supply of N (g[protein] / g[storage])
 ! PROSTF    Minimum stem protein composition after N mining
 !             (g[protein] / g[stem])
-! PROSTI    Maximum protein composition in stems during growth with 
+! PROSTI    Maximum protein composition in stems during growth with
 !             luxurious supply of N (g[protein] / g[stem])
-! PUNCSD    Cumulative puncture damage to seed (not yet implemented) 
-! PUNCTR    Cumulative puncture damage (not yet implemented) 
+! PUNCSD    Cumulative puncture damage to seed (not yet implemented)
+! PUNCTR    Cumulative puncture damage (not yet implemented)
 ! RCH2O     Respiration required for synthesizing CH2O structure
 !             (g[CH2O] / g[tissue])
-! REDPUN    Reduces growth of seed in an age group due to pest-caused 
-!             punctures in seed (0 to 1) 
-! REDPUN    Reduces growth of seed in an age group due to pest-caused 
-!             punctures in seed (0 to 1) (not yet implemented) 
-! REDSHL    Reduces growth of shell in an age group due to pest-caused 
-!             punctures in seed (0 to 1) 
+! REDPUN    Reduces growth of seed in an age group due to pest-caused
+!             punctures in seed (0 to 1)
+! REDPUN    Reduces growth of seed in an age group due to pest-caused
+!             punctures in seed (0 to 1) (not yet implemented)
+! REDSHL    Reduces growth of shell in an age group due to pest-caused
+!             punctures in seed (0 to 1)
 ! RLIG      Respiration required for synthesizing lignin structure
 !             (g[CH2O] / g[lignin])
 ! RLIP      Respiration required for synthesizing lipid structure
@@ -1474,15 +1563,15 @@ C-----------------------------------------------------------------------
 !             (g[CH2O] / g[protein])
 ! ROA       Respiration required for synthesizing organic acids
 !             (g[CH2O] / g[product])
-! RPRO      Respiration required for re-synthesizing protein from mobilized 
+! RPRO      Respiration required for re-synthesizing protein from mobilized
 !             N (g[CH2O] / g[protein])
-! RPROAV    Respiration required for protein synthesis, average based on 
+! RPROAV    Respiration required for protein synthesis, average based on
 !             sources of N (g[CH2O] / g[protein])
-! RPRPUN    Puncture damage reduction variable (not yet implemented) (0-1) 
+! RPRPUN    Puncture damage reduction variable (not yet implemented) (0-1)
 ! RTWT      Dry mass of root tissue, including C and N
 !             (g[root] / m2[ground])
 ! SDAGPL    Initial planting material age (days)
-! SDDES(J)  Number of seeds destroyed today in cohort J when shells are 
+! SDDES(J)  Number of seeds destroyed today in cohort J when shells are
 !             not destroyed (#/m2/day)
 ! SDGR      Potential growth rate per seed (g / seed / d)
 ! SDLIP     Maximum lipid composition in seed (fraction)
@@ -1492,150 +1581,150 @@ C-----------------------------------------------------------------------
 ! SDVAR     Maximum cultivar-dependent seed growth rate, per seed
 !             (g / seed / d)
 ! SHELN(J)  Number of shells for cohort J (#/m2)
-! SHLAG     Shell (peg) growth rate during its initial slow growth phase 
-!             after beginning pegging (R2) as a fraction of shell growth 
-!             rate (SHVAR) during its rapid growth phase. 
+! SHLAG     Shell (peg) growth rate during its initial slow growth phase
+!             after beginning pegging (R2) as a fraction of shell growth
+!             rate (SHVAR) during its rapid growth phase.
 ! SHVAR     Shell growth rate during its rapid growth phase, per shell
 !             (g / shell / d)
-! SIZELF    The size of a normal upper node leaf (nodes 8 - 10) used to 
-!             adjust leaf area expansion during sink-limited phase of 
+! SIZELF    The size of a normal upper node leaf (nodes 8 - 10) used to
+!             adjust leaf area expansion during sink-limited phase of
 !             vegetative growth, i.e., prior to VSSINK nodes on the main stem
 !             (cm2/leaf)
-! SIZRAT    Ratio of upper node normal leaf size for given variety to that 
-!             for standard cultivar, used to adjust table of maximum leaf 
-!             area vs. V-stage 
-! SIZREF    The size of a normal upper node  leaf (nodes 8 - 10) of 
+! SIZRAT    Ratio of upper node normal leaf size for given variety to that
+!             for standard cultivar, used to adjust table of maximum leaf
+!             area vs. V-stage
+! SIZREF    The size of a normal upper node  leaf (nodes 8 - 10) of
 !             standard cultivar. (cm2 / leaf)
-! SLAMAX    The maximum specific leaf area (SLA) for new leaves when grown 
-!             under low (nearly zero) radiation but optimum water and 
+! SLAMAX    The maximum specific leaf area (SLA) for new leaves when grown
+!             under low (nearly zero) radiation but optimum water and
 !             temperature for the standard cultivar. (cm2 / g)
-! SLAMIN    The minimum specific leaf area (SLA) for new leaves when grown 
-!             under infinitely high radiation, optimum water and 
+! SLAMIN    The minimum specific leaf area (SLA) for new leaves when grown
+!             under infinitely high radiation, optimum water and
 !             temperature for the standard cultivar. (cm2 / g)
-! SLAMN     Minimum specific leaf area for new leaves when grown under high 
+! SLAMN     Minimum specific leaf area for new leaves when grown under high
 !             radiation and optimum water and temperature conditions (cm2 / g)
-! SLAMX     Maximum specific leaf area for new leaves when grown under low 
+! SLAMX     Maximum specific leaf area for new leaves when grown under low
 !             radiation, but optimum water and temperature conditions
 !             (cm2 / g)
-! SLAPAR    Coefficient in exponential equation to reduce SLA as PAR 
-!             increases (leaf curvature) 
-! SLAREF    Specific leaf area (SLA) for new leaves during peak vegetative 
+! SLAPAR    Coefficient in exponential equation to reduce SLA as PAR
+!             increases (leaf curvature)
+! SLAREF    Specific leaf area (SLA) for new leaves during peak vegetative
 !             growth for the standard cultivar. (cm2/g)
-! SLAVAR    Specific leaf area (SLA) for new leaves during peak vegetative 
+! SLAVAR    Specific leaf area (SLA) for new leaves during peak vegetative
 !             growth for cultivar I, modified by environmental factor (cm2/g)
 ! SLOSUM    Slope of temperature vs. SUMTEM line (1/oC)
 ! SRMAX     Maximum fraction change in seed growth rate for long daylengths
-!             
+!
 ! STMWT     Dry mass of stem tissue, including C and N
 !             (g[stem] / m2[ground)
 ! STRWT     Dry mass of storage organ tissue, including C and N
 !             (g[storage] / m2[ground)
-! SUMTEM    Factor which affects protein composition based on average 
-!             temperature. 
-! SWFAC     Effect of soil-water stress on photosynthesis, 1.0=no stress, 
-!             0.0=max stress 
+! SUMTEM    Factor which affects protein composition based on average
+!             temperature.
+! SWFAC     Effect of soil-water stress on photosynthesis, 1.0=no stress,
+!             0.0=max stress
 ! TAVG      Average daily temperature (°C)
-! TDUMX     Photo-thermal time that occurs in a real day based on early 
+! TDUMX     Photo-thermal time that occurs in a real day based on early
 !             reproductive development temperature function
 !             (photo-thermal days / day)
-! TDUMX2    Photo-thermal time that occurs in a real day based on late 
+! TDUMX2    Photo-thermal time that occurs in a real day based on late
 !             reproductive development temperature function
 !             (photo-thermal days / day)
-! TEMXFR    Temperature effect on partitioning to pods, high temp. 
-!             increases fraction of growth to vegetative tissue (0-1) 
+! TEMXFR    Temperature effect on partitioning to pods, high temp.
+!             increases fraction of growth to vegetative tissue (0-1)
 ! TGRO(I)   Hourly air temperature (°C)
-! THRESH    The maximum ratio mass of seed to mass of seed plus shell at 
-!             maturity.  Causes seed to stop growing as their dry weights 
-!             increase until shells are filled in a cohort. 
-! TMPFAC    Modifies maximum growth rate for seed and shells depending on 
-!             temperature 
-! TMPFCS    Interim value of TMPFAC 
-! TPHFAC    Reduction in specific leaf area due to daytime temperature 
-!             being less than optimal (0-1) 
-! TURADD    Water stress factor (TURFAC) effect on reproductive growth and 
-!             pod addition.  Stress is defined to INCREASE growth and 
-!             addition. 
-! TURFAC    Water stress factor for expansion (0 - 1) 
-! TURFSL    Factor which applies water stress to specific leaf area of new 
-!             leaf tissue growth 
-! TURSLA    Water stress effects on leaf area expansion 
-! TURXFR    Turgor water stress factor used to modify partitioning to 
-!             reproductive growth 
+! THRESH    The maximum ratio mass of seed to mass of seed plus shell at
+!             maturity.  Causes seed to stop growing as their dry weights
+!             increase until shells are filled in a cohort.
+! TMPFAC    Modifies maximum growth rate for seed and shells depending on
+!             temperature
+! TMPFCS    Interim value of TMPFAC
+! TPHFAC    Reduction in specific leaf area due to daytime temperature
+!             being less than optimal (0-1)
+! TURADD    Water stress factor (TURFAC) effect on reproductive growth and
+!             pod addition.  Stress is defined to INCREASE growth and
+!             addition.
+! TURFAC    Water stress factor for expansion (0 - 1)
+! TURFSL    Factor which applies water stress to specific leaf area of new
+!             leaf tissue growth
+! TURSLA    Water stress effects on leaf area expansion
+! TURXFR    Turgor water stress factor used to modify partitioning to
+!             reproductive growth
 ! TYPLMOB        Shape of CURV response for mobilization to LAI
-! TYPNMOB        Shape of CURV response for mobilization to current vegetative N 
+! TYPNMOB        Shape of CURV response for mobilization to current vegetative N
 !              status of plant relative to maximum N concentration
-! TYPSDT    Curve type for temperature factor calculations 
-! VNMOBR        Effect of N status on N & C mobilization. (0= no effect, 
+! TYPSDT    Curve type for temperature factor calculations
+! VNMOBR        Effect of N status on N & C mobilization. (0= no effect,
 !              mobilization at minimum rate, 1.0 = increase mobilization
-!              to maximum rate      
-! VSSINK    Vegetative stage beyond which sink-limited leaf area expansion 
-!             can no longer limit photosynthesis or leaf area growth. 
-! VSTAGE    Number of nodes on main stem of plant 
+!              to maximum rate
+! VSSINK    Vegetative stage beyond which sink-limited leaf area expansion
+!             can no longer limit photosynthesis or leaf area growth.
+! VSTAGE    Number of nodes on main stem of plant
 ! WCRLF     Mass of CH2O reserves in leaves (g[leaf CH2O] / m2[ground])
 ! WCRRT     Mass of CH2O reserves in roots (g[root CH2O] / m2[ground])
-! WCRSR     Mass of CH2O reserves in storage organ 
+! WCRSR     Mass of CH2O reserves in storage organ
 !                  (g[storage CH2O] / m2[ground])
 ! WCRST     Mass of CH2O reserves in stems (g[stem CH2O] / m2[ground])
-! WNRLF     N available for mobilization from leaves above lower limit of 
+! WNRLF     N available for mobilization from leaves above lower limit of
 !             mining (g[N] / m2)
-! WNRRT     N available for mobilization from roots above lower limit of 
+! WNRRT     N available for mobilization from roots above lower limit of
 !             mining (g[N] / m2)
-! WNRSH     N available for mobilization from shells above lower limit of 
+! WNRSH     N available for mobilization from shells above lower limit of
 !             mining (g[N] / m2)
-! WNRSR     N available for mobilization from storage organ above lower  
+! WNRSR     N available for mobilization from storage organ above lower
 !             mining (g[N] / m2)
-! WNRST     N available for mobilization from stems above lower limit of 
+! WNRST     N available for mobilization from stems above lower limit of
 !             limit of mining (g[N] / m2)
 ! WTLF      Dry mass of leaf tissue including C and N
 !             (g[leaf] / m2[ground])
 ! WTSD(J)   Seed mass  for cohort J (g/m2)
 ! WTSHE(J)  Shell mass  for cohort J (g/m2)
-! XFRMAX    Maximum increase in partitioning to fruits induced under water 
-!             stress, assuming no problem in pod setting 
+! XFRMAX    Maximum increase in partitioning to fruits induced under water
+!             stress, assuming no problem in pod setting
 ! XFRT      Current day's partitioning to reproductive growth (0-1)
 !             (g[fruit] / g[plant])
-! XFRUIT    Maximum fraction of daily available gross photosynthate (PG) 
-!             which is allowed to go to seeds plus shells, varies from 0 to 
-!             1.0. 
+! XFRUIT    Maximum fraction of daily available gross photosynthate (PG)
+!             which is allowed to go to seeds plus shells, varies from 0 to
+!             1.0.
 ! XLAI        Leaf area (one side) per unit of ground area
-!           (m2[leaf] / m2[ground])      
+!           (m2[leaf] / m2[ground])
 ! XLEAF(I)  V-stage at which partitioning to leaves is YLEAF(I).
 !             (leaf nodes)
 ! XPOD      Growth partitioning to pods which slows node appearance
 !             (fraction)
-! XSLATM(I) Temperature values for function that reduces specific leaf area 
+! XSLATM(I) Temperature values for function that reduces specific leaf area
 !             (SLA) (°C)
-! XSTR        Difference between partitioning fraction to storage organ at 
-!             beginning bloom (R1) and at the day on which the maximum  
-!             number of V-stages occurs (NDLEAF)       
-! XTRFAC(I) Values of TURFAC for function which reduces reproductive growth 
-!             based on water stress 
-! XVGROW(I) V-stage at which maximum leaf area growth per plant since 
+! XSTR        Difference between partitioning fraction to storage organ at
+!             beginning bloom (R1) and at the day on which the maximum
+!             number of V-stages occurs (NDLEAF)
+! XTRFAC(I) Values of TURFAC for function which reduces reproductive growth
+!             based on water stress
+! XVGROW(I) V-stage at which maximum leaf area growth per plant since
 !             emergence is YVGROW(I). (# leaf nodes)
-! XX        Difference between partitioning fraction to stems at beginning 
-!             bloom (R1) and at the day on which the maximum number of 
-!             V-stages occurs (NDLEAF) 
-! XXFTEM(I) Array of temperature values in table lookup describing effect 
+! XX        Difference between partitioning fraction to stems at beginning
+!             bloom (R1) and at the day on which the maximum number of
+!             V-stages occurs (NDLEAF)
+! XXFTEM(I) Array of temperature values in table lookup describing effect
 !             of temperature on partitioning to pods (YXFTEM = 0 TO 1). (°C)
 ! YLEAF(I)  Partitioning fraction to leaves at V-stage XLEAF(I)
 !             ( g[leaf] / g[veg. plant])
 ! YRDOY     Current day of simulation (YYDDD)
 ! YRSIM     Start of simulation date (YYDDD)
-! YSLATM(I) Array which describes the effect of temperature on specific 
-!             leaf area 
+! YSLATM(I) Array which describes the effect of temperature on specific
+!             leaf area
 ! YSTEM(I)  Partitioning factor for stem growth at V-stage XSTEM(I)
 !             (g[stem] / g[veg. plant])
 ! YSTOR(I)  Partitioning factor for storage organ growth at V-stage XSTOR(I)
 !             (g[storage] / g[veg. plant])
-! YTRFAC(I) Factor which affects reproductive growth based on water stress 
+! YTRFAC(I) Factor which affects reproductive growth based on water stress
 ! YVGROW(I) Maximum leaf area grown per plant at V-stage XVGROW(I)
 !             (cm2 / plant)
-! YVREF(I)  Maximum leaf area grown per plant at V-stage XVGROW(I), for 
+! YVREF(I)  Maximum leaf area grown per plant at V-stage XVGROW(I), for
 !             reference cultivar. (cm2 / plant)
-! YXFTEM(I) Array describing the relative partitioning to pods (0 to 1 
-!             effect on XFRUIT) as temperature increases. 
-! YY        Used to linearly interpolate the difference in partitioning to 
-!             leaves between stages R1 and NDLEAF 
+! YXFTEM(I) Array describing the relative partitioning to pods (0 to 1
+!             effect on XFRUIT) as temperature increases.
+! YY        Used to linearly interpolate the difference in partitioning to
+!             leaves between stages R1 and NDLEAF
 !-----------------------------------------------------------------------
 !       END SUBROUTINE FOR_DEMAND
 !=======================================================================
