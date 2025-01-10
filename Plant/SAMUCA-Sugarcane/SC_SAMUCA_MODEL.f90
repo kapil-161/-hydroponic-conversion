@@ -49,8 +49,7 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     Implicit None
     EXTERNAL DAYLEN, FIND_INP_SAM, GET_CULTIVAR_COEFF, GET_SPECIES_COEFF,     &
       PGS, ROOT_PROFILE, SC_OPGROW_SAM, SC_OPGROW_SAM_DETAILED, SC_OPHARV_SAM, SC_WATERSTRESS, SOLAR, &
-      SUBS_BALANCE, SUCROSE_CONTENT, TOTASS
-    save
+      SUBS_BALANCE, SUCROSE_CONTENT, TOTASS    
     
     integer     DYNAMIC         ! This is the dynamic call initialization, rate, integration (~task) (IN) 
     
@@ -97,7 +96,7 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     TYPE (SoilType)    SOILPROP
     TYPE (SwitchType)  ISWITCH
 !   Type (ResidueType) HARVRES 
-!   Type (ResidueType) SENESCE
+    Type (ResidueType) SENESCE
     Type (WeatherType) WEATHER
     
     !--- Local composite variables:
@@ -146,6 +145,7 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     integer  sl                                          ! Soil layer iterator
     integer  tl                                          ! Tiller iterator
     integer  nlay                                        ! Number of soil layers
+    integer  nlay_roots                                  ! Number of soil layers with roots
     integer  das                                         ! Days after simulation started
     integer  dap                                         ! Days after planting
     integer  year                                        ! year
@@ -576,7 +576,13 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     real  resp                                           ! Canopy respiration used for carbon assimilation [deprecated method] 
     real  pol                                            ! Percentage of sucrose content in fresh stalk biomass
     real  kc                                             ! Crop coefficient for evapotranspiration calculations
-    real  maxlai                                         ! Maximum LAI hit throughout the season (needed for SC_OPHARV_SAM)     
+    real  maxlai                                         ! Maximum LAI hit throughout the season (needed for SC_OPHARV_SAM)
+
+    !--- N-related variables [based on MZCER]
+    real  TMNC                                           ! Plant top minimum N concentration g N/g dry matter
+    real  TANCE                                          ! Nitrogen content in above ground biomass at emergence, g N/g dry matter
+    real  RCNP                                           ! Root critical nitrogen concentration, g N/g root dry weight
+    real  RANCE                                          ! Root N content at emergence   g N/g root
 
     !--- Arrays Variables
     real        phprof(200,60)                           ! Phytomer profile and attributes dimensions    
@@ -923,7 +929,14 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     call get_species_coeff(                   c_scattering,   'C_SCATTERING', CONTROL, SPC_ERROR)
     call get_species_coeff(                              k,              'K', CONTROL, SPC_ERROR)
     call get_species_coeff(                root_front_size,  'RT_FRONT_SIZE', CONTROL, SPC_ERROR)
-    
+
+    !--- N-related parameters (experimental!)
+    !--- TODO: when finished, transfer to samuca .SPE
+    TMNC  = 0.00450 ! Same as Genotype/MZCER048.SPE [v4.8.5]
+    TANCE = 0.0440  ! Same as Genotype/MZCER048.SPE [v4.8.5]
+    RCNP  = 0.01060 ! Same as Genotype/MZCER048.SPE [v4.8.5]
+    RANCE = 0.0220  ! Same as Genotype/MZCER048.SPE [v4.8.5]
+
     !--- Get integer variables
     maxgl               = aint(maxgl_r)
     maxdgl              = aint(maxdgl_r)
@@ -1309,6 +1322,12 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     !--- Initial Crop Depth [cm]
     shootdepth          = initcropdepth
     diac_at_emergence   = 0.d0
+    nlay_roots = 0
+    do sl=1, nlay
+        if (rld(sl) .gt. z) then
+            nlay_roots = nlay
+        endif
+    enddo
     
     !--- Resources used for emergence (reset plant memory)
     res_used_emerg      = 0.d0        
@@ -1387,6 +1406,12 @@ subroutine SAMUCA(CONTROL, ISWITCH,                                 &
     !--- Total LAI must exceed or be equal to healthy LAI
     !--- Following MJ:
     XLAI = MAX(XLAI, XHLAI)
+
+    !--- Composite variable containing data about daily senesced plant matter. Structure of variable is defined in ModuleDefs.for
+    SENESCE % ResWt  = 0.0
+    SENESCE % ResLig = 0.0
+    SENESCE % ResE   = 0.0
+
     
     !HARVRES     ! Composite variable containing harvest residue amounts for total dry matter, lignin, and N amounts.  Structure of variable is defined in ModuleDefs.for. 
     !MDATE       ! Harvest maturity date (YYYYDDD)
