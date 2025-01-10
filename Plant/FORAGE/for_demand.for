@@ -266,7 +266,9 @@ C-----------------------------------------------------------------------
         IF ((ISECT .EQ. 1) .AND. (C255(1:1) .NE. ' ') .AND.
      &    (C255(1:1) .NE. '*')) THEN
       READ (C255,'(A6,145X,F6.0)',IOSTAT=ERR)
-     &    ECOTYP, LFDELT
+     &          ECOTYP, LFDELT
+      LFDELT = MAX(-0.05,MIN(0.05,LFDELT))
+
 !      WRITE(*,*) LFDELT
       IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,LNUM)
         IF (ECOTYP .EQ. ECONO) THEN
@@ -302,12 +304,12 @@ C-----------------------------------------------------------------------
         FRLF = TABEX(YLEAF,XLEAF,0.0,8)
         FRSTM = TABEX(YSTEM,XLEAF,0.0,8)
         FRSTR = TABEX(YSTOR,XLEAF,0.0,8)
+
         FRLF = FRLF + LFDELT
         FRSTM = FRSTM - LFDELT
 !     Cap negative values
-       LFDELT = MAX(0.1,LFDELT)
-       FRLF = MAX(0.1,FRLF)
-       FRSTM = MAX(0.1,FRSTM)
+        FRLF = MAX(0.001,FRLF)
+        FRSTM = MAX(0.001,FRSTM)
 
         FRRT = 1.0 - FRLF - FRSTM - FRSTR
 
@@ -361,12 +363,12 @@ C-----------------------------------------------------------------------
         FRSTM = TABEX(YSTEM,XLEAF,VSTAGE,8)
         FRSTR = TABEX(YSTOR,XLEAF,VSTAGE,8)
         ENDIF
-        LFDELT = MAX(-0.05,MIN(0.05,LFDELT))
+      
         FRLF = FRLF + LFDELT
         FRSTM = FRSTM - LFDELT
 !     Cap negative values
-       FRLF = MAX(0.001,FRLF)
-       FRSTM = MAX(0.001,FRSTM)
+        FRLF = MAX(0.001,FRLF)
+        FRSTM = MAX(0.001,FRSTM)
 
 
         FRRT = 1.0 - FRLF - FRSTM - FRSTR
@@ -669,12 +671,12 @@ C-----------------------------------------------------------------------
         FRSTM = TABEX(YSTEM,XLEAF,VSTAGE,8)
         FRSTR = TABEX(YSTOR,XLEAF,VSTAGE,8)
         ENDIF
+      
         FRLF = FRLF + LFDELT
         FRSTM = FRSTM - LFDELT
 !     Cap negative values
-       LFDELT = MAX(0.1,LFDELT)
-       FRLF = MAX(0.1,FRLF)
-       FRSTM = MAX(0.1,FRSTM)
+        FRLF = MAX(0.001,FRLF)
+        FRSTM = MAX(0.001,FRSTM)
 
 
       ELSE
@@ -702,7 +704,7 @@ C-----------------------------------------------------------------------
 
 !      Location to insert code to increase partitioning to leaf
 !      in spring and summer but not fall.  Per Dr. Boote.
-      WRITE(8600,'(I8,3F6.3)') YRDOY,FRLF,FRSTM,LFDELT
+!      WRITE(8600,'(I8,3F6.3)') YRDOY,FRLF,FRSTM,LFDELT
 
 
       IF (PPTFAC .GT. 0.0) THEN
