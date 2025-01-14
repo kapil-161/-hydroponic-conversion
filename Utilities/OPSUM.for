@@ -65,7 +65,7 @@ C=======================================================================
         
 !       Added 7/19/2016 N2O emissions
         REAL N2OEM  !kg/ha
-        INTEGER CO2EM
+        REAL CO2EM
         REAL CH4EM  !kg[C]/ha chp 2021-07-28
 
 !       Added 2019-19-17 CHP Cumulative net mineralization
@@ -119,7 +119,7 @@ C-----------------------------------------------------------------------
       CHARACTER*2  CROP, CG
       CHARACTER*6  SECTION
       CHARACTER*6, PARAMETER :: ERRKEY = 'OPSUM '
-      CHARACTER*8  EXPER, FLDNAM, MODEL, MODEL_LAST
+      CHARACTER*8  EXPER, FLDNAM, MODEL, MODEL_LAST, CO2EM_TXT
       CHARACTER*12 OUTS, SEVAL, FMT
 !     PARAMETER (OUTS = 'Summary.OUT')
       CHARACTER*25 TITLET
@@ -158,8 +158,8 @@ C-----------------------------------------------------------------------
 !     Added 02/23/2011 Seasonal average environmental data
       INTEGER NDCH
       REAL TMINA, TMAXA, SRADA, DAYLA, CO2A, PRCP, ETCP, ESCP, EPCP
-      INTEGER CO2EM, CRST
-      REAL N2OEM, CH4EM  !kg/ha
+      INTEGER CRST
+      REAL CO2EM, N2OEM, CH4EM  !kg/ha
 !     Added 05/28/2021 Latitude, Longitude and elevation data
       CHARACTER*9  ELEV 
       CHARACTER*15 LATI, LONG
@@ -600,9 +600,9 @@ C-------------------------------------------------------------------
      &'SITE INFORMATION.....................',
      &'........................................ ',
      &'DATES..................................................  ',
-     &'DRY WEIGHT, YIELD AND YIELD COMPONENTS....................',
-     &'....................   ',
-     &'FRESH WEIGHT..................................  ',
+     &'DRY WEIGHT, YIELD AND YIELD COMPONENTS, AND ECONOMIC YIELD',
+     &'.............................  ',
+     &'FRESH WEIGHT..........................  ',
      &'WATER...............................................  ',
      &'NITROGEN..................................................  ',
      &'PHOSPHORUS............  ',
@@ -624,8 +624,8 @@ C-------------------------------------------------------------------
      &   '  SDAT    PDAT    EDAT    ADAT    MDAT    HDAT   HYEAR',
      &   '  DWAP    CWAM    HWAM    HWAH    BWAH  PWAM',
 !    &   '    HWUM  H#AM    H#UM  HIAM  LAIX',
-     &   '    HWUM    H#AM    H#UM  HIAM  LAIX',
-     &   '   FCWAM   FHWAM   HWAHF   FBWAH   FPWAM    EYLDH',
+     &   '    HWUM    H#AM    H#UM  HIAM  LAIX    EYLDH',
+     &   '   FCWAM   FHWAM   HWAHF   FBWAH   FPWAM',
      &   '  IR#M  IRCM  PRCM  ETCM  EPCM  ESCM  ROCM  DRCM  SWXM',
      &   '  NI#M  NICM  NFXM  NUCM  NLCM  NIAM NMINC  CNAM  GNAM N2OEM',
 !    &   '  NI#M  NICM  NFXM  NUCM  NLCM  NIAM  CNAM  GNAM N2OGC',
@@ -708,9 +708,10 @@ C-------------------------------------------------------------------
         CALL PrintText(ESCP,  "(F7.1)", ESCP_TXT )
         CALL PrintText(EPCP,  "(F7.1)", EPCP_TXT )
 
-!       Allow negative values for TMAX and TMIN
-        CALL PrintTxtNeg(TMINA, "(F6.1)", TMINA_TXT)
-        CALL PrintTxtNeg(TMAXA, "(F6.1)", TMAXA_TXT)
+!       Allow negative values for TMAX, TMIN, and net CO2 emissions
+        CALL PrintTxtNeg(TMINA, 6, 1, TMINA_TXT)
+        CALL PrintTxtNeg(TMAXA, 6, 1, TMAXA_TXT)
+        CALL PrintTxtNeg(CO2EM, 8, 1, CO2EM_TXT)
 
 !       N2O emissions
         IF (N2OEM .LT. -0.00001) THEN
@@ -731,16 +732,11 @@ C-------------------------------------------------------------------
           FBWAH = FBWAH * 10.
         ENDIF
 
-        WRITE (NOUTDS,502,ADVANCE='NO') LAIX, 
-     &    FCWAM, FHWAM, NINT(HWAHF), NINT(FBWAH), FPWAM 
-
-502     FORMAT(                                
+        WRITE (NOUTDS,510,ADVANCE='NO') LAIX
+510     FORMAT(                                
 !       LAIX,
-     &  F6.1, 
-                                              
-!       FCWAM, FHWAM, NINT(HWAHF), NINT(FBWAH*10.), FPWAM
-     &  5(1X,I7))
-          
+     &  F6.1)
+
         ! 2024-07-11 FO - Economic standard output format
         IF    (EYLDH < 0.999) THEN; FMT = '(1X,F8.3)'
         ELSEIF(EYLDH < 10.0)  THEN; FMT = '(1X,F8.2)'
@@ -767,15 +763,21 @@ C-------------------------------------------------------------------
         ELSE
             WRITE (NOUTDS,FMT,ADVANCE='NO') iEYLDH
         ENDIF
+
+        WRITE (NOUTDS,520,ADVANCE='NO')
+     &    FCWAM, FHWAM, NINT(HWAHF), NINT(FBWAH), FPWAM 
+520     FORMAT(
+!       FCWAM, FHWAM, NINT(HWAHF), NINT(FBWAH*10.), FPWAM
+     &  5(1X,I7))
      
-        WRITE (NOUTDS,503)
+        WRITE (NOUTDS,530)
      &    IRNUM, IRCM, PRCM, ETCM, EPCM, ESCM, ROCM, DRCM, SWXM, 
      &    NINUMM, NICM, NFXM, NUCM, NLCM, NIAM, NMINC, CNAM, GNAM, 
      &    N2OEC_TXT,
 !    &    N2OGC_TXT,
      &    PINUMM, PICM, PUPC, SPAM,        !P data
      &    KINUMM, KICM, KUPC, SKAM,        !K data
-     &    RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM, CH4EM,
+     &    RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM_TXT, CH4EM,
 !         Water productivity
      &    DMPPM_TXT, DMPEM_TXT, DMPTM_TXT, DMPIM_TXT, 
      &                 YPPM_TXT, YPEM_TXT, YPTM_TXT, YPIM_TXT,
@@ -784,7 +786,7 @@ C-------------------------------------------------------------------
      &                 CO2A_TXT, PRCP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT,
      &    CRST
 
-  503   FORMAT(                                            
+  530   FORMAT(                                            
 !       IRNUM, IRCM, PRCM, ETCM, EPCM, ESCM, ROCM, DRCM, SWXM, 
 !       NINUMM, NICM, NFXM, NUCM, NLCM, NIAM, NMINC, CNAM, GNAM, 
      &  18(1X,I5),
@@ -797,7 +799,7 @@ C-------------------------------------------------------------------
      &  9(1X,I5),
        
 !       ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM, CH4EM,
-     &  4(1X,I6),3(1X,I7), F7.1,      
+     &  4(1X,I6),2(1X,I7), A, F7.1,      
    
 !       DMPPM, DMPEM, DMPTM, DMPIM, YPPM, YPEM, YPTM, YPIM
 !    &  4F9.1,4F9.2,
@@ -818,16 +820,16 @@ C-------------------------------------------------------------------
         END IF   ! VSH
         
 !       VSH summary.csv header
-        IF (FMOPT == 'C') THEN
-            
+        IF (FMOPT == 'C') THEN  
+
 !           CALL CsvOutSumOpsum(RUN, TRTNUM, ROTNO, ROTOPT, CRPNO, CROP,
             CALL CsvOutSumOpsum(RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP,
      &MODEL, CONTROL%FILEX(1:8), TITLET, FLDNAM, WSTAT,WYEAR,SLNO,
      &LATI,LONG,ELEV,YRSIM,YRPLT, EDAT, ADAT, MDAT, YRDOY, HYEAR, DWAP, 
      &CWAM, HWAM, HWAH, BWAH,
 !     &PWAM, HWUM, HNUMUM, HIAM, LAIX, HNUMAM, IRNUM, IRCM, PRCM, ETCM,
-     &PWAM, HWUM, HNUMUM, HIAM, LAIX, HNUMAM, FCWAM, FHWAM, HWAHF, 
-     &FBWAH, FPWAM, EYLDH, IRNUM, IRCM, PRCM, ETCM,
+     &PWAM, HWUM, HNUMUM, HIAM, LAIX,EYLDH,HNUMAM,FCWAM, FHWAM,HWAHF, 
+     &FBWAH, FPWAM, IRNUM, IRCM, PRCM, ETCM,
      &EPCM, ESCM, ROCM, DRCM, SWXM, NINUMM, NICM, NFXM, NUCM, NLCM, 
      &NIAM, NMINC, CNAM, GNAM, N2OEM, PINUMM, PICM, PUPC, SPAM, KINUMM, 
      &KICM, KUPC, SKAM, RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, 
@@ -1049,6 +1051,7 @@ C-------------------------------------------------------------------
 
       End Subroutine PrintText
 !=======================================================================
+
 !=======================================================================
 !  PrintTxtNeg, Subroutine, C.H.Porter
 !     Sends back a text string for a real value with format provided.
@@ -1058,26 +1061,39 @@ C-------------------------------------------------------------------
 !     FTXT  = format for real value
 !   Output:
 !     PRINT_TXT_neg = text string for real value
+!
+!   2024-05-27 chp - handle missing values (-99). If the value is  exactly
+!    equal to -99.00000 then handle as missing (low risk of a false 
+!    missing value). Missing values are reported as "-99" integer values,
+!     Actual values are floating point.
 !=======================================================================
-      Subroutine PrintTxtNeg(VALUE, FTXT, PRINT_TXT_neg)
+      Subroutine PrintTxtNeg(VALUE, FWID, FDEC, PRINT_TXT_neg)
 
       REAL, INTENT(IN) :: VALUE
-      CHARACTER(LEN=*), INTENT(IN) :: FTXT 
+      INTEGER, INTENT(IN) :: FWID, FDEC
       CHARACTER(LEN=*), INTENT(OUT) :: PRINT_TXT_neg 
-      CHARACTER(LEN=6) FTXT1 
-      INTEGER I, ERRNUM
+      CHARACTER(LEN=10) :: FTXT 
 
-      READ (FTXT,'(2X,I1)',IOSTAT=ERRNUM) I   !width of field
-      IF (ERRNUM == 0) THEN
-        FTXT1 = FTXT
+!     Handle missing values (exactly equal to -99)
+      IF (ABS(VALUE + 99.) .LT. 1E-6) THEN
+!       assume missing value, change format to integer
+        IF (FWID < 9) THEN
+          WRITE(FTXT,'(A,I1,A)') "(I",FWID,")"
+        ELSE
+          WRITE(FTXT,'(A,I2,A)') "(I",FWID,")"
+        ENDIF
+        WRITE (PRINT_TXT_neg, FTXT) NINT(VALUE)
       ELSE
-        FTXT1 = "(F6.1)"
+        IF (FWID < 9) THEN
+          WRITE(FTXT,'(A,I1,A,I1,A)') "(F", FWID, ".", FDEC, ")"
+        ELSE
+          WRITE(FTXT,'(A,I2,A,I1,A)') "(F", FWID, ".", FDEC, ")"
+        ENDIF
+        WRITE (PRINT_TXT_neg, FTXT) VALUE
       ENDIF
 
-      WRITE(PRINT_TXT_neg,FTXT1) VALUE
-
+      RETURN
       End Subroutine PrintTxtNeg
-!=======================================================================
 !=======================================================================
 
 !=======================================================================

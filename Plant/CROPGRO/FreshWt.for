@@ -61,6 +61,9 @@
       REAL :: HRVD, HRVF
       REAL :: CHPDT,CHFPW
 
+!     In-season harvest weight CHP 2024-06-27
+      REAL ISH_wt
+
       LOGICAL FEXIST
 
       TYPE (ControlType) CONTROL
@@ -79,6 +82,7 @@
         
         FWFile  = 'FreshWt.OUT '
         CALL GETLUN('FWOUT',  NOUTPF)
+
 !***********************************************************************
 !***********************************************************************
 !     Seasonal initialization - run once per season
@@ -243,15 +247,21 @@
         HRDSD   = 0.0
         HRDSH   = 0.0      
 
+        CALL PUT('MHARVEST','ISH_date',-99)
+        CALL PUT('MHARVEST','ISH_wt',  -99.)
+
 !***********************************************************************
 !***********************************************************************
 !     DAILY RATE/INTEGRATION
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. INTEGR) THEN
 !-----------------------------------------------------------------------
-        IF (INDEX('Y',ISWFWT) < 1 .OR. 
-     &    INDEX('N,0',ISWITCH%IDETL) > 0) RETURN
-        
+!     chp 2024-12-11 Need to continue with calculations for multiple harvests
+!                     regardless of IDETL value.
+!       IF (INDEX('Y',ISWFWT) < 1 .OR. 
+!    &    INDEX('N,0',ISWITCH%IDETL) > 0) RETURN
+        IF (INDEX('Y',ISWFWT) < 1)  RETURN
+
         ! Total values
         TOSDN   = 0.0      
         TOWSD   = 0.0      
@@ -384,9 +394,11 @@
             SHELN(NPP) = 0.0
             WTSHE(NPP) = 0.0
             WTSD(NPP)  = 0.0
-            SDNO(NPP)  = 0.0                      
+            SDNO(NPP)  = 0.0
+            ISH_wt = HSHELWT + HSDWT + HPODWT + HFPOW
+            CALL PUT('MHARVEST','ISH_date',YRDOY)
+            CALL PUT('MHARVEST','ISH_wt',  ISH_wt)
           ENDIF
-               
         ENDDO  ! NPP
 
 !       Prepare model outputs
