@@ -132,9 +132,8 @@ C  Calls:     None
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASINIT) THEN
 !-----------------------------------------------------------------------
-!     CHP TEMP DISABLE VBOSE EFFECT
 !     CHP 2025-02-06 only print if requested
-!      IF (IDETG .NE. 'N') THEN
+      IF (IDETG .NE. 'N') THEN
 
         IF (FMOPT == 'A' .OR. FMOPT == ' ') THEN    ! VSH
 !         Initialize daily growth output file      
@@ -250,8 +249,7 @@ C  Calls:     None
         END IF ! VSH
 
 
-!     CHP TEMP DISABLE VBOSE EFFECT
-!      ENDIF  !IDETG for printing
+      ENDIF  !IDETG for printing
 
       CUMSENSURF  = 0.0
       CUMSENSOIL  = 0.0
@@ -363,12 +361,11 @@ C-----------------------------------------------------------------------
           LINTP = (LINTW*100.)/SDWT
         ENDIF
 
-!     CHP TEMP DISABLE VBOSE EFFECT
-!        IF ((IDETG .NE. 'N')              !Growth output switch is on
-!     &    .AND.  !plus at least one of the following is true
-!     &        ((MOD(DAS,FROP) .EQ. 0)     !Output every FROP days,
-!     &    .OR. (YRDOY .EQ. YRPLT)         !or on planting date,
-!     &    .OR. (YRDOY .EQ. MDATE))) THEN  !or at harvest maturity 
+        IF ((IDETG .NE. 'N')              !Growth output switch is on
+     &    .AND.  !plus at least one of the following is true
+     &        ((MOD(DAS,FROP) .EQ. 0)     !Output every FROP days,
+     &    .OR. (YRDOY .EQ. YRPLT)         !or on planting date,
+     &    .OR. (YRDOY .EQ. MDATE))) THEN  !or at harvest maturity 
 
           DAP = MAX(0,TIMDIF(YRPLT,YRDOY))
           IF (DAP > DAS) DAP = 0
@@ -506,8 +503,7 @@ C           changed from 12 to TS/2 on 9Jul17 by Bruce Kimball
 !     &        2(1X,F6.1),3(1X,F7.2))
           ENDIF   ! VSH
 
-!     CHP TEMP DISABLE VBOSE EFFECT
-!        ENDIF  !print today
+        ENDIF  !print today
 
 !***********************************************************************
 !***********************************************************************
