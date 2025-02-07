@@ -63,6 +63,7 @@ C=======================================================================
       CHARACTER*5   NEND,NCODE,IOFF,IAME, TEXT
       CHARACTER*6   ERRKEY,FINDCH
       CHARACTER*8   MODEL, MODELARG, CRMODEL, TRY_MODEL, Try_MODELARG
+      CHARACTER*8   CTRMODEL
       CHARACTER*12  FILEX
       CHARACTER*16  CROPD
       CHARACTER*25  TITSIM
@@ -480,58 +481,13 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
 
       REWIND (LUNEXP)
 
-C-----------------------------------------------------------------------
-C    Select Model Name and Path -- order of priority:
-!     CTRMODEL is value from control file override -- this is used
-!         over all other values if valid. (Done in External_SimControls)
-!     CRMODEL is read from FILEX.  Use this if no control file.  
-!     MODELARG is from command line argument list. Third priority. 
-!     Last, use value from DSSATPRO.v??.
-C-----------------------------------------------------------------------
-!     First check model name from FILEX
-      TRY_MODEL = CRMODEL
-      CALL MODEL_NAME (CROP, DSSATP, TRY_MODEL, MODEL)
-
-!     If FILEX model name was not acceptable, then try the 
-!       model name read from command line.  If this is not OK, 
-!       MODEL contains value from DSSATPRO file
-      IF (TRY_MODEL /= MODEL) THEN
-!       Fallow must be associated with CRGRO model (for now)
-        IF (CROP == 'FA') THEN
-          Try_MODELARG(1:5) = "CRGRO"
-        ELSE
-          Try_MODELARG = MODELARG
-        ENDIF
-        CALL MODEL_NAME (CROP, DSSATP, Try_MODELARG, MODEL)
-      ENDIF
-
-      IF (MEPHO .EQ. 'L' .AND. MODEL(1:5) .NE. 'CRGRO' 
-     &  .and. model(1:5) .ne. 'PRFRM' ) THEN
-        MEPHO = 'C'
-        WRITE(MSG(1),80)
-        WRITE (MSG(2),81) MODEL(1:5)
-        CALL WARNING(2, "IPEXP ", MSG)
-
-   80 FORMAT('Photosynthesis method (PHOTO in FILEX) has been changed')
-   81 FORMAT('from "L" to "C" for compatibility with crop model, '
-     &            ,A5,'.') 
-      ENDIF
-
       CALL FILL_ISWITCH(
      &      CONTROL, ISWITCH, FROP, MODEL, NYRS, RNMODE)
 
-
-!     Planting date needed for generic start of simulation
-      SELECT CASE(IPLTI)
-           CASE('R'); PLDATE = YRPLT
-           CASE('A'); PLDATE = PWDINF
-      END SELECT
-
 !     Check Simulation control file for control overrides 
       CALL External_SimControls(
-     &    CONTROL, CRMODEL, DSSATP, FILECTL, ISWITCH,     !Input
-     &    MODELARG, PLDATE,                               !Input
-     &    UseSimCtr, MODEL)                               !Output
+     &    CONTROL, FILECTL, ISWITCH,                      !Input
+     &    UseSimCtr, CTRMODEL)                            !Output
 
       IF (UseSimCtr) THEN
         IOX     = ISWITCH % FNAME 
@@ -589,9 +545,48 @@ C-----------------------------------------------------------------------
 !     both FileX values and those from the external simulation controls.
 !     Previously, changes to checks in FileX were not also done for simulation controls.
 
+C-----------------------------------------------------------------------
+C    Select Model Name and Path -- order of priority:
+!     CTRMODEL is value from control file override -- this is used
+!         over all other values if valid. (Done in External_SimControls)
+!     CRMODEL is read from FILEX.  Use this if no control file.  
+!     MODELARG is from command line argument list. Third priority. 
+!     Last, use value from DSSATPRO.v??.
+C-----------------------------------------------------------------------
 !     -------------------------------------------------
-!     Line 2
+!     Line 1
 !     -------------------------------------------------
+!     First check model from external simulation control file 
+      TRY_MODEL = CTRMODEL  !from external control file
+      CALL MODEL_NAME (CROP, DSSATP, TRY_MODEL, MODEL)
+
+!     Next check model name from FILEX
+!     If CTR file model name was not acceptable, then try the 
+!       model name read from FileX.  
+      IF (TRY_MODEL /= MODEL) THEN
+        TRY_MODEL = CRMODEL   !from FileX
+        CALL MODEL_NAME (CROP, DSSATP, TRY_MODEL, MODEL)
+
+!       If FILEX model name was not acceptable, then try the 
+!         model name read from command line.  If this is not OK, 
+!         get MODEL name from DSSATPRO file
+        IF (TRY_MODEL /= MODEL) THEN
+!         Fallow must be associated with CRGRO model (for now)
+          IF (CROP == 'FA') THEN
+            Try_MODELARG(1:5) = "CRGRO"
+          ELSE
+            Try_MODELARG = MODELARG  !From command line
+          ENDIF
+          CALL MODEL_NAME (CROP, DSSATP, Try_MODELARG, MODEL)
+        ENDIF
+      ENDIF
+
+!     Planting date needed for generic start of simulation
+      SELECT CASE(IPLTI)
+           CASE('R'); PLDATE = YRPLT
+           CASE('A'); PLDATE = PWDINF
+      END SELECT
+
 !     Check for N fixation in CROPGRO crops
       SELECT CASE (CROP)
            CASE ('BN','SB','PN','PE','CH','PP','GY',
@@ -626,6 +621,18 @@ C-----------------------------------------------------------------------
 !     -------------------------------------------------
 !     Line 3
 !     -------------------------------------------------
+      IF (MEPHO .EQ. 'L' .AND. MODEL(1:5) .NE. 'CRGRO' 
+     &  .and. model(1:5) .ne. 'PRFRM' ) THEN
+        MEPHO = 'C'
+        WRITE(MSG(1),80)
+        WRITE (MSG(2),81) MODEL(1:5)
+        CALL WARNING(2, "IPEXP ", MSG)
+
+   80 FORMAT('Photosynthesis method (PHOTO in FILEX) has been changed')
+   81 FORMAT('from "L" to "C" for compatibility with crop model, '
+     &            ,A5,'.') 
+      ENDIF
+
       IF (INDEX('PG',MESOM) .EQ. 0) THEN
          MESOM = 'G'
       ENDIF
@@ -808,14 +815,6 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
         PWDINF = -99
         PWDINL = -99
       ENDIF
-
-
-
-
-
-
-
-
 
       CALL FILL_ISWITCH(
      &      CONTROL, ISWITCH, FROP, MODEL, NYRS, RNMODE)
@@ -1086,9 +1085,8 @@ C-----------------------------------------------------------------------
 !=======================================================================
 
       SUBROUTINE External_SimControls(
-     &    CONTROL, CRMODEL, DSSATP, FILECTL, ISWITCH,     !Input
-     &    MODELARG, PLDATE,                               !Input
-     &    UseSimCtr, MODEL)                               !Output
+     &    CONTROL, FILECTL, ISWITCH,                      !Input
+     &    UseSimCtr, CTRMODEL)                            !Output
 
       USE ModuleDefs
       IMPLICIT NONE
@@ -1108,16 +1106,16 @@ C-----------------------------------------------------------------------
       CHARACTER*1 FMOPT
 
       CHARACTER*6 ERRKEY,FINDCH, SECTION
-      CHARACTER*8 MODEL, CRMODEL, CTRMODEL, MODELARG, TRY_MODEL
+      CHARACTER*8 MODEL, CTRMODEL
       CHARACTER*12 FILEX  !, DSSATS
       CHARACTER*78 MSG(50)
-      CHARACTER*102 DSSATP, SIMCTR
+      CHARACTER*102 SIMCTR
       CHARACTER*120 INPUTX, FILECTL
       CHARACTER*128 CHARTEST
 
       INTEGER CTRNO, ERRNUM, FOUND, FROP, I, IFIND, IPX, ISECT, ISIM
       INTEGER LEVEL, LINEXP, NMSG, NREPSQ, NSWITCH, NYRS
-      INTEGER PLDATE, RSEED1, SCLun, YEAR, YRSIM
+      INTEGER RSEED1, SCLun, YEAR, YRSIM
       INTEGER SimLen, LenString, FIND_IN_FILE
 
       TYPE (SwitchType)  ISWITCH
@@ -1324,7 +1322,7 @@ C-----------------------------------------------------------------------
             CALL CHECK_A('ISIMI', ISIMI, ERRNUM, MSG, NMSG)
 
             READ (CHARTEST,'(33X,I5)',IOSTAT=ERRNUM) YRSIM
-            IF (YRSIM == -99) YRSIM = PLDATE
+            IF (YRSIM == -99) YRSIM = '.'
             CALL CHECK_I('YRSIM', YRSIM, ERRNUM, MSG, NMSG)
             IF (ERRNUM == 0) THEN
 C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
@@ -1386,16 +1384,6 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
             ISWCHE = UPCASE(ISWCHE)
             ISWTIL = UPCASE(ISWTIL)
             ICO2   = UPCASE(ICO2)
-
-            IF (ISWWAT .EQ. 'N') THEN
-              ISWNIT = 'N'
-              ISWCHE = 'N'
-            ENDIF
-
-            IF (ISWNIT .EQ. 'N') THEN
-              ISWPHO = 'N'
-              ISWPOT = 'N'
-            ENDIF
 
 !         Third line of simulation controls
           CASE('@N MET')
@@ -1459,14 +1447,6 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
             MESEV = UPCASE(MESEV)
             METMP = UPCASE(METMP)
             MEGHG = UPCASE(MEGHG)
-
-            IF (INDEX('PG' ,MESOM) == 0) MESOM = ' '
-            IF (INDEX('123',MESOL) == 0) MESOL = ' '
-            IF (INDEX('RS' ,MESEV) == 0) MESEV = ' '
-            IF (INDEX('Z'  ,MEEVP)  > 0) MEPHO = 'L'
-!           IF (INDEX('ED' ,METMP) == 0) METMP = 'E' !3/27/2016
-            IF (INDEX('ED' ,METMP) == 0) METMP = 'D' !7/21/2016
-            IF (INDEX('01' ,MEGHG) == 0) MEGHG = '0'
 
 !         Fourth line of simulation controls
           CASE('@N MAN')
@@ -1569,43 +1549,6 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
             IDETR = UPCASE(IDETR)
             FMOPT = UPCASE(FMOPT)  ! VSH
 
-!           Verbose output switch
-            IF (IDETL == '0') THEN
-!             VBOSE = zero, suppress all output except Summary and Evaluate
-              IDETS = 'Y'
-              IDETG = 'N' 
-              IDETC = 'N' 
-              IDETW = 'N' 
-              IDETN = 'N' 
-              IDETP = 'N' 
-              IDETD = 'N' 
-              IDETH = 'N' 
-              IDETR = 'N' 
-              IDETO = 'E'
-!             FMOPT = 'N' ! VSH  !CHP FMOPT is not tied to IDETL
-
-!             Seasonal, Spatial, and Yield forecast runs do not get evaluate file when IDETL=0
-              IF (INDEX('SNY',CONTROL%RNMODE) > 0) IDETO = 'N'
-
-            ELSEIF (IDETL == 'A' .OR. IDETL == 'D') THEN
-!             VBOSE = 'A', generate all output
-              IDETS = 'A'
-              IDETO = 'Y'
-              IDETG = 'Y' 
-              IDETC = 'Y' 
-              IDETW = 'Y' 
-              IDETN = 'Y' 
-              IDETP = 'Y' 
-              IDETD = 'Y' 
-              IDETH = 'Y' 
-              IDETR = 'Y' 
-!             FMOPT = 'A'  ! VSH  !CHP FMOPT is not tied to IDETL
-              
-!             Set IDETL back to "D" so no need for changes elsewhere
-!             IDETL = 'D' 
-              FROP  = 1 
-            ENDIF
-
           END SELECT
         ENDDO
 
@@ -1624,84 +1567,6 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
         IF (.NOT. UseSimCtr) RETURN
         MEPHO  = MEPHO_SAVE
         ISWSYM = ISWSYM_SAVE
-      ENDIF
-
-C-----------------------------------------------------------------------
-C    Select Model Name and Path -- order of priority:
-!     CTRMODEL is value from control file override -- this is used
-!         over all other values if valid. (Done in External_SimControls)
-!     CRMODEL is read from FILEX.  Use this if no control file.  
-!     MODELARG is from command line argument list. Third priority. 
-!     Last, use value from DSSATPRO file
-C-----------------------------------------------------------------------
-!     First check model from simulation control file 
-      TRY_MODEL = CTRMODEL
-      CALL MODEL_NAME (CONTROL%CROP, DSSATP, TRY_MODEL, MODEL)
-
-!     If model name from simulation control file is not acceptable,
-!     try value from FILEX
-      IF (TRY_MODEL /= MODEL) THEN
-        TRY_MODEL = CRMODEL
-        CALL MODEL_NAME (CONTROL%CROP, DSSATP, TRY_MODEL, MODEL)
-
-!       If FILEX model name was not acceptable, then try the 
-!       model name read from command line.  If this is not OK, 
-!       MODEL contains value from DSSATPRO file
-        IF (TRY_MODEL /= MODEL) THEN
-          TRY_MODEL = MODELARG
-          CALL MODEL_NAME (CONTROL%CROP, DSSATP, TRY_MODEL, MODEL)
-        ENDIF
-      ENDIF
-
-      MEPHO_SAVE = MEPHO
-!     IF (MEPHO .EQ. 'L' .AND. CTRMODEL(1:5) .NE. 'CRGRO') THEN
-      IF (MEPHO .EQ. 'L' .AND. MODEL(1:5) .NE. 'CRGRO') THEN
-        MEPHO = 'C'
-        MSG(1)='Photosynthesis method (PHOTO in FILEX) has been changed'
-        WRITE (MSG(2),81) CTRMODEL(1:5)
-   81   FORMAT('from "L" to "C" for compatibility with crop model, '
-     &            ,A5,'.') 
-        CALL WARNING(2, "IPSIM ", MSG)
-      ENDIF
-
-!     Check for N fixation in CROPGRO crops
-      ISWSYM_SAVE = ISWSYM
-      SELECT CASE (CONTROL % CROP)
-           CASE ('BN','SB','PN','PE','CH','PP',
-     &           'VB','CP','CB','FB','GB','LT',
-     &            'AL','BG','CV','GY' )
-C!         Do nothing -- CROPGRO crops can have Y or N
-           CASE DEFAULT; ISWSYM = 'N'  !other crops don't have a choice
-      END SELECT
-
-      IF ((INDEX('CSPT',CONTROL % CROP)) .GT. 0) THEN
-        IF (IHARI .EQ. 'A') THEN
-          MSG(1) = "Default Simulation controls file used."
-          WRITE(MSG(2),'("Automatic harvest option is not valid for ",
-     &    "crop type: ",A2)') CONTROL%CROP
-          CALL WARNING(2, ERRKEY, MSG)
-          CALL ERROR ('IPSIM ',4,FILEX,LINEXP)
-        ENDIF
-      ENDIF
-      
-      IF ((INDEX('CS',CONTROL % CROP)) .GT. 0) THEN
-        IF (IHARI .EQ. 'M') THEN
-          MSG(1) = "Default Simulation controls file used."
-          WRITE(MSG(2),'("Harvest at maturity option is not valid for ",
-     &    "crop type: ",A2)') CONTROL%CROP
-          CALL WARNING(1, ERRKEY, MSG)
-          CALL ERROR ('IPSIM ',11,FILEX,LINEXP)
-        ENDIF
-      ENDIF
-
-      IF ((INDEX('PT',CONTROL % CROP)) .GT. 0) THEN
-        IF (IPLTI .EQ. 'A') THEN
-          MSG(1) = "Default Simulation controls file used."
-          WRITE(MSG(2),'("Automatic planting option is not valid for ",
-     &    "crop type: ",A2)') CONTROL%CROP
-          CALL WARNING(2, ERRKEY, MSG)
-          CALL ERROR ('IPSIM ',5,FILEX,LINEXP)
-        ENDIF
       ENDIF
 
 !     Fill ISWITCH variable (complete)
