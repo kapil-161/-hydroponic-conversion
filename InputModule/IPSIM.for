@@ -1129,6 +1129,9 @@ C-----------------------------------------------------------------------
 
       PARAMETER (ERRKEY = 'SIMCTR')
 
+      MEPHO_SAVE  = ISWITCH % MEPHO
+      ISWSYM_SAVE = ISWITCH % ISWSYM
+
 !-----------------------------------------------------------------------
       IF (FIRST) THEN
         FIRST = .FALSE.
@@ -1226,9 +1229,6 @@ C-----------------------------------------------------------------------
         MSG(4)="The following switches and options will override values"
         MSG(5)="  found in the Experiment files, if appropriate:"
         NMSG = 5
-
-        MEPHO_SAVE  = ISWITCH % MEPHO
-        ISWSYM_SAVE = ISWITCH % ISWSYM
 
 !       Initialize override values
         NYRS    = -99
