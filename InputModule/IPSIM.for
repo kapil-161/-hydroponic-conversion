@@ -954,6 +954,9 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
         END SELECT
       ENDIF
 
+      CALL FILL_ISWITCH(
+     &      CONTROL, ISWITCH, FROP, MODEL, NYRS, RNMODE)
+
       RETURN
 
 C-----------------------------------------------------------------------
@@ -1223,6 +1226,9 @@ C-----------------------------------------------------------------------
         MSG(4)="The following switches and options will override values"
         MSG(5)="  found in the Experiment files, if appropriate:"
         NMSG = 5
+
+        MEPHO_SAVE  = ISWITCH % MEPHO
+        ISWSYM_SAVE = ISWITCH % ISWSYM
 
 !       Initialize override values
         NYRS    = -99
@@ -1557,6 +1563,7 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
         IF (NMSG < 6) THEN
           MSG(4)='No default simulation controls read.'
           NMSG = 4
+          UseSimCtr = .FALSE.
         ELSE
           UseSimCtr = .TRUE.
         ENDIF
