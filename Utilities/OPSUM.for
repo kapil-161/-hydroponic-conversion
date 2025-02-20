@@ -1050,102 +1050,114 @@ C-------------------------------------------------------------------
 !-------------------------------------------------------------------
 !     Write EnvSum.OUT file
       IF (INDEX('YE',IDETO) > 0) THEN
+        SELECT CASE(MODEL(1:5))
+        CASE('CSCER', 'CSCRP', 'CSCAS', 'CSYCA', 'PRFRM')
+!         Exclude these models because they do not use OPSTRESS
+!         CSCER    CERES wheat, barley
+!         CSCRP    CSCRP wheat, barley
+!         CSCAS    CSCAS-Cassava
+!         CSYCA    CSYCA-Cassava
+!         PRFRM    Perennial forage
+          CONTINUE 
+
+!       All other models, print out Evaluate.OUT
+        CASE DEFAULT
 !-------------------------------------------------------------------
 
-    !    IF (FMOPT == 'A' .OR. FMOPT == ' ') THEN   ! VSH
-        IF (CROP .NE. 'FA') THEN
-!         Open or create EnvSum.OUT file
-          INQUIRE (FILE = ESFile, EXIST = FEXIST)
-          IF (FEXIST) THEN
-            OPEN (UNIT = ESLUN, FILE = ESFile, STATUS = 'OLD',
-     &        IOSTAT = ERRNUM, POSITION = 'APPEND')
-          ELSE
-            OPEN (UNIT = ESLUN, FILE = ESFile, STATUS = 'NEW',
-     &        IOSTAT = ERRNUM)
-            WRITE (ESLUN,800) Version, VBranch,
-     &        MonthTxt(DATE_TIME(2)), DATE_TIME(3), DATE_TIME(1), 
-     &        DATE_TIME(5), DATE_TIME(6), DATE_TIME(7)
-  800       FORMAT('*Environmental Summary: ',
+          IF (CROP .NE. 'FA') THEN
+!           Open or create EnvSum.OUT file
+            INQUIRE (FILE = ESFile, EXIST = FEXIST)
+            IF (FEXIST) THEN
+              OPEN (UNIT = ESLUN, FILE = ESFile, STATUS = 'OLD',
+     &          IOSTAT = ERRNUM, POSITION = 'APPEND')
+            ELSE
+              OPEN (UNIT = ESLUN, FILE = ESFile, STATUS = 'NEW',
+     &          IOSTAT = ERRNUM)
+              WRITE (ESLUN,800) Version, VBranch,
+     &          MonthTxt(DATE_TIME(2)), DATE_TIME(3), DATE_TIME(1), 
+     &          DATE_TIME(5), DATE_TIME(6), DATE_TIME(7)
+  800         FORMAT('*Environmental Summary: ',
      &        'DSSAT Cropping System Model Ver. ',I1,'.',I1,'.',I1,'.',
      &         I3.3,1X,A10,4X,
      &         A3," ",I2.2,", ",I4,"; ",I2.2,":",I2.2,":",I2.2)
-          ENDIF
-      
-!         Write phase-specific headers if new crop model is being processed
-          IF (NewCrop .OR. NewModel) THEN
-            WRITE(ESLUN, 810, ADVANCE='NO')
-  810       FORMAT(/,
+            ENDIF
+          
+!           Write phase-specific headers if new crop model is being processed
+            IF (NewCrop .OR. NewModel) THEN
+              WRITE(ESLUN, 810, ADVANCE='NO')
+  810         FORMAT(/,
      &        '!',T78,'SEASONAL ENVIRONMENTAL DATA',/,
      &        '!IDENTIFIERS..................................  ',
      &        'GHG Emissions (kg/ha) ....   ',
      &        'Planting to Harvest ...................................',
      &        '..........................  ')
+            
+              DO I = 1, ESData % PhaseCount
+                WRITE(ESLUN,'(A,I1,A,A,A,A)', ADVANCE='NO')
+     &            'Phase ', I, ": ", ESData % PhaseName(I), 
+     &            repeat(".", 36), "  "
+              ENDDO
+            
+              WRITE(ESLUN,'(/,A,A,A,A)', ADVANCE='NO')
+     &          '@   RUNNO   TRNO R# O# P# CR MODEL... EXNAME..',
+     &          '  N2OEM  CO2EM  CH4EM  TCEQM   NDCH  DAYLA   CO2A',
+     &          '  TMINA  TAVGA  TMAXA  SRADA   PRCP   PETP   ETCP',
+     &          '   ESCP   EPCP'
+            
+              IF (ESData % PhaseCount > 0) THEN
+                DO I = 1, ESData % PhaseCount-1
+                  WRITE(ESLUN,'(10(A6,I1))',ADVANCE='NO')
+     &           '  NDCH',I,'  TMIN',I,'  TAVG',I,'  TMAX',I,'  SRAD',I,
+     &           '  PRCP',I,'  PETP',I,'  ETCP',I,'  ESCP',I,'  EPCP',I
+                ENDDO
+!               Last phase, advance line
+                WRITE(ESLUN,'(10(A6,I1))')
+     &           '  NDCH',I,'  TMIN',I,'  TAVG',I,'  TMAX',I,'  SRAD',I,
+     &           '  PRCP',I,'  PETP',I,'  ETCP',I,'  ESCP',I,'  EPCP',I
+              ENDIF
+            ENDIF
           
-            DO I = 1, ESData % PhaseCount
-              WRITE(ESLUN,'(A,I1,A,A,A,A)', ADVANCE='NO')
-     &          'Phase ', I, ": ", ESData % PhaseName(I), 
-     &          repeat(".", 36), "  "
-            ENDDO
+!           These 3 variables are not in Summary.OUT
+            CALL PrintTxtNeg(ESData % TAVG(0), 7, 1, TAVG_TXT)
+            CALL PrintText(ESData % PETP(0), "(F7.1)", PETP_TXT)
+            CALL PrintTxtNeg(TCEQM, 7, 0, TCEQM_TXT)
+!           Reformat for this output
+            CALL PrintTxtNeg(CO2EM, 7, 0, CO2EM_TXT)
           
-            WRITE(ESLUN,'(/,A,A,A,A)', ADVANCE='NO')
-     &        '@   RUNNO   TRNO R# O# P# CR MODEL... EXNAME..',
-     &        '  N2OEM  CO2EM  CH4EM  TCEQM   NDCH  DAYLA   CO2A',
-     &        '  TMINA  TAVGA  TMAXA  SRADA   PRCP   PETP   ETCP',
-     &        '   ESCP   EPCP'
+            WRITE(ESLUN,820,ADVANCE='NO')
+     &        RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
+     &        CONTROL%FILEX(1:8),
+     &        N2OEC_TXT, NINT(CO2EM), CH4EM, NINT(TCEQM),
+     &        NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
+     &        SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT,EPCP_TXT
+          
+!             RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, FILEX
+  820         FORMAT (I9,1X,I6,3(I3),1X,A2,1X,A8,1X,A8,               
+!             N2OEC_TXT, CO2EM_TXT, CH4EM, NINT(TCEQM),
+     &        A7, I7, F7.1, I7,
+!             NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
+!             SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
+     &        I7, 11A7)
           
             IF (ESData % PhaseCount > 0) THEN
-              DO I = 1, ESData % PhaseCount-1
-                WRITE(ESLUN,'(10(A6,I1))',ADVANCE='NO')
-     &           '  NDCH',I,'  TMIN',I,'  TAVG',I,'  TMAX',I,'  SRAD',I,
-     &           '  PRCP',I,'  PETP',I,'  ETCP',I,'  ESCP',I,'  EPCP',I
+              DO I = 1, ESData % PhaseCount
+                CALL PrintText(ESData % TMIN(I), "(F7.1)", TMINA_TXT)
+                CALL PrintText(ESData % TAVG(I), "(F7.1)", TAVG_TXT )
+                CALL PrintText(ESData % TMAX(I), "(F7.1)", TMAXA_TXT)
+                CALL PrintText(ESData % SRAD(I), "(F7.1)", SRADA_TXT)
+                CALL PrintText(ESData % PRCP(I), "(F7.1)", PRCP_TXT )
+                CALL PrintText(ESData % PETP(I), "(F7.1)", PETP_TXT )
+                CALL PrintText(ESData % ETCP(I), "(F7.1)", ETCP_TXT )
+                CALL PrintText(ESData % ESCP(I), "(F7.1)", ESCP_TXT )
+                CALL PrintText(ESData % EPCP(I), "(F7.1)", EPCP_TXT )
+          
+                WRITE(ESLUN,'(I7,9A7)',ADVANCE='NO') ESData % NDCH(I),
+     &            TMINA_TXT, TAVG_TXT, TMAXA_TXT, SRADA_TXT, 
+     &            PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
               ENDDO
-!             Last phase, advance line
-              WRITE(ESLUN,'(10(A6,I1))')
-     &           '  NDCH',I,'  TMIN',I,'  TAVG',I,'  TMAX',I,'  SRAD',I,
-     &           '  PRCP',I,'  PETP',I,'  ETCP',I,'  ESCP',I,'  EPCP',I
             ENDIF
-          ENDIF
-
-!         These 3 variables are not in Summary.OUT
-          CALL PrintTxtNeg(ESData % TAVG(0), 7, 1, TAVG_TXT)
-          CALL PrintText(ESData % PETP(0), "(F7.1)", PETP_TXT)
-          CALL PrintTxtNeg(TCEQM, 7, 0, TCEQM_TXT)
-!         Reformat for this output
-          CALL PrintTxtNeg(CO2EM, 7, 0, CO2EM_TXT)
-
-          WRITE(ESLUN,820,ADVANCE='NO')
-     &      RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
-     &      CONTROL%FILEX(1:8),
-     &      N2OEC_TXT, NINT(CO2EM), CH4EM, NINT(TCEQM),
-     &      NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
-     &      SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
-
-!           RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, FILEX
-  820       FORMAT (I9,1X,I6,3(I3),1X,A2,1X,A8,1X,A8,               
-!           N2OEC_TXT, CO2EM_TXT, CH4EM, NINT(TCEQM),
-     &      A7, I7, F7.1, I7,
-!           NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
-!           SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
-     &      I7, 11A7)
-
-          IF (ESData % PhaseCount > 0) THEN
-            DO I = 1, ESData % PhaseCount
-              CALL PrintText(ESData % TMIN(I), "(F7.1)", TMINA_TXT)
-              CALL PrintText(ESData % TAVG(I), "(F7.1)", TAVG_TXT )
-              CALL PrintText(ESData % TMAX(I), "(F7.1)", TMAXA_TXT)
-              CALL PrintText(ESData % SRAD(I), "(F7.1)", SRADA_TXT)
-              CALL PrintText(ESData % PRCP(I), "(F7.1)", PRCP_TXT )
-              CALL PrintText(ESData % PETP(I), "(F7.1)", PETP_TXT )
-              CALL PrintText(ESData % ETCP(I), "(F7.1)", ETCP_TXT )
-              CALL PrintText(ESData % ESCP(I), "(F7.1)", ESCP_TXT )
-              CALL PrintText(ESData % EPCP(I), "(F7.1)", EPCP_TXT )
-
-              WRITE(ESLUN,'(I7,9A7)',ADVANCE='NO') ESData % NDCH(I),
-     &          TMINA_TXT, TAVG_TXT, TMAXA_TXT, SRADA_TXT, 
-     &          PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
-            ENDDO
-          ENDIF
-        ENDIF   !not fallow
+          ENDIF   !not fallow
+        END SELECT
       ENDIF     !IDETO switch for output
 
 !***********************************************************************
