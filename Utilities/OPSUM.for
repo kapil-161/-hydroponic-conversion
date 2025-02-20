@@ -212,7 +212,7 @@ C-----------------------------------------------------------------------
       CHARACTER*9 DPNAM_TXT, DPNUM_TXT, YPNAM_TXT, YPNUM_TXT
       CHARACTER*7 TMINA_TXT, TMAXA_TXT, SRADA_TXT, DAYLA_TXT
       CHARACTER*7 CO2A_TXT, PRCP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
-      CHARACTER*7 TAVG_TXT, PETP_TXT, TCEQM_TXT
+      CHARACTER*7 TAVG_TXT, PETP_TXT, TCEQM_TXT, CH4EM_TXT
       CHARACTER*7 N2OEC_TXT  !, N2OGC_TXT
       CHARACTER*8 CO2EM_TXT
 
@@ -764,20 +764,8 @@ C-------------------------------------------------------------------
         CALL PrintTxtNeg(TMINA, 7, 1, TMINA_TXT)  !was 6 char wide
         CALL PrintTxtNeg(TMAXA, 7, 1, TMAXA_TXT)  !was 6 char wide
         CALL PrintTxtNeg(CO2EM, 8, 1, CO2EM_TXT)
-
-!       N2O emissions
-!       change from 6 to 7 characters wide
-        IF (N2OEM .LT. -0.00001) THEN
-          N2OEC_TXT = "   -99"
-        ELSEIF (N2OEM .LT. 1) THEN
-          CALL PrintText(N2OEM, "(F7.3)", N2OEC_TXT) !kg/ha
-        ELSEIF (N2OEM .LT. 10) THEN
-          CALL PrintText(N2OEM, "(F7.2)", N2OEC_TXT) !kg/ha
-        ELSEIF (N2OEM .LT. 100) THEN
-          CALL PrintText(N2OEM, "(F7.1)", N2OEC_TXT) !kg/ha
-        ELSE
-          CALL PrintText(N2OEM, "(F7.0)", N2OEC_TXT) !kg/ha
-        ENDIF
+        CALL PrintFlex(N2OEM, 7, N2OEC_TXT)
+        CALL PrintFlex(CH4EM, 7, CH4EM_TXT)
 
         IF (FBWAH .GT. 1.E-3) THEN
           FBWAH = FBWAH * 10.
@@ -828,7 +816,8 @@ C-------------------------------------------------------------------
 !    &    N2OGC_TXT,
      &    PINUMM, PICM, PUPC, SPAM,        !P data
      &    KINUMM, KICM, KUPC, SKAM,        !K data
-     &    RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM_TXT, CH4EM,
+     &    RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM_TXT, 
+     &    CH4EM_TXT,
 !         Water productivity
      &    DMPPM_TXT, DMPEM_TXT, DMPTM_TXT, DMPIM_TXT, 
      &                 YPPM_TXT, YPEM_TXT, YPTM_TXT, YPIM_TXT,
@@ -850,7 +839,7 @@ C-------------------------------------------------------------------
      &  9(1X,I5),
        
 !       ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, CO2EM, CH4EM,
-     &  4(1X,I6),2(1X,I7), A, F7.1,      
+     &  4(1X,I6),2(1X,I7), A, A,      
    
 !       DMPPM, DMPEM, DMPTM, DMPIM, YPPM, YPEM, YPTM, YPIM
 !    &  4F9.1,4F9.2,
@@ -972,7 +961,6 @@ C-------------------------------------------------------------------
 !     IDETO = Y - both Overview and Evaluate are printed
 !     IDETO = N - neither Overview nor Evaluate are printed
 !     IDETO = E - only Evaluate is printed.
-!      IF (INDEX('YE',IDETO) > 0 .AND. 
       IF (INDEX('YE',IDETO) > 0) THEN
         SELECT CASE(MODEL(1:5))
         CASE('CSCER', 'CSCRP', 'CSCAS', 'CSYCA')
@@ -1000,71 +988,65 @@ C-------------------------------------------------------------------
           ENDIF
 
           IF (FMOPT == 'A' .OR. FMOPT == ' ') THEN   ! VSH
-!         Open or create Evaluate.out file
-          INQUIRE (FILE = SEVAL, EXIST = FEXIST)
-          IF (FEXIST) THEN
-            OPEN (UNIT = SLUN, FILE = SEVAL, STATUS = 'OLD',
-     &        IOSTAT = ERRNUM, POSITION = 'APPEND')
-          ELSE
-            OPEN (UNIT = SLUN, FILE = SEVAL, STATUS = 'NEW',
-     &        IOSTAT = ERRNUM)
-            CALL DATE_AND_TIME (VALUES=DATE_TIME)
-            WRITE (SLUN,700) EXPER, CG, ENAME, Version, VBranch,
-!           WRITE (SLUN,700) MODEL, EXPER, CG, ENAME, Version,
-     &        MonthTxt(DATE_TIME(2)), DATE_TIME(3), DATE_TIME(1), 
-     &        DATE_TIME(5), DATE_TIME(6), DATE_TIME(7)
-  700       FORMAT ('*EVALUATION : ',A8,A2,1X,A60,1X,
-! 700       FORMAT ('*EVALUATION : ',A8,1X,A8,A2,1X,A60,1X,
+!           Open or create Evaluate.out file
+            INQUIRE (FILE = SEVAL, EXIST = FEXIST)
+            IF (FEXIST) THEN
+              OPEN (UNIT = SLUN, FILE = SEVAL, STATUS = 'OLD',
+     &          IOSTAT = ERRNUM, POSITION = 'APPEND')
+            ELSE
+              OPEN (UNIT = SLUN, FILE = SEVAL, STATUS = 'NEW',
+     &          IOSTAT = ERRNUM)
+              CALL DATE_AND_TIME (VALUES=DATE_TIME)
+              WRITE (SLUN,700) EXPER, CG, ENAME, Version, VBranch,
+!             WRITE (SLUN,700) MODEL, EXPER, CG, ENAME, Version,
+     &          MonthTxt(DATE_TIME(2)), DATE_TIME(3), DATE_TIME(1), 
+     &          DATE_TIME(5), DATE_TIME(6), DATE_TIME(7)
+  700         FORMAT ('*EVALUATION : ',A8,A2,1X,A60,1X,
+! 700         FORMAT ('*EVALUATION : ',A8,1X,A8,A2,1X,A60,1X,
      &    'DSSAT Cropping System Model Ver. ',I1,'.',I1,'.',I1,'.',I3.3,
      &     1X,A10,4X,A3," ",I2.2,", ",I4,"; ",I2.2,":",I2.2,":",I2.2)
-          ENDIF
+            ENDIF
 
-!         Write headers if new crop is being processed
-          IF (NewModel) THEN
-            WRITE(SLUN,
-     &       '(/,"@RUN EXCODE        TN RN CR",80(1X,A7))')   
-     &       (ADJUSTR(OLAP(I))//"S",ADJUSTR(OLAP(I))//"M",I = 1, ICOUNT)
-          ENDIF
+!           Write headers if new crop is being processed
+            IF (NewModel) THEN
+              WRITE(SLUN,
+     &        '(/,"@RUN EXCODE        TN RN CR",80(1X,A7))')   
+     &        (ADJUSTR(OLAP(I))//"S",ADJUSTR(OLAP(I))//"M",I = 1,ICOUNT)
+            ENDIF
 
-!         Write evaluation data
-          WRITE(SLUN,750) RUN, EXPER, CG, TRTNUM, ROTNO, CROP, 
-     &            (Simulated(I), Measured(I), I= 1,ICOUNT)
-  750     FORMAT(I4,1X,A8,A2,I6,I3,1X,A2,80A8)
-          CLOSE(SLUN)
+!           Write evaluation data
+            WRITE(SLUN,750) RUN, EXPER, CG, TRTNUM, ROTNO, CROP, 
+     &              (Simulated(I), Measured(I), I= 1,ICOUNT)
+  750       FORMAT(I4,1X,A8,A2,I6,I3,1X,A2,80A8)
+            CLOSE(SLUN)
           END IF   ! VSH
          
-!        VSH  for evaluate.csv 
-         IF (FMOPT == 'C') THEN 
-            csvICOUNT = ICOUNT
-            csvOLAP = OLAP
-            CALL CsvOutEvOpsum(EXPER, RUN, CG, TRTNUM, ROTNO,  CROP, 
-     &Simulated, Measured, ICOUNT,   
-     &vCsvlineEvOpsum, vpCsvlineEvOpsum, vlngthEvOpsum) 
-            
-            CALL LinklstEvOpsum(vCsvlineEvOpsum)
-         END IF
-         
+!         VSH  for evaluate.csv 
+          IF (FMOPT == 'C') THEN 
+           csvICOUNT = ICOUNT
+           csvOLAP = OLAP
+           CALL CsvOutEvOpsum(EXPER, RUN, CG, TRTNUM, ROTNO,  CROP, 
+     &       Simulated, Measured, ICOUNT,   
+     &       vCsvlineEvOpsum, vpCsvlineEvOpsum, vlngthEvOpsum) 
+           
+           CALL LinklstEvOpsum(vCsvlineEvOpsum)
+          END IF
         END SELECT
       ENDIF
 
 !-------------------------------------------------------------------
 !     Write EnvSum.OUT file
+!-------------------------------------------------------------------
       IF (INDEX('YE',IDETO) > 0) THEN
         SELECT CASE(MODEL(1:5))
+!       Exclude these models because they do not use OPSTRESS
         CASE('CSCER', 'CSCRP', 'CSCAS', 'CSYCA', 'PRFRM')
-!         Exclude these models because they do not use OPSTRESS
-!         CSCER    CERES wheat, barley
-!         CSCRP    CSCRP wheat, barley
-!         CSCAS    CSCAS-Cassava
-!         CSYCA    CSYCA-Cassava
-!         PRFRM    Perennial forage
           CONTINUE 
 
-!       All other models, print out Evaluate.OUT
+!       All other models, print out EnvSum.OUT
         CASE DEFAULT
-!-------------------------------------------------------------------
 
-          IF (CROP .NE. 'FA') THEN
+          IF (CROP .NE. 'FA') THEN   ! VSH
 !           Open or create EnvSum.OUT file
             INQUIRE (FILE = ESFile, EXIST = FEXIST)
             IF (FEXIST) THEN
@@ -1123,18 +1105,18 @@ C-------------------------------------------------------------------
             CALL PrintTxtNeg(TCEQM, 7, 0, TCEQM_TXT)
 !           Reformat for this output
             CALL PrintTxtNeg(CO2EM, 7, 0, CO2EM_TXT)
-          
+   
             WRITE(ESLUN,820,ADVANCE='NO')
      &        RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
      &        CONTROL%FILEX(1:8),
-     &        N2OEC_TXT, NINT(CO2EM), CH4EM, NINT(TCEQM),
+     &        N2OEC_TXT, CO2EM_TXT, CH4EM_TXT, TCEQM_TXT,
      &        NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
      &        SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT,EPCP_TXT
           
 !             RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, FILEX
   820         FORMAT (I9,1X,I6,3(I3),1X,A2,1X,A8,1X,A8,               
 !             N2OEC_TXT, CO2EM_TXT, CH4EM, NINT(TCEQM),
-     &        A7, I7, F7.1, I7,
+     &        4A7, 
 !             NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
 !             SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
      &        I7, 11A7)
@@ -1250,6 +1232,37 @@ C-------------------------------------------------------------------
 
       RETURN
       End Subroutine PrintTxtNeg
+!=======================================================================
+
+!=======================================================================
+!  PrintFlex, Subroutine, C.H.Porter
+!     Flexible formatting. 
+!     Number of signigicant figures depends on value
+!   Input:  
+!     VALUE = real value
+!     FTXT  = format for real value
+!   Output:
+!     PRINT_TXT = text string for real value
+!=======================================================================
+      Subroutine PrintFlex(VALUE, Width, PRINT_TXT)
+
+      REAL, INTENT(IN) :: VALUE
+      INTEGER, INTENT(IN) :: Width
+      CHARACTER(LEN=*), INTENT(OUT) :: PRINT_TXT
+
+      IF (VALUE .LT. -0.00001) THEN
+        PRINT_TXT = "    -99"
+      ELSEIF (VALUE .LT. 1) THEN
+        CALL PrintTxtNeg(VALUE, Width, 3, PRINT_TXT)
+      ELSEIF (VALUE .LT. 10) THEN
+        CALL PrintTxtNeg(VALUE, Width, 2, PRINT_TXT)
+      ELSEIF (VALUE .LT. 100) THEN
+        CALL PrintTxtNeg(VALUE, Width, 1, PRINT_TXT)
+      ELSE
+        CALL PrintTxtNeg(VALUE, Width, 0, PRINT_TXT)
+      ENDIF
+
+      End Subroutine PrintFlex
 !=======================================================================
 
 !=======================================================================
