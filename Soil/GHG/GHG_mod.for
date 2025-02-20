@@ -232,8 +232,10 @@ C  05/01/2022 FO  Added N2O.csv output
 !-------------------------------------------------------------------
       USE CsvOutput 
       USE Linklist
+      USE SumModule
+
       IMPLICIT NONE
-      EXTERNAL GETLUN, HEADER, YR_DOY, SUMVALS
+      EXTERNAL GETLUN, HEADER, YR_DOY
       SAVE
 !-----------------------------------------------------------------------
 
@@ -583,8 +585,10 @@ C  06/15/2014 CHP Written
       SUBROUTINE OpGHG(CONTROL, ISWITCH, N2O_data, CH4_data) 
 !-------------------------------------------------------------------
       USE ModuleData
+      USE SumModule
+
       IMPLICIT NONE
-      EXTERNAL GETLUN, HEADER, YR_DOY, SUMVALS
+      EXTERNAL GETLUN, HEADER, YR_DOY
       SAVE
 !-----------------------------------------------------------------------
 
@@ -606,7 +610,7 @@ C  06/15/2014 CHP Written
       LOGICAL FEXIST
 
 !     Arrays which contain data for printing in SUMMARY.OUT file
-      INTEGER, PARAMETER :: SUMNUM = 1  !CO2EM now from GHG module
+      INTEGER, PARAMETER :: SUMNUM = 2  !CO2EM, TCEQM 
       CHARACTER*5, DIMENSION(SUMNUM) :: LABEL
       REAL, DIMENSION(SUMNUM) :: VALUE
 
@@ -749,6 +753,7 @@ C-----------------------------------------------------------------------
 !     Store Summary.out labels and values in arrays to send to
 !     OPSUM routines for printing.
       LABEL(1)  = 'CO2EM'; VALUE(1)  = CO2ENC
+      LABEL(2)  = 'TCEQM'; VALUE(2)  = TCEQC
 
 !     Send labels and values to OPSUM
       CALL SUMVALS (SUMNUM, LABEL, VALUE) 

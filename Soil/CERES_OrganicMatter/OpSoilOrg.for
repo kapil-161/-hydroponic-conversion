@@ -29,8 +29,10 @@
       USE ModuleDefs
       USE CsvOutput 
       USE Linklist
+      USE SumModule
+
       IMPLICIT NONE
-      EXTERNAL GETLUN, HEADER, YR_DOY, SUMVALS, INCDAT, INTERPOLATE
+      EXTERNAL GETLUN, HEADER, YR_DOY, INCDAT, INTERPOLATE
       SAVE
 !-----------------------------------------------------------------------
 

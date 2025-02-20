@@ -28,14 +28,14 @@
      &  TSOM3C, TSOM3E, TSOMC, TSOME, TSTRUCC, TSTRUCE)   !Input
 
 !     ------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
-                         !which contain control information, soil
-                         !parameters, hourly weather data.
+      USE ModuleDefs
+      USE SumModule
+
       ! VSH
       USE CsvOutput 
       USE Linklist
       IMPLICIT  NONE
-      EXTERNAL GETLUN, HEADER, YR_DOY, SUMVALS, INCDAT
+      EXTERNAL GETLUN, HEADER, YR_DOY, INCDAT
       SAVE
 !     ------------------------------------------------------------------
 

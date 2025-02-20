@@ -225,11 +225,11 @@ C
          ICO2   = UPCASE(ICO2)
 
          SELECT CASE (CROP)
-              CASE ('BN','SB','PN','PE','CH','PP','GY',
+           CASE ('BN','SB','PN','PE','CH','PP','GY',
      &              'VB','CP','CB','FB','GB','LT','AL',
      &              'CV','BG')
 !          Do nothing -- these crops fix N and can have Y or N
-              CASE DEFAULT; ISWSYM = 'N'  !other crops don't have a choice
+           CASE DEFAULT; ISWSYM = 'N'  !other crops, no choice
          END SELECT
 !        ENDIF
          IF (ISWCHE .EQ. ' ') THEN

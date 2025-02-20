@@ -29,10 +29,11 @@ C-----------------------------------------------------------------------
       USE ModuleDefs      
       USE FloodModule      
       USE CsvOutput   ! VSH 
+      USE SumModule
 
       IMPLICIT NONE
       EXTERNAL INFO, ERROR, WARNING, IPIBS, WEATHR, SOIL, SPAM, PLANT, 
-     &  OPSUM, MGMTOPS
+     &  MGMTOPS
       SAVE
 C-----------------------------------------------------------------------
 C     Crop, Experiment, Command line Variables

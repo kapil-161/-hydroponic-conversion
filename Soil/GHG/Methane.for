@@ -376,8 +376,10 @@ C  07/02/2021 CHP Written
 
 !-------------------------------------------------------------------
       USE ModuleDefs
+      USE SumModule
+
       IMPLICIT NONE
-      EXTERNAL GETLUN, HEADER, SUMVALS, YR_DOY
+      EXTERNAL GETLUN, HEADER, YR_DOY
       SAVE
 
       TYPE (ControlType) CONTROL

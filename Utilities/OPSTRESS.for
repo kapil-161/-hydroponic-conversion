@@ -14,6 +14,7 @@
 !  01/26/2010 CHP Add N productivity
 !  02/22/2011 CHP Add environmental factors during growth season, incl. CO2
 !  10/16/2020 CHP Cumulative "soil" evaporation includes mulch and flood evap
+!  02/17/2025 CHP Add EnvSum.OUT, one line per simulation 
 !-----------------------------------------------------------------------
 
       SUBROUTINE OPSTRESS(CONTROL, IDETO,   
@@ -22,11 +23,12 @@
       USE SumModule
       USE ModuleData
       IMPLICIT  NONE
-      EXTERNAL GETLUN, SUMVALS
+      EXTERNAL GETLUN !, SUMVALS
       SAVE
 
 !-----------------------------------------------------------------------
-      INTEGER, PARAMETER :: MaxStag = 5 !max # of stages output
+!     Moved this to OPSUM
+!     INTEGER, PARAMETER :: MaxStag = 5 !max # of stages output
 
 !     Interface variables
       TYPE (ControlType), Intent(IN)           :: CONTROL
@@ -116,7 +118,7 @@
       RADR  = 0.0
       CO2R  = 0.0
       CETR  = 0.0; CEPR = 0.0; CEOR = 0.0
-      CEVAPR=0.0  !; CESR = 0.0
+      CEVAPR= 0.0  !; CESR = 0.0
       W_growR = 0.0
       W_photR = 0.0
       N_growR = 0.0
@@ -157,16 +159,8 @@
       DMP_NUpt = -99.
       GrP_NUpt = -99.
 
-      NDCH  = -99 
-      TMINA = -99. 
-      TMAXA = -99. 
-      SRADA = -99. 
       DAYLA = -99. 
       CO2A  = -99. 
-      PRCP  = -99. 
-      ETCP  = -99. 
-      ESCP  = -99.
-      EPCP  = -99.
 
 !***********************************************************************
 !***********************************************************************
@@ -431,6 +425,10 @@
             ENDIF
           ENDIF !ISWNIT == 'Y'
 
+!         Send environmental summary variables to EnvSumDat 
+          CALL EnvSumDat(STTOT, NNR, CEOR, CEPR, CETR, CEVAPR, 
+     &      CO2R, DAYLR, RADR, RAINR, STAG, TMAXR, TMEANR, TMINR)
+
 !         Reset arrays for next run.
           TMAXR = 0.0
           TMINR = 0.0
@@ -440,8 +438,9 @@
           CO2R  = 0.0
           CETR  = 0.0
 !         CESR  = 0.0
-          CEVAPR  = 0.0
+          CEVAPR= 0.0
           CEPR  = 0.0
+          CEOR  = 0.0
           W_growR = 0.0
           W_photR = 0.0
           N_growR = 0.0
