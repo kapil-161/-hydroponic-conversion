@@ -534,7 +534,8 @@ C-----------------------------------------------------------------------
 
 C     05/01/2022 FO Added csv output for N2O.csv
 !     CSV output corresponding to N2O.csv
-      IF (FMOPT == 'C') THEN
+      IF (FMOPT == 'C' .AND. IDETN .EQ. 'Y') THEN  
+
           CALL CsvOutN2O(EXPNAME,CONTROL%RUN, CONTROL%TRTNUM,
      &      CONTROL%ROTNUM, CONTROL%REPNO,YEAR, DOY, DAS,
      &      CN2O_emitted, CN2_emitted, CNO_emitted, 

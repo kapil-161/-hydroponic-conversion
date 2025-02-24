@@ -62,7 +62,7 @@ C=======================================================================
       IMPLICIT NONE
       EXTERNAL IPWBAL, TILEDRAIN, WBSUM, SNOWFALL, 
      &  MULCHWATER, WBAL, OPWBAL, RNOFF, INFIL, SATFLO, UP_FLOW, 
-     &  SOILMIXING, SUMSW, WTDEPT, WaterTable
+     &  SOILMIXING, SUMSW, WTDEPT, WaterTable, OPSWBL
       SAVE
 !-----------------------------------------------------------------------
 !     Interface variables:
