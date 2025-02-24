@@ -96,12 +96,12 @@ C=======================================================================
         CHARACTER*23, DIMENSION(0:MaxStag) :: PhaseName
         INTEGER, DIMENSION(0:MaxStag) :: NDCH  !Phase duration (d)
         REAL, DIMENSION(0:MaxStag) ::
-     &    CO2,          !Atmospheric CO2 (ppm)
-     &    DAYL,         !Daylength (hr)
-     &    TMAX,         !Max temp oC per plant phase
-     &    TMIN,         !Min temp oC per plant phase
-     &    TAVG,         !Avg temp oC per plant phase
-     &    SRAD,         !Avg srad (MJ/m2/d) plant phase
+     &    CO2A,         !Avg atmospheric CO2 (ppm)
+     &    DAYLA,        !Avg daylength (hr)
+     &    TMAXA,        !Avg max temp oC per plant phase
+     &    TMINA,        !Avg min temp oC per plant phase
+     &    TAVGA,        !Avg temp oC per plant phase
+     &    SRADA,        !Avg srad (MJ/m2/d) plant phase
      &    PRCP,         !Tot precip (mm) plant phase
      &    ETCP,         !Tot ET (mm) per plant phase
      &    ESCP,         !Soil evap (mm) per plant phase
@@ -135,6 +135,7 @@ C-----------------------------------------------------------------------
       IMPLICIT NONE
       EXTERNAL ERROR, FIND, TIMDIF, GETLUN, LENSTRING, 
      &  CLEAR, ROUND
+
 !    &  PrintText, PrintTxtNeg, 
       SAVE
 
@@ -181,8 +182,9 @@ C-----------------------------------------------------------------------
 !     Added 01/27/2010 N productivity
       REAL DPNAM, DPNUM, YPNAM, YPNUM
 !     Added 02/23/2011 Seasonal average environmental data
-      INTEGER NDCH
-      REAL TMINA, TMAXA, SRADA, DAYLA, CO2A, PRCP, ETCP, ESCP, EPCP
+      INTEGER, DIMENSION(0:MaxStag) :: NDCH
+      REAL, DIMENSION(0:MaxStag) :: TMINA, TAVGA, TMAXA, SRADA, 
+     &  DAYLA, CO2A, PRCP, ETCP, ESCP, EPCP, PETP
       INTEGER CRST
       REAL CO2EM, N2OEM, CH4EM, TCEQM  !kg/ha
 
@@ -212,7 +214,7 @@ C-----------------------------------------------------------------------
       CHARACTER*9 DPNAM_TXT, DPNUM_TXT, YPNAM_TXT, YPNUM_TXT
       CHARACTER*7 TMINA_TXT, TMAXA_TXT, SRADA_TXT, DAYLA_TXT
       CHARACTER*7 CO2A_TXT, PRCP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
-      CHARACTER*7 TAVG_TXT, PETP_TXT, TCEQM_TXT, CH4EM_TXT
+      CHARACTER*7 TAVGA_TXT, PETP_TXT, TCEQM_TXT, CH4EM_TXT
       CHARACTER*7 N2OEC_TXT  !, N2OGC_TXT
       CHARACTER*8 CO2EM_TXT
 
@@ -438,18 +440,6 @@ C     Initialize OPSUM variables.
       SUMDAT % YPNAM  = -99.0 !Yield : N applied
       SUMDAT % YPNUM  = -99.0 !Yield : N uptake
 
-!     Average or cumulative environmental data, planting to harvest
-      SUMDAT % NDCH   = -99   !Number days
-      SUMDAT % TMINA  = -99.9 !Avg min daily temp (C) 
-      SUMDAT % TMAXA  = -99.9 !Avg max daily temp (C) 
-      SUMDAT % SRADA  = -99.9 !Avg solar rad (MJ/m2/d)
-      SUMDAT % DAYLA  = -99.9 !Avg daylength (hr/d) 
-      SUMDAT % CO2A   = -99.9 !Avg atm. CO2 (ppm) 
-      SUMDAT % PRCP   = -99.9 !Cumul rainfall (mm), planting to harvest
-      SUMDAT % ETCP   = -99.9 !Cumul ET (mm), planting to harvest
-      SUMDAT % ESCP   = -99.9 !Cumul soil evap (mm), planting to harvest
-      SUMDAT % EPCP   = -99.9 !Cumul transp (mm), planting to harvest
-
       SUMDAT % CRST   = -99   !End of season crop status code
 
       CALL GET('WEATHER','WSTA',WSTAT)
@@ -541,16 +531,19 @@ C     Initialize OPSUM variables.
       YPNAM  = SUMDAT % YPNAM !Yield : N applied
       YPNUM  = SUMDAT % YPNUM !Yield : N uptake
 
-      NDCH   = SUMDAT % NDCH  !Number days 
-      TMINA  = SUMDAT % TMINA  !Avg min daily temp (C) 
-      TMAXA  = SUMDAT % TMAXA  !Avg max daily temp (C) 
-      SRADA  = SUMDAT % SRADA !Avg solar rad (MJ/m2/d)
-      DAYLA  = SUMDAT % DAYLA !Avg daylength (hr/d) 
-      CO2A   = SUMDAT % CO2A  !Avg atm. CO2 (ppm) 
-      PRCP   = SUMDAT % PRCP  !Cumulative rainfall (mm) 
-      ETCP   = SUMDAT % ETCP  !Cumul ET (mm), planting to harvest
-      ESCP   = SUMDAT % ESCP  !Cumul soil evap (mm), planting to harvest
-      EPCP   = SUMDAT % EPCP  !Cumul transp (mm), planting to harvest
+!     Envrionmental summary variables arrays sent from OPSTRESS
+      NDCH   = ESDATA % NDCH  !Number days 
+      CO2A   = ESDATA % CO2A  !Avg atm. CO2 (ppm) 
+      DAYLA  = ESDATA % DAYLA !Avg daylength (hr/d) 
+      TMINA  = ESDATA % TMINA !Avg min daily temp (C) 
+      TAVGA  = ESDATA % TAVGA !Avg daily temp (C)
+      TMAXA  = ESDATA % TMAXA !Avg max daily temp (C) 
+      SRADA  = ESDATA % SRADA !Avg solar rad (MJ/m2/d)
+      PRCP   = ESDATA % PRCP  !Cumulative rainfall (mm) 
+      PETP   = ESDATA % PETP  !Cumul pot ET (mm) per plant phase
+      ETCP   = ESDATA % ETCP  !Cumul ET (mm), planting to harvest
+      ESCP   = ESDATA % ESCP  !Cumul soil evap (mm), planting to harvest
+      EPCP   = ESDATA % EPCP  !Cumul transp (mm), planting to harvest
 
       CRST   = SUMDAT % CRST  !End of season crop status code
 
@@ -739,30 +732,30 @@ C-------------------------------------------------------------------
         WRITE (NOUTDS,FMT,ADVANCE='NO') HIAM
 
 !       Handle formatting for real numbers which may have value of "-99"
-        CALL PrintText(DMPPM, "(F9.1)", DMPPM_TXT)
-        CALL PrintText(DMPPM, "(F9.1)", DMPPM_TXT)
-        CALL PrintText(DMPEM, "(F9.1)", DMPEM_TXT)
-        CALL PrintText(DMPTM, "(F9.1)", DMPTM_TXT)
-        CALL PrintText(DMPIM, "(F9.1)", DMPIM_TXT)
-        CALL PrintText(YPPM,  "(F9.1)", YPPM_TXT )
-        CALL PrintText(YPEM,  "(F9.1)", YPEM_TXT )
-        CALL PrintText(YPTM,  "(F9.1)", YPTM_TXT )
-        CALL PrintText(YPIM,  "(F9.1)", YPIM_TXT )
-        CALL PrintText(DPNAM, "(F9.1)", DPNAM_TXT)
-        CALL PrintText(DPNUM, "(F9.1)", DPNUM_TXT)
-        CALL PrintText(YPNAM, "(F9.1)", YPNAM_TXT)
-        CALL PrintText(YPNUM, "(F9.1)", YPNUM_TXT)
-        CALL PrintText(SRADA, "(F7.1)", SRADA_TXT)  !was F6.1
-        CALL PrintText(DAYLA, "(F7.1)", DAYLA_TXT)  !was F6.1
-        CALL PrintText(CO2A,  "(F7.1)", CO2A_TXT )
-        CALL PrintText(PRCP,  "(F7.1)", PRCP_TXT )
-        CALL PrintText(ETCP,  "(F7.1)", ETCP_TXT )
-        CALL PrintText(ESCP,  "(F7.1)", ESCP_TXT )
-        CALL PrintText(EPCP,  "(F7.1)", EPCP_TXT )
+        CALL PrintText(DMPPM,   "(F9.1)", DMPPM_TXT)
+        CALL PrintText(DMPPM,   "(F9.1)", DMPPM_TXT)
+        CALL PrintText(DMPEM,   "(F9.1)", DMPEM_TXT)
+        CALL PrintText(DMPTM,   "(F9.1)", DMPTM_TXT)
+        CALL PrintText(DMPIM,   "(F9.1)", DMPIM_TXT)
+        CALL PrintText(YPPM,    "(F9.1)", YPPM_TXT )
+        CALL PrintText(YPEM,    "(F9.1)", YPEM_TXT )
+        CALL PrintText(YPTM,    "(F9.1)", YPTM_TXT )
+        CALL PrintText(YPIM,    "(F9.1)", YPIM_TXT )
+        CALL PrintText(DPNAM,   "(F9.1)", DPNAM_TXT)
+        CALL PrintText(DPNUM,   "(F9.1)", DPNUM_TXT)
+        CALL PrintText(YPNAM,   "(F9.1)", YPNAM_TXT)
+        CALL PrintText(YPNUM,   "(F9.1)", YPNUM_TXT)
+        CALL PrintText(SRADA(0),"(F7.1)", SRADA_TXT)  !was F6.1
+        CALL PrintText(DAYLA(0),"(F7.1)", DAYLA_TXT)  !was F6.1
+        CALL PrintText(CO2A(0), "(F7.1)", CO2A_TXT )
+        CALL PrintText(PRCP(0), "(F7.1)", PRCP_TXT )
+        CALL PrintText(ETCP(0), "(F7.1)", ETCP_TXT )
+        CALL PrintText(ESCP(0), "(F7.1)", ESCP_TXT )
+        CALL PrintText(EPCP(0), "(F7.1)", EPCP_TXT )
 
 !       Allow negative values for TMAX, TMIN, and net CO2 emissions
-        CALL PrintTxtNeg(TMINA, 7, 1, TMINA_TXT)  !was 6 char wide
-        CALL PrintTxtNeg(TMAXA, 7, 1, TMAXA_TXT)  !was 6 char wide
+        CALL PrintTxtNeg(TMINA(0), 7, 1, TMINA_TXT)  !was 6 char wide
+        CALL PrintTxtNeg(TMAXA(0), 7, 1, TMAXA_TXT)  !was 6 char wide
         CALL PrintTxtNeg(CO2EM, 8, 1, CO2EM_TXT)
         CALL PrintFlex(N2OEM, 7, N2OEC_TXT)
         CALL PrintFlex(CH4EM, 7, CH4EM_TXT)
@@ -822,7 +815,7 @@ C-------------------------------------------------------------------
      &    DMPPM_TXT, DMPEM_TXT, DMPTM_TXT, DMPIM_TXT, 
      &                 YPPM_TXT, YPEM_TXT, YPTM_TXT, YPIM_TXT,
      &    DPNAM_TXT, DPNUM_TXT, YPNAM_TXT, YPNUM_TXT,
-     &    NDCH, TMAXA_TXT, TMINA_TXT, SRADA_TXT, DAYLA_TXT, 
+     &    NDCH(0), TMAXA_TXT, TMINA_TXT, SRADA_TXT, DAYLA_TXT, 
      &                 CO2A_TXT, PRCP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT,
      &    CRST
 
@@ -861,24 +854,23 @@ C-------------------------------------------------------------------
         
 !       VSH summary.csv header
         IF (FMOPT == 'C') THEN  
+          CALL CsvOutSumOpsum(RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP,
+     &      MODEL, CONTROL%FILEX(1:8), TITLET, FLDNAM, WSTAT,WYEAR,SLNO,
+     &      LATI,LONG,ELEV,YRSIM,YRPLT, EDAT, ADAT, MDAT, YRDOY, HYEAR, 
+     &      DWAP, CWAM, HWAM, HWAH, BWAH,
+!           &PWAM, HWUM, HNUMUM, HIAM, LAIX, HNUMAM, IRNUM, IRCM, PRCM, ETCM,
+     &      PWAM, HWUM, HNUMUM, HIAM, LAIX,EYLDH,HNUMAM,FCWAM, FHWAM,
+     &      HWAHF, FBWAH, FPWAM, IRNUM, IRCM, PRCM, ETCM,
+     &      EPCM, ESCM, ROCM, DRCM, SWXM, NINUMM, NICM, NFXM, NUCM, 
+     &      NLCM, NIAM, NMINC, CNAM, GNAM, N2OEM, PINUMM, PICM, PUPC,  
+     &      SPAM, KINUMM,KICM, KUPC, SKAM, RECM, ONTAM, ONAM, OPTAM, 
+     &      OPAM, OCTAM, OCAM, CO2EM, CH4EM, DMPPM, DMPEM, 
+     &      DMPTM, DMPIM, YPPM, YPEM, YPTM, YPIM, DPNAM, DPNUM, 
+     &      YPNAM, YPNUM, NDCH(0), TMAXA(0), TMINA(0), SRADA(0), 
+     &      DAYLA(0), CO2A(0), PRCP(0), ETCP(0), ESCP(0), EPCP(0), CRST,
+     &      vCsvlineSumOpsum, vpCsvlineSumOpsum, vlngthSumOpsum) 
 
-!           CALL CsvOutSumOpsum(RUN, TRTNUM, ROTNO, ROTOPT, CRPNO, CROP,
-            CALL CsvOutSumOpsum(RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP,
-     &MODEL, CONTROL%FILEX(1:8), TITLET, FLDNAM, WSTAT,WYEAR,SLNO,
-     &LATI,LONG,ELEV,YRSIM,YRPLT, EDAT, ADAT, MDAT, YRDOY, HYEAR, DWAP, 
-     &CWAM, HWAM, HWAH, BWAH,
-!     &PWAM, HWUM, HNUMUM, HIAM, LAIX, HNUMAM, IRNUM, IRCM, PRCM, ETCM,
-     &PWAM, HWUM, HNUMUM, HIAM, LAIX,EYLDH,HNUMAM,FCWAM, FHWAM,HWAHF, 
-     &FBWAH, FPWAM, IRNUM, IRCM, PRCM, ETCM,
-     &EPCM, ESCM, ROCM, DRCM, SWXM, NINUMM, NICM, NFXM, NUCM, NLCM, 
-     &NIAM, NMINC, CNAM, GNAM, N2OEM, PINUMM, PICM, PUPC, SPAM, KINUMM, 
-     &KICM, KUPC, SKAM, RECM, ONTAM, ONAM, OPTAM, OPAM, OCTAM, OCAM, 
-     &CO2EM, CH4EM, DMPPM, DMPEM, DMPTM, DMPIM, YPPM, YPEM, YPTM, YPIM, 
-     &DPNAM, DPNUM, YPNAM, YPNUM, NDCH, TMAXA, TMINA, SRADA, DAYLA, 
-     &CO2A, PRCP, ETCP, ESCP, EPCP, CRST,   
-     &vCsvlineSumOpsum, vpCsvlineSumOpsum, vlngthSumOpsum) 
-
-            CALL LinklstSumOpsum(vCsvlineSumOpsum) 
+          CALL LinklstSumOpsum(vCsvlineSumOpsum) 
         END IF
                 
       ENDIF
@@ -912,6 +904,7 @@ C-------------------------------------------------------------------
             WRITE(*,612) RUN2
           ENDIF
         ENDIF
+
   600 FORMAT('RUN    TRT FLO MAT TOPWT HARWT  RAIN  TIRR',
      &                    '   CET  PESW  TNUP  TNLF   TSON TSOC')
   601 FORMAT('RUN    ROT FLO MAT TOPWT HARWT  RAIN  TIRR',
@@ -1046,7 +1039,9 @@ C-------------------------------------------------------------------
 !       All other models, print out EnvSum.OUT
         CASE DEFAULT
 
-          IF (CROP .NE. 'FA') THEN   ! VSH
+!         ASCII format
+          IF (CROP .NE. 'FA' .AND. 
+     &       (FMOPT == 'A' .OR. FMOPT == ' ')) THEN
 !           Open or create EnvSum.OUT file
             INQUIRE (FILE = ESFile, EXIST = FEXIST)
             IF (FEXIST) THEN
@@ -1100,7 +1095,7 @@ C-------------------------------------------------------------------
             ENDIF
           
 !           These 3 variables are not in Summary.OUT
-            CALL PrintTxtNeg(ESData % TAVG(0), 7, 1, TAVG_TXT)
+            CALL PrintTxtNeg(ESData % TAVGA(0), 7, 1, TAVGA_TXT)
             CALL PrintText(ESData % PETP(0), "(F7.1)", PETP_TXT)
             CALL PrintTxtNeg(TCEQM, 7, 0, TCEQM_TXT)
 !           Reformat for this output
@@ -1110,35 +1105,50 @@ C-------------------------------------------------------------------
      &        RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
      &        CONTROL%FILEX(1:8),
      &        N2OEC_TXT, CO2EM_TXT, CH4EM_TXT, TCEQM_TXT,
-     &        NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
-     &        SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT,EPCP_TXT
+     &        NDCH(0), DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVGA_TXT, 
+     &        TMAXA_TXT, SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, 
+     &        ESCP_TXT, EPCP_TXT
           
+
 !             RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, FILEX
   820         FORMAT (I9,1X,I6,3(I3),1X,A2,1X,A8,1X,A8,               
 !             N2OEC_TXT, CO2EM_TXT, CH4EM, NINT(TCEQM),
      &        4A7, 
-!             NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVG_TXT, TMAXA_TXT,
+!             NDCH, DAYLA_TXT, CO2A_TXT, TMINA_TXT, TAVGA_TXT, TMAXA_TXT,
 !             SRADA_TXT, PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
      &        I7, 11A7)
           
             IF (ESData % PhaseCount > 0) THEN
               DO I = 1, ESData % PhaseCount
-                CALL PrintText(ESData % TMIN(I), "(F7.1)", TMINA_TXT)
-                CALL PrintText(ESData % TAVG(I), "(F7.1)", TAVG_TXT )
-                CALL PrintText(ESData % TMAX(I), "(F7.1)", TMAXA_TXT)
-                CALL PrintText(ESData % SRAD(I), "(F7.1)", SRADA_TXT)
-                CALL PrintText(ESData % PRCP(I), "(F7.1)", PRCP_TXT )
-                CALL PrintText(ESData % PETP(I), "(F7.1)", PETP_TXT )
-                CALL PrintText(ESData % ETCP(I), "(F7.1)", ETCP_TXT )
-                CALL PrintText(ESData % ESCP(I), "(F7.1)", ESCP_TXT )
-                CALL PrintText(ESData % EPCP(I), "(F7.1)", EPCP_TXT )
+                CALL PrintText(ESData % TMINA(I), "(F7.1)", TMINA_TXT)
+                CALL PrintText(ESData % TAVGA(I), "(F7.1)", TAVGA_TXT )
+                CALL PrintText(ESData % TMAXA(I), "(F7.1)", TMAXA_TXT)
+                CALL PrintText(ESData % SRADA(I), "(F7.1)", SRADA_TXT)
+                CALL PrintText(ESData % PRCP(I),  "(F7.1)", PRCP_TXT )
+                CALL PrintText(ESData % PETP(I),  "(F7.1)", PETP_TXT )
+                CALL PrintText(ESData % ETCP(I),  "(F7.1)", ETCP_TXT )
+                CALL PrintText(ESData % ESCP(I),  "(F7.1)", ESCP_TXT )
+                CALL PrintText(ESData % EPCP(I),  "(F7.1)", EPCP_TXT )
           
                 WRITE(ESLUN,'(I7,9A7)',ADVANCE='NO') ESData % NDCH(I),
-     &            TMINA_TXT, TAVG_TXT, TMAXA_TXT, SRADA_TXT, 
+     &            TMINA_TXT, TAVGA_TXT, TMAXA_TXT, SRADA_TXT, 
      &            PRCP_TXT, PETP_TXT, ETCP_TXT, ESCP_TXT, EPCP_TXT
               ENDDO
             ENDIF
-          ENDIF   !not fallow
+
+!         csv format
+          ELSEIF (CROP .NE. 'FA' .AND. FMOPT == 'C') THEN
+
+           CALL CsvOutEnvSum( 
+     &       RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
+     &       CONTROL%FILEX(1:8),
+     &       N2OEM, CO2EM, CH4EM, TCEQM, 
+     &       NDCH, CO2A, DAYLA, TMINA, TAVGA, TMAXA, SRADA, PRCP, 
+     &       PETP, ETCP, ESCP, EPCP,
+     &       vCsvlineEnvSum, vpCsvlineEnvSum, vlngthEnvSum) 
+          
+           CALL LinklstEnvSum(vCsvlineEnvSum)
+          ENDIF   !ascii or csv format
         END SELECT
       ENDIF     !IDETO switch for output
 
@@ -1379,16 +1389,16 @@ C-------------------------------------------------------------------
         CASE ('YPNAM');SUMDAT % YPNAM  = VALUE(I)
         CASE ('YPNUM');SUMDAT % YPNUM  = VALUE(I)
 
-        CASE ('NDCH'); SUMDAT % NDCH   = NINT(VALUE(I))
-        CASE ('TMINA');SUMDAT % TMINA  = VALUE(I)
-        CASE ('TMAXA');SUMDAT % TMAXA  = VALUE(I)
-        CASE ('SRADA');SUMDAT % SRADA  = VALUE(I)
-        CASE ('DAYLA');SUMDAT % DAYLA  = VALUE(I)
-        CASE ('CO2A'); SUMDAT % CO2A   = VALUE(I)
-        CASE ('PRCP'); SUMDAT % PRCP   = VALUE(I)
-        CASE ('ETCP'); SUMDAT % ETCP   = VALUE(I)
-        CASE ('ESCP'); SUMDAT % ESCP   = VALUE(I)
-        CASE ('EPCP'); SUMDAT % EPCP   = VALUE(I)
+!       CASE ('NDCH'); SUMDAT % NDCH   = NINT(VALUE(I))
+!       CASE ('TMINA');SUMDAT % TMINA  = VALUE(I)
+!       CASE ('TMAXA');SUMDAT % TMAXA  = VALUE(I)
+!       CASE ('SRADA');SUMDAT % SRADA  = VALUE(I)
+!       CASE ('DAYLA');SUMDAT % DAYLA  = VALUE(I)
+!       CASE ('CO2A'); SUMDAT % CO2A   = VALUE(I)
+!       CASE ('PRCP'); SUMDAT % PRCP   = VALUE(I)
+!       CASE ('ETCP'); SUMDAT % ETCP   = VALUE(I)
+!       CASE ('ESCP'); SUMDAT % ESCP   = VALUE(I)
+!       CASE ('EPCP'); SUMDAT % EPCP   = VALUE(I)
 
 !       From GHG_Mod
         CASE ('N2OEM');SUMDAT % N2OEM  = VALUE(I)
@@ -1472,12 +1482,12 @@ C=======================================================================
       ESData % PhaseCount = NSTAGES
       ESData % PhaseName  = STAG
       ESData % NDCH = NNR
-      ESData % CO2  = CO2R
-      ESData % DAYL = DAYLR
-      ESData % TMAX = TMAXR
-      ESData % TMIN = TMINR
-      ESData % TAVG = TMEANR
-      ESData % SRAD = RADR
+      ESData % CO2A  = CO2R
+      ESData % DAYLA = DAYLR
+      ESData % TMAXA = TMAXR
+      ESData % TMINA = TMINR
+      ESData % TAVGA = TMEANR
+      ESData % SRADA = RADR
       ESData % PRCP = RAINR
       ESData % ETCP = CETR
       ESData % ESCP = CEVAPR

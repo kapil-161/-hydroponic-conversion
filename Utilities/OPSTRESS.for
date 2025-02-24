@@ -56,7 +56,7 @@
       REAL CumNit
       REAL TMINA, TMAXA, SRADA, DAYLA, CO2A, PRCP, ETCP, ESCP, EPCP
 
-      REAL, DIMENSION(0:MaxStag) :: N_photR, CETR, CEPR, DAYLR, CEVAPR    !, CESR 
+      REAL, DIMENSION(0:MaxStag) :: N_photR, CETR, CEPR, DAYLR, CEVAPR
       REAL, DIMENSION(0:MaxStag) :: N_growR, P_growR, P_photR
       REAL, DIMENSION(0:MaxStag) :: RAINR, RADR, CO2R
       REAL, DIMENSION(0:MaxStag) :: W_photR, TMAXR, TMINR, W_growR
@@ -271,7 +271,7 @@
         WRITE (*,500)
       ENDIF
 
-      DO I = 0, STTOT
+      DO I = 0, MaxStag
         IF (NNR(I) > 0) THEN
           TMAXR(I) = TMAXR(I)/ NNR(I)
           TMINR(I) = TMINR(I)/ NNR(I)
@@ -287,6 +287,19 @@
           N_photR(I) = 1. - AMIN1(1.0, (N_photR(I) / NNR(I)))
           P_growR(I) = 1. - (P_growR(I) / NNR(I))
           P_photR(I) = 1. - (P_photR(I) / NNR(I))
+        ELSE
+          NNR(I)   = -99
+          TMAXR(I) = -99.
+          TMINR(I) = -99.
+          TMEANR(I)= -99.
+          DAYLR(I) = -99.
+          RADR (I) = -99.
+          CO2R (I) = -99.
+          RAINR    = -99.
+          CETR     = -99.
+          CEVAPR   = -99.
+          CEPR     = -99.
+          CEOR     = -99.
         ENDIF
 
         IF (I == 0 .OR. NNR(I) == 0) CYCLE
