@@ -256,7 +256,7 @@ C-----------------------------------------------------------------------
            IF (NDEM .GT. 0.0) THEN           ! Luxury uptake.
               RATIO = AMIN1 (AVAILN/NDEM, 1.25)
               TNDEM = TNDEM * RATIO
-!           
+
 !             Accumulate less N in the tubers under excess N conditions.
 !             Don't allow any excess N to accumulate in the roots unless 
 !             a provision is added to re-allocate excess N in the roots 
