@@ -181,7 +181,7 @@
       USE CER_First_Trans_m
       
       IMPLICIT NONE
-      EXTERNAL CER_Init, CER_Growth, CER_Integrate, CER_Output
+      EXTERNAL CER_Init, CER_Growth, CER_Integrate, CER_Output, GETDESC
 
 !      TYPE (ControlType), intent (in) :: CONTROL ! Defined in ModuleDefs
 !      TYPE (WeatherType), intent (in) :: WEATHER ! Defined in ModuleDefs
@@ -212,7 +212,7 @@
 
 
         INTEGER ACOUNT
-        CHARACTER*6, DIMENSION(EvaluateNum) :: OLAB, OLAP !OLAP in dap
+        CHARACTER*6, DIMENSION(EvaluateNum) :: OLAB
         CHARACTER*40 DESCRIP(EvaluateNum)    
         
         
