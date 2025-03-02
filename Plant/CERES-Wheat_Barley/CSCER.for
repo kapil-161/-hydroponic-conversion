@@ -256,7 +256,8 @@
      &    'SPDAT ',
      &    'JDAT  ',
      &    'GS059 ',
-     &    6*'    '/
+     &    'BWAM  ',
+     &    5*'    '/
 
       YEARDOY = YEAR*1000 + DOY
 
