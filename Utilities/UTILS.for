@@ -1016,21 +1016,24 @@ C        USE IFPORT
             SYS = SYSTEM("cp *.OUT *.BAK")
             SYS = SYSTEM("rm *.OUT")      
           ELSE
-            OPEN (LUNTMP, FILE="TEMP.BAT", STATUS = 'REPLACE')
-            WRITE(LUNTMP,'(A)') "ECHO OFF"
-            WRITE(LUNTMP,'(A)') "COPY /Y *.OUT *.BAK"
-            WRITE(LUNTMP,'(A)') "ERASE *.OUT"
-            CLOSE (LUNTMP)
+!            OPEN (LUNTMP, FILE="TEMP.BAT", STATUS = 'REPLACE')
+!            WRITE(LUNTMP,'(A)') "ECHO OFF"
+             SYS = SYSTEM("ECHO OFF")
+!            WRITE(LUNTMP,'(A)') "COPY /Y *.OUT *.BAK"
+             SYS = SYSTEM("COPY /Y *.OUT *.BAK")
+!            WRITE(LUNTMP,'(A)') "ERASE *.OUT"
+             SYS = SYSTEM("ERASE *.OUT")
+!            CLOSE (LUNTMP)
 
-            SYS = SYSTEM("TEMP.BAT >TEMP.BAK")
+!            SYS = SYSTEM("TEMP.BAT >TEMP.BAK")
             
 !         Delete TEMP.BAT file
-            OPEN (LUNTMP, FILE = "TEMP.BAT", STATUS = 'UNKNOWN')
-            CLOSE (LUNTMP, STATUS = 'DELETE')
+!            OPEN (LUNTMP, FILE = "TEMP.BAT", STATUS = 'UNKNOWN')
+!            CLOSE (LUNTMP, STATUS = 'DELETE')
       
 !         Delete TEMP.BAK file
-            OPEN (LUNTMP, FILE = "TEMP.BAK", STATUS = 'UNKNOWN')
-            CLOSE (LUNTMP, STATUS = 'DELETE')
+!            OPEN (LUNTMP, FILE = "TEMP.BAK", STATUS = 'UNKNOWN')
+!            CLOSE (LUNTMP, STATUS = 'DELETE')
           ENDIF
 !         Output.CDE file is missing
           WRITE(MSG(1),'(A,A)') "OUTPUT.CDE file not found."
@@ -1129,8 +1132,8 @@ C        USE IFPORT
 !       Re-name output files based on FNAME
 !       Open temporary batch file
         CALL GETLUN("OUTBAT", LUNTMP)
-        IF(DSSATPRO .NE. 'DSSATPRO.L48')
-     &       OPEN (LUNTMP, FILE="TEMP.BAT", STATUS = 'REPLACE')
+!        IF(DSSATPRO .NE. 'DSSATPRO.L48')
+!     &       OPEN (LUNTMP, FILE="TEMP.BAT", STATUS = 'REPLACE')
         COUNT = 0
 
         DO i = 1, FileData % NumFiles
@@ -1150,7 +1153,8 @@ C        USE IFPORT
                   SYS = SYSTEM('rm ' // TempName)
               ELSE
                   BatchCommand = 'ERASE ' // TempName
-                  WRITE(LUNTMP, '(A50)') BatchCommand
+                  !WRITE(LUNTMP, '(A50)') BatchCommand
+                  SYS = SYSTEM(BatchCommand)
                   COUNT = COUNT + 1
               ENDIF
             ENDIF
@@ -1163,12 +1167,15 @@ C        USE IFPORT
                   !Copy from default filename into new filename 
                   BatchCommand = 'COPY ' // FileName(i) // ' '  
      &                             // TempName // ' /Y'
-                  WRITE(LUNTMP,'(A50)') BatchCommand
+                  !WRITE(LUNTMP,'(A50)') BatchCommand
+                  SYS = SYSTEM(BatchCommand)
+                  
 
                   !Delete old file
                   BatchCommand = 'ERASE ' // FileName(i)
-                  WRITE(LUNTMP,'(A50)') BatchCommand
-                  WRITE(LUNTMP, '(" ")')
+                  !WRITE(LUNTMP,'(A50)') BatchCommand
+                  !WRITE(LUNTMP, '(" ")')
+                  SYS = SYSTEM(BatchCommand)
                   COUNT = COUNT + 2
             ENDIF
 
@@ -1191,9 +1198,9 @@ C        USE IFPORT
 
         CLOSE (LUNTMP)
 
-        IF (COUNT > 0) THEN
+!        IF (COUNT > 0) THEN
 !         Run batch file - direct output to TEMP.BAK file
-          BatchCommand = "TEMP.BAT >TEMP.BAK"
+!          BatchCommand = "TEMP.BAT >TEMP.BAK"
 C-KRT February 2, 2024
 C-KRT This file renaming strategy is not compatible with Linux systems.
 C-KRT The Linux operating system will fail to run the following BatchCommand.
@@ -1207,19 +1214,19 @@ C-TF March 3, 2025
 C-TF Update: Fixed this issue by checking which OS DSSAT is currently 
 C-TF running via DSSATPRO. Sequence file are now also being generated in 
 C-TF unix-based systems.
-          SYS = SYSTEM(BatchCommand)
+!          SYS = SYSTEM(BatchCommand)
   
 !         Delete TEMP.BAT file
-          OPEN (LUNTMP, FILE = "TEMP.BAT", STATUS = 'UNKNOWN')
-          CLOSE (LUNTMP, STATUS = 'DELETE')
+!          OPEN (LUNTMP, FILE = "TEMP.BAT", STATUS = 'UNKNOWN')
+!          CLOSE (LUNTMP, STATUS = 'DELETE')
   
 !         Delete TEMP.BAK file
-          OPEN (LUNTMP, FILE = "TEMP.BAK", STATUS = 'UNKNOWN')
-          CLOSE (LUNTMP, STATUS = 'DELETE')
-        ELSE
+!          OPEN (LUNTMP, FILE = "TEMP.BAK", STATUS = 'UNKNOWN')
+!          CLOSE (LUNTMP, STATUS = 'DELETE')
+!        ELSE
 !         Close empty batch file
-          CLOSE (LUNTMP, STATUS = 'DELETE')
-        ENDIF
+!          CLOSE (LUNTMP, STATUS = 'DELETE')
+!        ENDIF
 
       ENDIF
 
