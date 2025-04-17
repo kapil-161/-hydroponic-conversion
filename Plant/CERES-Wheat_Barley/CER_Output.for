@@ -1262,8 +1262,9 @@
             ENDIF
             
             ! If nothing in A-file,use X-file
-            IF (EDATM.LE.0) edatm = emdatm   
-            
+            IF (EDATM.LE.0 .AND. emdatm .GT. 0) THEN
+              edatm = CSTIMDIF(YEARPLT,emdatm)
+            ENDIF
             ! END OF A-FILE READS
             
 !-----------------------------------------------------------------------
