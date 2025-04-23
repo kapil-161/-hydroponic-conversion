@@ -530,10 +530,6 @@ C       extraction (based on yesterday's values) for each soil layer.
 !       content
       DLAYR_YEST = DLAYR
 
-!      CALL OPWBAL(CONTROL, ISWITCH, 
-!     &    CRAIN, DLAYR, FLOODWAT, IRRAMT, LL, MULCH,      !Input
-!     &    NLAYR, RUNOFF, SOILPROP, SW, TDFC, TDFD,        !Input
-!     &    TDRAIN, TRUNOF, WTDEP)                          !Input
 
 !***********************************************************************
 !***********************************************************************
