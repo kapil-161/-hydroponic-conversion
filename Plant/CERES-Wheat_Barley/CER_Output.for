@@ -1033,6 +1033,7 @@
 !             READA_Y4K needs fileA name only. FILEA variable contains
 !             the entire path to the file.
               FILEA_NAME = EXCODE(1:8)//'.'//EXCODE(9:10)//'A'
+              PATHEX = FILEADIR
               CALL READA_Y4K(FILEA_NAME, PATHEX,OLAB, TRT_ROT, 
      &              YEARSIM, X)
              
@@ -1261,8 +1262,9 @@
             ENDIF
             
             ! If nothing in A-file,use X-file
-            IF (EDATM.LE.0) edatm = emdatm   
-            
+            IF (EDATM.LE.0 .AND. emdatm .GT. 0) THEN
+              edatm = CSTIMDIF(YEARPLT,emdatm)
+            ENDIF
             ! END OF A-FILE READS
             
 !-----------------------------------------------------------------------
