@@ -1531,7 +1531,7 @@ CH4STD CH4Stored       CH4 stored in soil and floodwater (kg[C]/ha)             
 CO2EC  Cum CO2 emitted Cumulative CO2 emissions from soil (kg[C]/ha)            .
 CO2ED  CO2emission kg  Daily CO2 emission (kg[C]/ha)                            .
 CO2GED CO2emission g   Daily CO2 emission (g[C]/ha)                             .
-CO2ENC CO2emi net kg/d Cumulative net CO2 emissions kg/d                        .
+CO2ENC CO2emi net kg/d Cumulative net CO2 emissions kg/ha                        .
 CO2END CO2emi net g/d  Daily net CO2 emissions kg/d                             .
 CO2TC  CumNewCO2       Cumul. CO2 from surface + soil OM decomp. (kg[C]/ha)     .
 CO2TD  newCO2Tot       Daily CO2 from surface + soil OM decomp. (g[C]/ha)       .
