@@ -303,7 +303,7 @@
             CASE ('PR')       ! Bell pepper
               !DMC(NPP) = (5. + 7.2 * EXP(-7.5 * PAGE / 40.)) / 100.
               ! HBD from data of Wurbs et al. (2012) and Marcelis & Baan Hofman-Eijer (1995)
-              DMC(NPP) = (5.6165 + 11.5396 * EXP(-3.6197 * PAGE / 40.)) / 100.   ! R nls fitting considering DAA < 41
+              DMC(NPP) = (5.6165+11.5396*EXP(-3.6197*PAGE/40.))/100.   ! R nls fitting considering DAA < 41
             CASE ('SR')       ! Strawberry
               !Fixed value for Strawberry. 
               !From Code from Ken Boote / VSH
