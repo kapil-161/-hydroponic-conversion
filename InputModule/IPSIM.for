@@ -551,7 +551,7 @@ C    Select Model Name and Path -- order of priority:
 !         over all other values if valid. (Done in External_SimControls)
 !     CRMODEL is read from FILEX.  Use this if no control file.  
 !     MODELARG is from command line argument list. Third priority. 
-!     Last, use value from DSSATPRO.v??.
+!     Last, use value from DSSATPRO.vxx.
 C-----------------------------------------------------------------------
 !     -------------------------------------------------
 !     Line 1
@@ -692,6 +692,7 @@ C-----------------------------------------------------------------------
         NSWITCH = 1
       ENDIF
 
+!     ==============================================================
 !     -------------------------------------------------
 !     Line 4
 !     -------------------------------------------------
@@ -754,7 +755,7 @@ C     TF, FO & DP - 2022-07-12 - AutomaticMOW Switch
 !     By default, use ASCII outputs
       IF (INDEX('CA',FMOPT) < 1) FMOPT = 'A'
 
-!     IDETL = VBOSE. 
+!     IDETL = VBOSE
 !       0  Only Summary.OUT
 !       N  Minimal output  
 !       Y  Normal output   
