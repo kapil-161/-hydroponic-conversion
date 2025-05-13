@@ -185,6 +185,7 @@ CRGRO    SU   CROPGRO-Sunflower
 CRGRO    TM   CROPGRO-Tomato
 CRGRO    VB   CROPGRO-Velvetbean
 CSCER    BA   CERES-Barley
+CSCER    RY   CSCER-Rye
 CSCER    WH   CERES-Wheat
 CSCRP    BA   CROPSIM-Barley
 CSCRP    WH   CROPSIM-Wheat
