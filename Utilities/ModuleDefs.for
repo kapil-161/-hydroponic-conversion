@@ -450,7 +450,7 @@ C             CHP Added TRTNUM to CONTROL variable.
 !     Data transferred from management routine 
       Type MgmtType
         REAL DEPIR, EFFIRR, FERNIT, IRRAMT, TOTIR, TOTEFFIRR
-        REAL MgmtWTD, ICWD
+        REAL MgmtWTD, ICWD, AdjWTD
 
 !       Vectors to save growth stage based irrigation
         REAL V_AVWAT(20)    
@@ -719,6 +719,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('IRRAMT'); Value = SAVE_data % MGMT % IRRAMT
         Case ('FERNIT'); Value = SAVE_data % MGMT % FERNIT
         Case ('WATTAB'); Value = SAVE_data % MGMT % MgmtWTD
+        Case ('ADJWTD'); Value = SAVE_data % MGMT % AdjWTD
         Case ('ICWD'); Value = SAVE_data % MGMT % ICWD
         Case DEFAULT; ERR = .TRUE.
         END SELECT
@@ -862,6 +863,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('IRRAMT'); SAVE_data % MGMT % IRRAMT = Value
         Case ('FERNIT'); SAVE_data % MGMT % FERNIT = Value
         Case ('WATTAB'); SAVE_data % MGMT % MgmtWTD = Value
+        Case ('ADJWTD'); SAVE_data % MGMT % AdjWTD = Value
         Case ('ICWD'); SAVE_data % MGMT % ICWD = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT

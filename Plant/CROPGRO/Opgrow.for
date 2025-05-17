@@ -156,14 +156,9 @@ C  Calls:     None
         N_LYR = MIN(10, MAX(4,SOILPROP%NLAYR))
 
         IF (FMOPT == 'A' .OR. FMOPT == ' ') THEN    ! VSH
-!        IF (ISWPHO .NE. 'N') THEN
           WRITE (NOUTDG, 100) "Root Dens. (cm/cm3) by soil ",
      &      "depth (cm):",(SoilProp%LayerText(L), L=1,N_LYR)
   100     FORMAT("!",251X,A,A,/,"!",246X,10A8) 
-!        ELSE
-!          WRITE (NOUTDG,102) (SoilProp%LayerText(L), L=1,N_LYR)
-!  102     FORMAT("!",216X,"Soil Layer depths (cm):",/,"!",211X,10A8)
-!        ENDIF
 
           WRITE (NOUTDG,200, ADVANCE='NO')
   200     FORMAT('@YEAR DOY   DAS   DAP',
@@ -416,31 +411,29 @@ C-----------------------------------------------------------------------
      &        EXW_AV, PCNLP, SHELPC, HIP, NINT(PODWTD*10.),
      &        NINT((PODWTD+PODWT)*10.), SLAP, CANHT, CANWH, (DWNOD*10.),
      &        (RTDEP/100.), NINT(TRLV), (RLV(I),I=1,N_LYR)
-  314     FORMAT (1X,F6.3,1X,F7.2,2(1X,F6.2),
+  314       FORMAT (1X,F6.3,1X,F7.2,2(1X,F6.2),
      &        2(1X,I6),1X,F6.1,2(1X,F6.2),1X,F6.1,1X,F6.2,
      &        I7,11(1X,F7.2))
 
             WRITE (NOUTDG,316) 
-     &        NINT(CUMSENSURF), NINT(CUMSENSOIL)   !,SENSURFT,SENSOILT
-!     &        , EOP, TRWUP, WRDOTN
+     &        NINT(CUMSENSURF), NINT(CUMSENSOIL)   
   316       FORMAT (I8,1X,I7, F10.1)
           END IF   ! VSH
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
 !         VSH CSV output corresponding to PlantGro.OUT
           IF (FMOPT == 'C') THEN
-             CALL CsvOut(
-     &         EXPNAME,CONTROL%RUN, CONTROL%TRTNUM,CONTROL%ROTNUM, 
-     &         CONTROL%REPNO, YEAR, DOY, DAS, DAP, VSTAGE, RSTAGE, XLAI,
-     &         WTLF, STMWT, SDWT, LINTW, LINTP,
-     &         RTWT, VWAD, TOPWT, SEEDNO, SDSIZE, HI, PODWT,
-     &         PODNO, SWF_AV, TUR_AV, NST_AV, PS1_AV, PS2_AV, KST_AV, 
-     &         EXW_AV, PCNLP, SHELPC, HIP, PODWTD, SLAP, CANHT, CANWH,
-     &         DWNOD, RTDEP, TRLV, N_LYR, RLV, CUMSENSURF, CUMSENSOIL,
-     &         vCsvline, vpCsvline, vlngth)
-          
-             CALL Linklst(vCsvline)
-          END IF
-      
+            CALL CsvOut(EXPNAME,CONTROL%RUN, CONTROL%TRTNUM, 
+     &        CONTROL%ROTNUM, CONTROL%REPNO, YEAR, DOY, DAS, DAP, 
+     &        VSTAGE, RSTAGE, XLAI, WTLF, STMWT, SDWT, LINTW, LINTP,
+     &        RTWT, VWAD, TOPWT, SEEDNO, SDSIZE, HI, PODWT,
+     &        PODNO, SWF_AV, TUR_AV, NST_AV, PS1_AV, PS2_AV, KST_AV, 
+     &        EXW_AV, PCNLP, SHELPC, HIP, PODWTD, SLAP, CANHT, CANWH,
+     &        DWNOD, RTDEP, TRLV, N_LYR, RLV, CUMSENSURF, CUMSENSOIL,
+     &        vCsvline, vpCsvline, vlngth)
+
+            CALL Linklst(vCsvline)
+          ENDIF
+
 !         Set average stress factors since last printout back to zero
           SWF_AV = 0.0
           TUR_AV = 0.0
