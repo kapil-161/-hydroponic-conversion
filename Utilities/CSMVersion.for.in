@@ -17,9 +17,10 @@
         INTEGER :: Build = @BUILD@
       END TYPE VersionType
       TYPE (VersionType) Version
-      CHARACTER(len=*), PARAMETER :: VBranch = 'develop'
+      CHARACTER(len=*), PARAMETER :: VBranch = '-@BRANCH@'
 
 !     Version history:
+!       4.8.5.21  FO 2025-07-01 v4.8.5.21 PR 510 Commit SHA: 8430559
 !       4.8.5.20  FO 2025-06-27 v4.8.5.20 PR 506 Commit SHA: 4c42c4c
 !       4.8.5.19  FO 2025-06-27 v4.8.5.19 PR 508 Commit SHA: f1ee30a
 !       4.8.5.18  FO 2025-06-27 v4.8.5.18 PR 505 Commit SHA: 97ab643
