@@ -416,7 +416,8 @@ C-----------------------------------------------------------------------
      &    RLV, RSTAGE, RTDEP, RTWT, SATFAC, SDWT, SEEDNO, 
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
-     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP) 
+     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
+     &    WTNSH) 
 
 !     Initialize Overview.out file.
       CALL OPHARV(CONTROL, ISWITCH, 
@@ -656,7 +657,8 @@ C-----------------------------------------------------------------------
      &    RLV, RSTAGE, RTDEP, RTWT, SATFAC, SDWT, SEEDNO, 
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
-     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP)
+     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
+     &    WTNSH)
 
       CALL OPHARV (CONTROL, ISWITCH, 
      &    AGEFAC, CANHT, CANNAA, CANWAA, CROP,            !Input
@@ -1313,7 +1315,8 @@ C-----------------------------------------------------------------------
      &    RLV, RSTAGE, RTDEP, RTWT, SATFAC, SDWT, SEEDNO, 
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
-     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP)
+     &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
+     &    WTNSH)
 
         IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
           CALL P_CGRO (DYNAMIC, ISWITCH, 
