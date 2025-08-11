@@ -520,6 +520,7 @@ SENNS  Sen N to soil   Senesced N added to soil (kg/(ha.d))                     
 SENNT  Sen N kg/ha.d   Senesced N added to litter+soil (kg/(ha.d))              .
 SENWT  Sen wt kg/ha.d  Senesced wt added to litter+soil (kg/(ha.d))             .
 SHND   Shell N %       Shell N concentration (%)                                .
+SHNAD  Shell N kg/ha   Shell N (kg/ha)                                          .
 SN%D   Stem N %        Stem N concentration (%)                                 .
 SN%RD  ShootN% relativ Shoot tissue relative (to critical) N conc. (%)          .
 SNAD   Stem N kg/ha    Stem N (kg/ha)                                           .

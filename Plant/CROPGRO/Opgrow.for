@@ -27,7 +27,7 @@ C  Calls:     None
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
      &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
-     &    WTNSH)
+     &    WTNRT, WTNSH)
 
 !-----------------------------------------------------------------------
       USE ModuleDefs     !Definitions of constructed variable types, 
@@ -65,7 +65,7 @@ C  Calls:     None
       REAL RLV(NL), TRLV
       REAL TGRO(TS)
 
-      REAL WTNCAN,WTNLF,WTNST,WTNSD,WTNUP,WTNFX
+      REAL WTNCAN,WTNLF,WTNST,WTNRT,WTNSD,WTNUP,WTNFX
       REAL WTNVEG,PCNVEG,NFIXN    
       REAL PCNST,PCNRT,PCNSH,PCNSD
       REAL WTNSH, PCNPOD, PNAD
@@ -222,7 +222,7 @@ C  Calls:     None
 !CHP &      '  RN%D  NFXD')
      &      '   RN%D   NFXD   SNN0C   SNN1C',
 ! HBD     
-     &      '   SHNAD   FRN%D   FRNAD')
+     &      '    RNAD   SHNAD   FRN%D   FRNAD')
 
 !-----------------------------------------------------------------------
 !         Initialize daily plant carbon output file
@@ -471,10 +471,10 @@ C-----------------------------------------------------------------------
      &       (WTNSD*10), (WTNVEG*10), PCNSDP, PCNVEG, (WTNFX*10),
      &       (WTNUP*10), (WTNLF*10), (WTNST*10), PCNLP, PCNSTP,
      &       PCNSHP, PCNRTP, NFIXN*10, CUMSENSURFN, CUMSENSOILN,
-     &       (WTNSH*10), PCNPOD, PNAD*10
+     &       (WTNRT*10), (WTNSH*10), PCNPOD, PNAD*10
   410       FORMAT(1X,I4,1X,I3.3,2(1X,I5),3(1X,F7.1),2(1X,F7.2),1X,
      &       2(1X,F7.1),2(1X,F7.1),2(1X,F7.2),1X,F7.1,2(1X,F6.1),
-     &       5(1X,F7.2))
+     &       6(1X,F7.2))
           END IF    ! VSH
 
 !         VSH

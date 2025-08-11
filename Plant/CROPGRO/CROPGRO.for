@@ -1316,7 +1316,7 @@ C-----------------------------------------------------------------------
      &    SENESCE, SLA, STMWT, SWFAC, TGRO, TGROAV, TOPWT, 
      &    TOTWT, TURFAC, VSTAGE, WTLF, WTNCAN, WTNLF, WTNST, 
      &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
-     &    WTNSH)
+     &    WTNRT, WTNSH)
 
         IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
           CALL P_CGRO (DYNAMIC, ISWITCH, 
