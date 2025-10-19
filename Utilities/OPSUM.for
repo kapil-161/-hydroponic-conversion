@@ -1141,7 +1141,7 @@ C-------------------------------------------------------------------
 
            CALL CsvOutEnvSum( 
      &       RUN, TRTNUM, ROTNO, ROTOPT, REPNO, CROP, MODEL, 
-     &       CONTROL%FILEX(1:8),
+     &       MaxStag, CONTROL%FILEX(1:8),
      &       N2OEM, CO2EM, CH4EM, TCEQM, 
      &       NDCH, CO2A, DAYLA, TMINA, TAVGA, TMAXA, SRADA, PRCP, 
      &       PETP, ETCP, ESCP, EPCP,
