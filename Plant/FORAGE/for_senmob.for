@@ -325,9 +325,24 @@ C    Find and Read Roots section
       ENDIF
 
 C-----------------------------------------------------------------------
+C
+C     ***** READ Storage organ senescence parameters *****
+C
+C-----------------------------------------------------------------------
+        SECTION = '!*STOR'
+        CALL FIND(LUNCRP, SECTION, LNUM, FOUND)
+        IF (FOUND .EQ. 0) THEN
+        CALL ERROR(ERRKEY, 1, FILECC, LNUM)
+        ELSE
+        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
+        READ(CHAR,'(F6.0)',IOSTAT=ERR) SENSR
+        IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
+        ENDIF
+
+C-----------------------------------------------------------------------
 C    Find and Read Surviving section  Added by Diego
 !-----------------------------------------------------------------------
-      LNUM = 1
       SECTION = '!*SURVIVI'
       CALL FIND(LUNCRP, SECTION, LNUM, FOUND)
             IF (FOUND .EQ. 0) THEN
@@ -346,22 +361,6 @@ C    Find and Read Surviving section  Added by Diego
             READ(CHAR,'(6F6.0)',IOSTAT=ERR) (YMOSWF(I),I=1,4)
             IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
       ENDIF
-
-C-----------------------------------------------------------------------
-C
-C     ***** READ Storage organ senescence parameters *****
-C
-C-----------------------------------------------------------------------
-        SECTION = '!*STOR'
-        CALL FIND(LUNCRP, SECTION, LNUM, FOUND)
-        IF (FOUND .EQ. 0) THEN
-        CALL ERROR(ERRKEY, 1, FILECC, LNUM)
-        ELSE
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        READ(CHAR,'(F6.0)',IOSTAT=ERR) SENSR
-        IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,LNUM)
-        ENDIF
 
 
 
