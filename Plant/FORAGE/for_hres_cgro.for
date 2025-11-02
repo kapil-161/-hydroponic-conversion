@@ -107,7 +107,7 @@ C=======================================================================
 !         concentration.
 
 !         chp 2024-07-01 HResLig should be in units of kg/ha! Don't divide by HResWt(SRFC)!
-        HResLig(SRFC) = (LFRES * PLIGLF + STMRES * PLIGST +
+          HResLig(SRFC) = (LFRES * PLIGLF + STMRES * PLIGST +
      &      SDRES * PLIGSD + SHLRES * PLIGSH) ! / HResWt(SRFC)
         ENDIF 
 
@@ -118,7 +118,7 @@ C=======================================================================
 !       by layer).
         TRLV = 0.
         DO L = 1, NLAYR
-        TRLV = TRLV + RLV(L) * DLAYR(L)
+          TRLV = TRLV + RLV(L) * DLAYR(L)
         END DO
 
 !       Root + nodule residues.
@@ -129,35 +129,35 @@ C=======================================================================
 
 !       N in root residues is N in roots plus N in nodules.
         TRTRESE(N) = WTNRT + WTNNOD
-         TRTRESE(P) = -99.
+        TRTRESE(P) = -99.
 !       TRTRESE(P) = PConc_Root * RTWT
 
 !       Senescence has been added daily (subroutine SENESADD), so no need
 !       to add it here as WTRO and WTNOO, as in the CERES-based module.
         IF (TRLV > 1.E-6 .AND. TRTRES > 1.E-6) THEN
-        DO L = 1, NLAYR
-        HResWt(L)  = 10. * TRTRES * RLV(L) * DLAYR(L) / TRLV
+          DO L = 1, NLAYR
+            HResWt(L)  = 10. * TRTRES * RLV(L) * DLAYR(L) / TRLV
             HResLig(L) = (RTWT * PLIGRT + DWNOD * PLIGNO) !/ TRTRES 
      &        * RLV(L) * DLAYR(L) / TRLV
-        DO IEL = 1, N_ELEMS
-        HResE(L,IEL) = 10. * TRTRESE(IEL) * RLV(L) * DLAYR(L)/TRLV
-        ENDDO
+            DO IEL = 1, N_ELEMS
+              HResE(L,IEL) = 10. * TRTRESE(IEL) * RLV(L) * DLAYR(L)/TRLV
+            ENDDO
           ENDDO   !End of soil layer loop.
         ELSE
-        DO L = 1, NLAYR
-        HResWt(L)  = 0.
-        HResLig(L) = 0.
-        HResE(L,N) = 0.
-        HResE(L,P) = 0.
-        ENDDO
+          DO L = 1, NLAYR
+            HResWt(L)  = 0.
+            HResLig(L) = 0.
+            HResE(L,N) = 0.
+            HResE(L,P) = 0.
+          ENDDO
         ENDIF
+
 !       chp 2024-07-01 Add storage tissue to layer 1
         HResWt(1)  = HResWt(1) + STRRES
         HResLig(1) = HResLig(1) + STRRES * PLIGSR
         DO IEL = 1, N_ELEMS
           HResE(1,IEL) = HResE(1,IEL) + WTNSR * 10.
         ENDDO
-
 
 C-------------------------------------------------------------------------
         !Add in last day of senesced plant material (not added in soil
@@ -168,10 +168,10 @@ C-------------------------------------------------------------------------
         HResE(SRFC,P) = HResE(SRFC,P) + SENESCE % ResE(SRFC,P)
 
         DO L = 1, NLAYR
-        HResWt(L)  = HResWt(L)  + SENESCE % ResWt(L)
-        HResLig(L) = HResLig(L) + SENESCE % ResLig(L)
-        HResE(L,N) = HResE(L,N) + SENESCE % ResE(L,N)
-        HResE(L,P) = HResE(L,P) + SENESCE % ResE(L,P)
+          HResWt(L)  = HResWt(L)  + SENESCE % ResWt(L)
+          HResLig(L) = HResLig(L) + SENESCE % ResLig(L)
+          HResE(L,N) = HResE(L,N) + SENESCE % ResE(L,N)
+          HResE(L,P) = HResE(L,P) + SENESCE % ResE(L,P)
         ENDDO
 
       ENDIF   !Crop .NE. 'FA'
