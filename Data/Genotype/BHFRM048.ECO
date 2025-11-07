@@ -51,6 +51,7 @@
 ! RDRMG  Relative dormancy sensitivity of this cultivar to daylength - photosynthesis (0-1)
 ! RDRMM  Relative dormancy sensitivity of this cultivar to daylength - mobilization (0-1)
 ! RCHDP  Relative cold hardening potential (0-1)
+! LFDEL  Shift in partitioning between leaf and stem as a function of vstage (-0.05 - 0.05)
 !
 ! Note:  Only use TRIFL, RWDTH, RHGHT, RDRMT, RDRMM.  Rest are not used.  
 

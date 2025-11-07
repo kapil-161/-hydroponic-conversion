@@ -50,6 +50,7 @@
 ! RDRMG  Relative dormancy sensitivity of this cultivar to daylength - photosynthesis (0-1)
 ! RDRMM  Relative dormancy sensitivity of this cultivar to daylength - mobilization (0-1)
 ! RCHDP  Relative cold hardening potential (0-1)
+! LFDEL  Shift in partitioning between leaf and stem as a function of vstage (-0.05 - 0.05)
 !
 ! KJB 5/16 SET TRIFL FROM .15 TO 0.20, possibly drive TRIFOL with small change per FD, because CUF101 goes faster on node number?
 ! KJB 8/22/19 to 9/27/19 set RDRMT to increment by 60 units per FD class calibrated Rugged, Cisco, CUF101 on 8/22, Apica and Oneida on 9/27

@@ -245,8 +245,8 @@ C    Find and Read Field Section from FILEIO - previously read in IPIBS
 C-----------------------------------------------------------------------
       LNUM = 50
 
-        SECTION = '*CULTI'
-        CALL FIND(LUNIO, SECTION, LNUM, FOUND)
+      SECTION = '*CULTI'
+      CALL FIND(LUNIO, SECTION, LNUM, FOUND)
 
       IF (FOUND .EQ. 0) THEN
         CALL ERROR(ERRKEY, 1, FILEIO, LNUM)
@@ -265,19 +265,17 @@ C-----------------------------------------------------------------------
         IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,0)
         IF ((ISECT .EQ. 1) .AND. (C255(1:1) .NE. ' ') .AND.
      &    (C255(1:1) .NE. '*')) THEN
-      READ (C255,'(A6,145X,F6.0)',IOSTAT=ERR)
+        READ (C255,'(A6,145X,F6.0)',IOSTAT=ERR)
      &          ECOTYP, LFDELT
-      LFDELT = MAX(-0.05,MIN(0.05,LFDELT))
+        IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,LNUM)
 
-!      WRITE(*,*) LFDELT
-      IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILEGC,LNUM)
-        IF (ECOTYP .EQ. ECONO) THEN
-        EXIT
-        ENDIF
+        LFDELT = MAX(-0.05,MIN(0.05,LFDELT))
+        IF (ECOTYP .EQ. ECONO) EXIT
+        
         ELSE IF (ISECT .EQ. 0) THEN
-        IF (ECONO .EQ. 'DFAULT') CALL ERROR(ERRKEY,3,FILEGC,LNUM)
-        ECONO = 'DFAULT'
-        REWIND(LUNECO)
+         IF (ECONO .EQ. 'DFAULT') CALL ERROR(ERRKEY,3,FILEGC,LNUM)
+         ECONO = 'DFAULT'
+         REWIND(LUNECO)
         ENDIF
       ENDDO
 
