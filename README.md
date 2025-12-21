@@ -150,3 +150,5 @@ Jones, J.W., G. Hoogenboom, C.H. Porter, K.J. Boote, W.D. Batchelor, L.A. Hunt, 
 
 See also: [The DSSAT cropping system model](https://dssat.net/jones_2003_the_dssat_cropping_system_model).
 
+#   - h y d r o p o n i c - c o n v e r s i o n  
+ 
