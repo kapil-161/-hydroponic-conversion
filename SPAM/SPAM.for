@@ -53,7 +53,7 @@ C=======================================================================
       EXTERNAL XTRACT
       SAVE
 
-      CHARACTER*1  IDETW, ISWWAT
+      CHARACTER*1  IDETW, ISWWAT, ISWHYDRO
       CHARACTER*1  MEEVP, MEINF, MEPHO, MESEV, METMP
       CHARACTER*2  CROP
       CHARACTER*6, PARAMETER :: ERRKEY = "SPAM  "
@@ -111,13 +111,14 @@ C=======================================================================
       SAT    = SOILPROP % SAT
       U      = SOILPROP % U
 
-      ISWWAT = ISWITCH % ISWWAT
-      IDETW  = ISWITCH % IDETW
-      MEEVP  = ISWITCH % MEEVP
-      MEINF  = ISWITCH % MEINF
-      MEPHO  = ISWITCH % MEPHO
-      METMP  = ISWITCH % METMP
-      MESEV  = ISWITCH % MESEV
+      ISWWAT   = ISWITCH % ISWWAT
+      ISWHYDRO = ISWITCH % ISWHYDRO
+      IDETW    = ISWITCH % IDETW
+      MEEVP    = ISWITCH % MEEVP
+      MEINF    = ISWITCH % MEINF
+      MEPHO    = ISWITCH % MEPHO
+      METMP    = ISWITCH % METMP
+      MESEV    = ISWITCH % MESEV
 
       FLOOD  = FLOODWAT % FLOOD
 
@@ -170,34 +171,58 @@ C=======================================================================
       ET0 = 0.0
 
 !     ---------------------------------------------------------
+!     SOIL TEMPERATURE CALCULATIONS (SEASINIT phase)
+!     ---------------------------------------------------------
       IF (MEEVP .NE.'Z') THEN   !LPM 02dec14 use values from ETPHOT
-        SELECT CASE (METMP)
-        CASE ('E')    !EPIC soil temperature routine
-          CALL STEMP_EPIC(CONTROL, ISWITCH,
-     &      SOILPROP, SW, TAVG, TMAX, TMIN, TAV, WEATHER,    !Input
-     &      SRFTEMP, ST)                                     !Output
-        CASE DEFAULT  !DSSAT soil temperature
-          CALL STEMP(CONTROL, ISWITCH,
-     &      SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP, !Input
-     &      SRFTEMP, ST)                                     !Output
-        END SELECT
+        IF (ISWHYDRO .EQ. 'Y') THEN
+!         HYDROPONIC MODE: Use solution temperature instead of soil temperature
+!         Solution temperature is stored in ModuleData, use air temp as proxy if not available
+          DO L = 1, NLAYR
+            ST(L) = TAVG  ! Use average air temperature for root zone
+          ENDDO
+          SRFTEMP = TAVG  ! Surface temperature = air temperature
+        ELSE
+!         SOIL MODE: Calculate soil temperature by layer
+          SELECT CASE (METMP)
+          CASE ('E')    !EPIC soil temperature routine
+            CALL STEMP_EPIC(CONTROL, ISWITCH,
+     &        SOILPROP, SW, TAVG, TMAX, TMIN, TAV, WEATHER,    !Input
+     &        SRFTEMP, ST)                                     !Output
+          CASE DEFAULT  !DSSAT soil temperature
+            CALL STEMP(CONTROL, ISWITCH,
+     &        SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP, !Input
+     &        SRFTEMP, ST)                                     !Output
+          END SELECT
+        ENDIF
       ENDIF
 !     ---------------------------------------------------------
+!     ROOT WATER UPTAKE AND SOIL EVAPORATION INITIALIZATION
+!     ---------------------------------------------------------
       IF (MEEVP .NE. 'Z') THEN
-        CALL ROOTWU(SEASINIT,
+        IF (ISWHYDRO .EQ. 'Y') THEN
+!         HYDROPONIC MODE: Skip soil-related routines
+!         Root water uptake is handled by HYDRO_WATER
+!         No soil evaporation in hydroponic systems
+          RWU   = 0.0
+          TRWUP = 0.0
+          ES    = 0.0
+        ELSE
+!         SOIL MODE: Initialize root water uptake and soil evaporation
+          CALL ROOTWU(SEASINIT,
      &      DLAYR, LL, NLAYR, PORMIN, RLV, RWUMX, SAT, SW,!Input
      &      RWU, TRWUP)                           !Output
 
-!       Initialize soil evaporation variables
-        SELECT CASE (MESEV)
+!         Initialize soil evaporation variables
+          SELECT CASE (MESEV)
 !     ----------------------------
-        CASE ('R')  !Original soil evaporation routine
-          CALL SOILEV(SEASINIT,
+          CASE ('R')  !Original soil evaporation routine
+            CALL SOILEV(SEASINIT,
      &      DLAYR, DUL, EOS, LL, SW, SW_AVAIL(1),         !Input
      &      U, WINF,                                      !Input
      &      ES)                                           !Output
 !     ----------------------------
-        END SELECT
+          END SELECT
+        ENDIF
 
 !       Initialize plant transpiration variables
         CALL TRANS(DYNAMIC, MEEVP,
@@ -249,41 +274,75 @@ C=======================================================================
 !-----------------------------------------------------------------------
       SWDELTX = 0.0
 !     ---------------------------------------------------------
+!     SOIL TEMPERATURE CALCULATIONS
+!     ---------------------------------------------------------
       IF (MEEVP .NE.'Z') THEN  !LPM 02dec14 use values from ETPHOT
-        SELECT CASE (METMP)
-        CASE ('E')    !EPIC soil temperature routine
-          CALL STEMP_EPIC(CONTROL, ISWITCH,
-     &      SOILPROP, SW, TAVG, TMAX, TMIN, TAV, WEATHER,   !Input
-     &      SRFTEMP, ST)                                    !Output
-        CASE DEFAULT
+        IF (ISWHYDRO .EQ. 'Y') THEN
+!         HYDROPONIC MODE: Use solution temperature instead of soil temperature
+!         Solution temperature is stored in ModuleData, use air temp as proxy if not available
+          DO L = 1, NLAYR
+            ST(L) = TAVG  ! Use average air temperature for root zone
+          ENDDO
+          SRFTEMP = TAVG  ! Surface temperature = air temperature
+        ELSE
+!         SOIL MODE: Calculate soil temperature by layer
+          SELECT CASE (METMP)
+          CASE ('E')    !EPIC soil temperature routine
+            CALL STEMP_EPIC(CONTROL, ISWITCH,
+     &        SOILPROP, SW, TAVG, TMAX, TMIN, TAV, WEATHER,   !Input
+     &        SRFTEMP, ST)                                    !Output
+          CASE DEFAULT
 !       7/21/2016 - DSSAT method is default, per GH
 !       CASE ('D')  !DSSAT soil temperature
-          CALL STEMP(CONTROL, ISWITCH,
-     &      SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP,!Input
-     &      SRFTEMP, ST)                                    !Output
-        END SELECT
+            CALL STEMP(CONTROL, ISWITCH,
+     &        SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP,!Input
+     &        SRFTEMP, ST)                                    !Output
+          END SELECT
+        ENDIF
       ENDIF
 !-----------------------------------------------------------------------
 !     POTENTIAL ROOT WATER UPTAKE
 !-----------------------------------------------------------------------
-      IF (ISWWAT .EQ. 'Y') THEN
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!       HYDROPONIC MODE - unlimited water from nutrient solution
+        WRITE(*,*) 'SPAM: Hydroponic mode - unlimited water'
+!       Still need to calculate PET for plant transpiration demand
+!       Skip soil water uptake calculations, but do PET calculation below
+        RWU   = 0.0      ! No layer-specific uptake (solution-based)
+        ES    = 0.0      ! No soil evaporation
+
+!       Fall through to calculate PET (don't skip to ENDIF)
+!       Set flag to bypass soil water limitations later
+      ENDIF
+
+      IF (ISWWAT .EQ. 'Y' .OR. ISWHYDRO .EQ. 'Y') THEN
 !       Calculate the availability of soil water for use in SOILEV.
-        DO L = 1, NLAYR
-          SW_AVAIL(L) = MAX(0.0, SW(L) + SWDELTS(L) + SWDELTU(L))
-        ENDDO
+!       Skip in hydroponic mode - no soil water to calculate
+        IF (ISWHYDRO .NE. 'Y') THEN
+          DO L = 1, NLAYR
+            SW_AVAIL(L) = MAX(0.0, SW(L) + SWDELTS(L) + SWDELTU(L))
+          ENDDO
+        ENDIF
 
 !       These processes are done by ETPHOT for hourly (Zonal) energy
 !       balance method.
         IF (MEEVP .NE. 'Z') THEN
 !         Calculate potential root water uptake rate for each soil layer
 !         and total potential water uptake rate.
-          IF (XHLAI .GT. 0.0) THEN
-            CALL ROOTWU(RATE,
-     &          DLAYR, LL, NLAYR, PORMIN, RLV, RWUMX, SAT, SW,!Input
-     &          RWU, TRWUP)                                   !Output
+          IF (ISWHYDRO .NE. 'Y') THEN
+!           SOIL MODE: Calculate root water uptake from soil
+            IF (XHLAI .GT. 0.0) THEN
+              CALL ROOTWU(RATE,
+     &            DLAYR, LL, NLAYR, PORMIN, RLV, RWUMX, SAT, SW,!Input
+     &            RWU, TRWUP)                                   !Output
+            ELSE
+              RWU   = 0.0
+              TRWUP = 0.0
+            ENDIF
           ELSE
-            RWU   = 0.0
-            TRWUP = 0.0
+!           HYDROPONIC MODE: Unlimited water from solution
+            RWU   = 0.0       ! No layer uptake
+            TRWUP = 999.0     ! Unlimited potential uptake
           ENDIF
 
 !-----------------------------------------------------------------------
@@ -319,6 +378,16 @@ C=======================================================================
 !         Initialize soil, mulch and flood evaporation
           ES = 0.; EM = 0.; EF = 0.; EVAP = 0.0
           UPFLOW = 0.0; ES_LYR = 0.0
+
+!         Skip soil evaporation calculations in hydroponic mode
+          IF (ISWHYDRO .EQ. 'Y') THEN
+!           HYDROPONIC MODE: No soil, mulch, or flood evaporation
+            ES = 0.0
+            EM = 0.0
+            EF = 0.0
+            EVAP = 0.0
+            GOTO 350  ! Skip to after evaporation calculations
+          ENDIF
 
 !         First meet evaporative demand from floodwater
           IF (FLOOD .GT. 1.E-4) THEN
@@ -372,16 +441,23 @@ C=======================================================================
 !         Total evaporation from soil, mulch, flood
           EVAP = ES + EM + EF
 
+! 350    Continue here after skipping evaporation in hydroponic mode
+ 350      CONTINUE
+
 !-----------------------------------------------------------------------
 !         Potential transpiration - model dependent
 !-----------------------------------------------------------------------
-          IF (XHLAI > 1.E-6) THEN
+          IF (ISWHYDRO .EQ. 'Y') THEN
+!           HYDROPONIC MODE: Use EO directly for potential transpiration
+!           Bypass XHLAI check to allow seedling transpiration
+            EOP = EO  ! Use reference ET directly
+          ELSEIF (XHLAI > 1.E-6) THEN
+!           SOIL MODE: Calculate from LAI
             CALL TRANS(RATE, MEEVP,
      &      CO2, CROP, EO, ET0, EVAP, KTRANS,           !Input
      &      WINDSP, XHLAI,                              !Input
      &      WEATHER,                                    !Input
      &      EOP)                                        !Output
-
           ELSE
             EOP = 0.0
           ENDIF
@@ -389,10 +465,22 @@ C=======================================================================
 !-----------------------------------------------------------------------
 !         ACTUAL TRANSPIRATION
 !-----------------------------------------------------------------------
-          IF (XHLAI .GT. 1.E-4 .AND. EOP .GT. 1.E-4) THEN
+          IF (ISWHYDRO .EQ. 'Y') THEN
+!           HYDROPONIC MODE: Water is unlimited, so actual = potential
+!           EP should equal EOP (demand-based, no water stress)
+!           Don't restrict by XHLAI to avoid chicken-egg problem
+            IF (EOP .GT. 1.E-6) THEN
+              EP = EOP    ! Actual = potential (unlimited water supply)
+              WRITE(*,*) 'HYDRO EP: EOP=',EOP,' EP=',EP,' (demand-based)'
+            ELSE
+              EP = 0.0
+              WRITE(*,*) 'HYDRO EP=0: EOP=',EOP
+            ENDIF
+          ELSEIF (XHLAI .GT. 1.E-4 .AND. EOP .GT. 1.E-4) THEN
+!           SOIL MODE: Normal calculation - limited by soil water supply
             !These calcs replace the old SWFACS subroutine
             !Stress factors now calculated as needed in PLANT routines.
-            EP = MIN(EOP, TRWUP*10.)
+            EP = MIN(EOP, TRWUP*10.)  ! Limited by soil water availability
           ELSE
             EP = 0.0
           ENDIF
@@ -414,6 +502,10 @@ C=======================================================================
      &    WEATHER, XLAI,                                 !Input
      &    EOP, EP, ES, RWU, TRWUP)                        !Output
           EVAP = ES  !CHP / BK 7/13/2017
+C         Override EP in hydroponic mode to ensure demand-based transpiration
+          IF (ISWHYDRO .EQ. 'Y' .AND. EOP .GT. 1.E-6) THEN
+            EP = EOP    ! Actual = potential (unlimited water supply)
+          ENDIF
         ENDIF
 
 !-----------------------------------------------------------------------
@@ -432,10 +524,17 @@ C=======================================================================
           END SELECT
 
 !         Calculate actual soil water uptake and transpiration rates
-          CALL XTRACT(
-     &      NLAYR, DLAYR, LL, SW, SW_AVAIL, TRWUP, UH2O,  !Input
-     &      EP, RWU,                                      !Input/Output
-     &      SWDELTX, TRWU)                                !Output
+          IF (ISWHYDRO .NE. 'Y') THEN
+!           SOIL MODE: Calculate water extraction from soil
+            CALL XTRACT(
+     &        NLAYR, DLAYR, LL, SW, SW_AVAIL, TRWUP, UH2O,  !Input
+     &        EP, RWU,                                      !Input/Output
+     &        SWDELTX, TRWU)                                !Output
+          ELSE
+!           HYDROPONIC MODE: No water stress, actual = potential
+            TRWU = EP    ! Actual transpiration = potential (no stress)
+            SWDELTX = 0.0  ! No soil water extraction
+          ENDIF
         ENDIF   !ISWWAT = 'Y'
       ENDIF
 
@@ -498,7 +597,17 @@ C-----------------------------------------------------------------------
       EF = FLOODWAT % EF
 
 !     ---------------------------------------------------------
+!     SOIL TEMPERATURE CALCULATIONS (OUTPUT phase)
+!     ---------------------------------------------------------
       IF (MEEVP .NE.'Z') THEN  !LPM 02dec14 use values from ETPHOT
+        IF (ISWHYDRO .EQ. 'Y') THEN
+!         HYDROPONIC MODE: Use solution temperature instead of soil temperature
+          DO L = 1, NLAYR
+            ST(L) = TAVG  ! Use average air temperature for root zone
+          ENDDO
+          SRFTEMP = TAVG  ! Surface temperature = air temperature
+        ELSE
+!         SOIL MODE: Calculate soil temperature by layer
           SELECT CASE (METMP)
           CASE ('E')    !EPIC soil temperature routine
             CALL STEMP_EPIC(CONTROL, ISWITCH,
@@ -509,6 +618,7 @@ C-----------------------------------------------------------------------
      &        SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP,!Input
      &        SRFTEMP, ST)                                    !Output
           END SELECT
+        ENDIF
       ENDIF
 
       CALL OPSPAM(CONTROL, ISWITCH, FLOODWAT, TRWU,
@@ -537,7 +647,17 @@ C-----------------------------------------------------------------------
      &    ES_LYR, SOILPROP)
 
 !     ---------------------------------------------------------
+!     SOIL TEMPERATURE CALCULATIONS (SEASEND phase)
+!     ---------------------------------------------------------
       IF (MEEVP .NE.'Z') THEN  !LPM 02dec14 use values from ETPHOT
+        IF (ISWHYDRO .EQ. 'Y') THEN
+!         HYDROPONIC MODE: Use solution temperature instead of soil temperature
+          DO L = 1, NLAYR
+            ST(L) = TAVG  ! Use average air temperature for root zone
+          ENDDO
+          SRFTEMP = TAVG  ! Surface temperature = air temperature
+        ELSE
+!         SOIL MODE: Calculate soil temperature by layer
           SELECT CASE (METMP)
           CASE ('E')    !EPIC soil temperature routine
             CALL STEMP_EPIC(CONTROL, ISWITCH,
@@ -548,6 +668,7 @@ C-----------------------------------------------------------------------
      &        SOILPROP, SRAD, SW, TAVG, TMAX, XLAT, TAV, TAMP,!Input
      &        SRFTEMP, ST)                                    !Output
           END SELECT
+        ENDIF
       ENDIF
 
       IF (MEPHO .EQ. 'L') THEN
@@ -590,7 +711,7 @@ C-----------------------------------------------------------------------
 ! CET         Cumulative evapotranspiration (mm)
 ! CLOUDS      Relative cloudiness factor (0-1)
 ! CO2         Atmospheric carbon dioxide concentration
-!              (µmol[CO2] / mol[air])
+!              (ï¿½mol[CO2] / mol[air])
 ! CONTROL     Composite variable containing variables related to control
 !               and/or timing of simulation.    See Appendix A.
 ! CROP        Crop identification code
@@ -641,8 +762,8 @@ C-----------------------------------------------------------------------
 !               density, drained upper limit, lower limit, pH, saturation
 !               water content.  Structure defined in ModuleDefs.
 ! SRAD        Solar radiation (MJ/m2-d)
-! SRFTEMP     Temperature of soil surface litter (°C)
-! ST(L)       Soil temperature in soil layer L (°C)
+! SRFTEMP     Temperature of soil surface litter (ï¿½C)
+! ST(L)       Soil temperature in soil layer L (ï¿½C)
 ! SUMES1      Cumulative soil evaporation in stage 1 (mm)
 ! SUMES2      Cumulative soil evaporation in stage 2 (mm)
 ! SW(L)       Volumetric soil water content in layer L
@@ -658,14 +779,14 @@ C-----------------------------------------------------------------------
 !               layer L (cm3 [water] / cm3 [soil])
 ! T           Number of days into Stage 2 evaporation (WATBAL); or time
 !               factor for hourly temperature calculations
-! TA          Daily normal temperature (°C)
+! TA          Daily normal temperature (ï¿½C)
 ! TAMP        Amplitude of temperature function used to calculate soil
-!               temperatures (°C)
+!               temperatures (ï¿½C)
 ! TAV         Average annual soil temperature, used with TAMP to calculate
-!               soil temperature. (°C)
-! TAVG        Average daily temperature (°C)
-! TMAX        Maximum daily temperature (°C)
-! TMIN        Minimum daily temperature (°C)
+!               soil temperature. (ï¿½C)
+! TAVG        Average daily temperature (ï¿½C)
+! TMAX        Maximum daily temperature (ï¿½C)
+! TMIN        Minimum daily temperature (ï¿½C)
 ! TRWU        Actual daily root water uptake over soil profile (cm/d)
 ! TRWUP       Potential daily root water uptake over soil profile (cm/d)
 ! U           Evaporation limit (cm)

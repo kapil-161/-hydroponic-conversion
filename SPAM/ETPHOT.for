@@ -68,7 +68,7 @@ C-----------------------------------------------------------------------
      &  RADABS, ROOTWU, SOIL05, YR_DOY
       SAVE
 
-      CHARACTER FILEIO*30,ISWWAT*1,MEEVP*1,MEPHO*1,METEMP*1,
+      CHARACTER FILEIO*30,ISWWAT*1,ISWHYDRO*1,MEEVP*1,MEPHO*1,METEMP*1,
      &  TYPPGN*3,TYPPGL*3, CROP*2
       INTEGER DAS,DYNAMIC,H,I,NELAYR,NHOUR, DOY, YRDOY, YEAR,
      &  NLAYR,NR5, LUNIO, TSV2
@@ -160,9 +160,10 @@ C         added by BAK on 10DEC2015
       SLPF = SOILPROP % SLPF
       SAT  = SOILPROP % SAT
 
-      ISWWAT = ISWITCH % ISWWAT
-      MEEVP  = ISWITCH % MEEVP
-      MEPHO  = ISWITCH % MEPHO
+      ISWWAT   = ISWITCH % ISWWAT
+      ISWHYDRO = ISWITCH % ISWHYDRO
+      MEEVP    = ISWITCH % MEEVP
+      MEPHO    = ISWITCH % MEPHO
 
       AZZON  = WEATHER % AZZON
       BETA   = WEATHER % BETA
@@ -664,8 +665,14 @@ C          ES = MAX(MIN(EDAY,AWEV1),0.0)
 
 !*****************************************
 !         Calculate daily water stess factors (from SWFACS)
+!         In hydroponic mode: no water stress (SWFAC = 1.0)
+!         In soil mode: calculate based on TRWUP vs EOP
           SWFAC = 1.0
-          IF (EOP .GT. 1.E-4 .AND. ISWWAT .EQ. 'Y') THEN
+          IF (ISWHYDRO .EQ. 'Y') THEN
+!           HYDROPONIC MODE: No water stress - unlimited water from solution
+            SWFAC = 1.0
+          ELSEIF (EOP .GT. 1.E-4 .AND. ISWWAT .EQ. 'Y') THEN
+!           SOIL MODE: Calculate water stress factor
             IF ((EOP * 0.1) .GE. TRWUP) THEN
               SWFAC = TRWUP / (EOP * 0.1)
             ENDIF

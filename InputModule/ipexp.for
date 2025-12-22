@@ -70,10 +70,10 @@ C=======================================================================
       USE ModuleData    
       Use CsvOutput   ! VSH
       IMPLICIT NONE
-      EXTERNAL ERROR, FIND, WARNING, YR_DOY, IGNORE, VERIFY, CLEAR, 
-     &  IGNORE2, OPHEAD, MAKEFILEW, IPCUL, IPPLNT_INP, IPSIM, PATH, 
-     &  GET_CROPD, IPFLD, IPENV, IPHAR, IPIRR, IPFERT, IPRES, IPCHEM, 
-     &  IPTILL
+      EXTERNAL ERROR, FIND, WARNING, YR_DOY, IGNORE, VERIFY, CLEAR,
+     &  IGNORE2, OPHEAD, MAKEFILEW, IPCUL, IPPLNT_INP, IPSIM, PATH,
+     &  GET_CROPD, IPFLD, IPENV, IPHAR, IPIRR, IPFERT, IPRES, IPCHEM,
+     &  IPTILL, IPSOL
 
       SAVE
 
@@ -104,9 +104,13 @@ C=======================================================================
       INTEGER PATHL,RUN,ISIM,TRTALL,IIRV(NAPPL)   !,CRID
       INTEGER NFORC,NDOF,PMTYPE,YR,ROTN
 !     NEW FORAGE VARIABLES (DIEGO-2/14/2017)
-      INTEGER TRTNUM, ROTNUM!,FREQ(3),CUHT(3) 
-      REAL    FLAG,EXP,TRT,PLTFOR !,FREQ,CUHT 
+      INTEGER TRTNUM, ROTNUM!,FREQ(3),CUHT(3)
+      REAL    FLAG,EXP,TRT,PLTFOR !,FREQ,CUHT
       REAL    PMWD
+!     HYDROPONIC SOLUTION VARIABLES
+      CHARACTER*1 ISWHYDRO
+      REAL    SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL
+      REAL    NO3_CONC,NH4_CONC,P_CONC,K_CONC
 
       LOGICAL FEXIST, UseSimCtr, SimLevel
 
@@ -854,6 +858,37 @@ C     Call IPTILL - Tillage operations
 C-----------------------------------------------------------------------
       CALL IPTILL (LUNEXP,FILEX,LNTIL,YRSIM,ISWTIL,NTIL,TDATE,
      &    TIMPL,TDEP,LNSIM)
+
+C-----------------------------------------------------------------------
+C     Call IPSOL - Hydroponic Solution (if present)
+C-----------------------------------------------------------------------
+      WRITE(*,*) ' '
+      WRITE(*,*) 'Checking for HYDROPONIC SOLUTION section...'
+      CALL IPSOL (LUNEXP,FILEX,LNFLD,SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL,
+     &    NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO)
+
+C     Store hydroponic switch in ISWITCH structure for global access
+      ISWITCH % ISWHYDRO = ISWHYDRO
+
+C     Store hydroponic parameters in CONTROL structure (via ModuleData)
+      IF (ISWHYDRO .EQ. 'Y') THEN
+        WRITE(*,*) 'Hydroponic experiment detected!'
+        WRITE(*,*) 'IPEXP: Storing values:'
+        WRITE(*,*) '  NO3_CONC=',NO3_CONC,' NH4_CONC=',NH4_CONC
+        WRITE(*,*) '  P_CONC=',P_CONC,' K_CONC=',K_CONC
+        CALL PUT('HYDRO','SOLVOL',SOLVOL)
+        CALL PUT('HYDRO','EC',EC_SOL)
+        CALL PUT('HYDRO','PH',PH_SOL)
+        CALL PUT('HYDRO','DO2',DO2)
+        CALL PUT('HYDRO','TEMP',TEMP_SOL)
+        CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
+        CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
+        CALL PUT('HYDRO','P_CONC',P_CONC)
+        CALL PUT('HYDRO','K_CONC',K_CONC)
+        WRITE(*,*) 'IPEXP: Values stored in ModuleData'
+      ELSE
+        WRITE(*,*) 'Soil-based experiment (no hydroponic section found)'
+      ENDIF
 
       CLOSE(LUNEXP)
       RETURN

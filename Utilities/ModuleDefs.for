@@ -120,6 +120,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         CHARACTER (len=1) IHARI, IPLTI, IIRRI, ISIMI
         CHARACTER (len=1) ISWCHE, ISWDIS, ISWNIT
         CHARACTER (len=1) ISWPHO, ISWPOT, ISWSYM, ISWTIL, ISWWAT
+        CHARACTER (len=1) ISWHYDRO  !Hydroponic switch
         CHARACTER (len=1) MEEVP, MEGHG, MEHYD, MEINF, MELI, MEPHO
         CHARACTER (len=1) MESOM, MESOL, MESEV, MEWTH
         CHARACTER (len=1) METMP !Temperature, EPIC
@@ -513,6 +514,19 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL ISH_wt
       END TYPE 
 
+!     Data transferred from Hydroponic routine
+      Type HydroType
+        REAL SOLVOL      ! Solution volume (L)
+        REAL EC          ! Electrical conductivity (dS/m)
+        REAL PH          ! pH
+        REAL DO2         ! Dissolved oxygen (mg/L)
+        REAL TEMP        ! Solution temperature (C)
+        REAL NO3_CONC    ! NO3-N concentration (mg/L)
+        REAL NH4_CONC    ! NH4-N concentration (mg/L)
+        REAL P_CONC      ! P concentration (mg/L)
+        REAL K_CONC      ! K concentration (mg/L)
+      End Type HydroType
+
 !     Data which can be transferred between modules
       Type TransferType
         Type (ControlType) CONTROL
@@ -530,6 +544,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         TYPE (PDLABETATYPE)PDLABETA
         TYPE (PMDataType)  PM
         TYPE (MHarveType)  MHARVEST
+        TYPE (HydroType)   HYDRO
       End Type TransferType
 
 !     The variable SAVE_data contains all of the components to be 
@@ -788,6 +803,20 @@ C             CHP Added TRTNUM to CONTROL variable.
         CASE DEFAULT; ERR = .TRUE.
         END SELECT       
 
+      Case ('HYDRO')
+        SELECT CASE (VarName)
+        Case ('SOLVOL');  Value = SAVE_data % HYDRO % SOLVOL
+        Case ('EC');      Value = SAVE_data % HYDRO % EC
+        Case ('PH');      Value = SAVE_data % HYDRO % PH
+        Case ('DO2');     Value = SAVE_data % HYDRO % DO2
+        Case ('TEMP');    Value = SAVE_data % HYDRO % TEMP
+        Case ('NO3_CONC');Value = SAVE_data % HYDRO % NO3_CONC
+        Case ('NH4_CONC');Value = SAVE_data % HYDRO % NH4_CONC
+        Case ('P_CONC');   Value = SAVE_data % HYDRO % P_CONC
+        Case ('K_CONC');   Value = SAVE_data % HYDRO % K_CONC
+        Case DEFAULT; ERR = .TRUE.
+        END SELECT
+
       Case DEFAULT; ERR = .TRUE.
       END SELECT
 
@@ -920,6 +949,20 @@ C             CHP Added TRTNUM to CONTROL variable.
         CASE('ISH_wt'); SAVE_data % MHARVEST % ISH_wt = Value
         CASE DEFAULT; ERR = .TRUE.
         END SELECT       
+
+      Case ('HYDRO')
+        SELECT CASE (VarName)
+        Case ('SOLVOL');  SAVE_data % HYDRO % SOLVOL  = Value
+        Case ('EC');      SAVE_data % HYDRO % EC      = Value
+        Case ('PH');      SAVE_data % HYDRO % PH      = Value
+        Case ('DO2');     SAVE_data % HYDRO % DO2     = Value
+        Case ('TEMP');    SAVE_data % HYDRO % TEMP    = Value
+        Case ('NO3_CONC');SAVE_data % HYDRO % NO3_CONC = Value
+        Case ('NH4_CONC');SAVE_data % HYDRO % NH4_CONC = Value
+        Case ('P_CONC');   SAVE_data % HYDRO % P_CONC  = Value
+        Case ('K_CONC');   SAVE_data % HYDRO % K_CONC  = Value
+        Case DEFAULT; ERR = .TRUE.
+        END SELECT
 
       Case DEFAULT; ERR = .TRUE.
       END SELECT

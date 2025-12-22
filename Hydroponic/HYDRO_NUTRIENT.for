@@ -1,0 +1,241 @@
+C=======================================================================
+C  HYDRO_NUTRIENT, Subroutine
+C
+C  Hydroponic nutrient uptake using Michaelis-Menten kinetics
+C  V = Vmax * [S] / (Km + [S])
+C-----------------------------------------------------------------------
+C  Revision history
+C
+C  12/22/2025 Created for hydroponic nutrient uptake
+C-----------------------------------------------------------------------
+C  Called from: Nitrogen/nutrient uptake modules
+C
+C-----------------------------------------------------------------------
+
+      SUBROUTINE HYDRO_NUTRIENT(
+     &    CONTROL, ISWITCH,                    !Input
+     &    PLTPOP, RTDEP, RWU_HYDRO,            !Input
+     &    UNO3, UNH4, UPO4, UK,                !Output
+     &    NO3_SOL, NH4_SOL, P_SOL, K_SOL)      !I/O - Solution conc.
+
+      USE ModuleDefs
+      USE ModuleData
+      IMPLICIT NONE
+      SAVE
+
+      TYPE (ControlType) CONTROL
+      TYPE (SwitchType)  ISWITCH
+
+C     Input variables
+      REAL PLTPOP        ! Plant population (plants/m2)
+      REAL RTDEP         ! Root depth (cm)
+      REAL RWU_HYDRO     ! Water uptake (cm3/plant/day)
+
+C     Output variables - uptake rates (kg/ha/day)
+      REAL UNO3          ! Nitrate uptake
+      REAL UNH4          ! Ammonium uptake
+      REAL UPO4          ! Phosphate uptake
+      REAL UK            ! Potassium uptake
+
+C     Solution concentrations (mg/L) - updated by depletion
+      REAL NO3_SOL       ! Nitrate in solution
+      REAL NH4_SOL       ! Ammonium in solution
+      REAL P_SOL         ! Phosphorus in solution
+      REAL K_SOL         ! Potassium in solution
+
+C     Local variables
+      REAL SOLVOL        ! Solution volume (L)
+      REAL NO3_CONC_INIT ! Initial NO3 concentration (mg/L)
+      REAL NH4_CONC_INIT ! Initial NH4 concentration (mg/L)
+      REAL P_CONC_INIT   ! Initial P concentration (mg/L)
+      REAL K_CONC_INIT   ! Initial K concentration (mg/L)
+      SAVE SOLVOL        ! Save SOLVOL between calls
+
+C     Michaelis-Menten parameters (from hydroponic literature)
+      REAL Vmax_NO3      ! Max uptake rate NO3 (mg/plant/day)
+      REAL Vmax_NH4      ! Max uptake rate NH4 (mg/plant/day)
+      REAL Vmax_P        ! Max uptake rate P (mg/plant/day)
+      REAL Vmax_K        ! Max uptake rate K (mg/plant/day)
+
+      REAL Km_NO3        ! Half-saturation constant NO3 (mg/L)
+      REAL Km_NH4        ! Half-saturation constant NH4 (mg/L)
+      REAL Km_P          ! Half-saturation constant P (mg/L)
+      REAL Km_K          ! Half-saturation constant K (mg/L)
+
+C     Uptake calculations
+      REAL UNO3_plant    ! NO3 uptake per plant (mg/plant/day)
+      REAL UNH4_plant    ! NH4 uptake per plant (mg/plant/day)
+      REAL UP_plant      ! P uptake per plant (mg/plant/day)
+      REAL UK_plant      ! K uptake per plant (mg/plant/day)
+
+      REAL UPTAKE_FACTOR ! Scaling factor for crop growth stage
+      REAL DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K  ! Depletion rates
+      REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
+      INTEGER DYNAMIC
+
+C-----------------------------------------------------------------------
+
+      DYNAMIC = CONTROL % DYNAMIC
+
+      SELECT CASE (DYNAMIC)
+
+      CASE (RUNINIT, SEASINIT)
+C-----------------------------------------------------------------------
+C       Initialize solution concentrations from ModuleData
+C       If ModuleData values are available, use them; otherwise use passed parameters
+C-----------------------------------------------------------------------
+C       Try to get values from ModuleData first
+        CALL GET('HYDRO','SOLVOL',SOLVOL)
+        CALL GET('HYDRO','NO3_CONC',NO3_SOL)
+        CALL GET('HYDRO','NH4_CONC',NH4_SOL)
+        CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL GET('HYDRO','K_CONC',K_SOL)
+
+C       If ModuleData values are missing or invalid, use passed parameters
+        IF (SOLVOL .LT. 1.0) THEN
+          SOLVOL = 1000.0  ! Default 1000 L if not set
+          WRITE(*,*) 'HYDRO_NUTRIENT: Using default SOLVOL=',SOLVOL,'L'
+        ENDIF
+
+        IF (NO3_SOL .LT. 0.0) THEN
+          WRITE(*,*) 'HYDRO_NUTRIENT: NO3_CONC not in ModuleData, using passed value'
+        ENDIF
+        IF (NH4_SOL .LT. 0.0) THEN
+          WRITE(*,*) 'HYDRO_NUTRIENT: NH4_CONC not in ModuleData, using passed value'
+        ENDIF
+        IF (P_SOL .LT. 0.0) THEN
+          WRITE(*,*) 'HYDRO_NUTRIENT: P_CONC not in ModuleData, using passed value'
+        ENDIF
+        IF (K_SOL .LT. 0.0) THEN
+          WRITE(*,*) 'HYDRO_NUTRIENT: K_CONC not in ModuleData, using passed value'
+        ENDIF
+
+        WRITE(*,*) 'HYDRO_NUTRIENT INIT: Initialized concentrations:'
+        WRITE(*,*) '  NO3=',NO3_SOL,' NH4=',NH4_SOL,
+     &             ' P=',P_SOL,' K=',K_SOL,' SOLVOL=',SOLVOL
+
+C       Michaelis-Menten parameters (from literature for NFT systems)
+C       These are typical values - should be crop-specific ideally
+        Vmax_NO3 = 50.0    ! mg N/plant/day (peak uptake)
+        Vmax_NH4 = 30.0    ! mg N/plant/day
+        Vmax_P   = 8.0     ! mg P/plant/day
+        Vmax_K   = 60.0    ! mg K/plant/day
+
+        Km_NO3   = 2.0     ! mg/L (half-saturation)
+        Km_NH4   = 0.5     ! mg/L (higher affinity)
+        Km_P     = 0.3     ! mg/L
+        Km_K     = 1.0     ! mg/L
+
+        UNO3 = 0.0
+        UNH4 = 0.0
+        UPO4 = 0.0
+        UK   = 0.0
+
+        WRITE(*,200) NO3_SOL, NH4_SOL, P_SOL, K_SOL
+ 200    FORMAT(/,' Hydroponic Nutrient Module Initialized',
+     &         /,'   Initial NO3-N : ',F8.2,' mg/L',
+     &         /,'   Initial NH4-N : ',F8.2,' mg/L',
+     &         /,'   Initial P     : ',F8.2,' mg/L',
+     &         /,'   Initial K     : ',F8.2,' mg/L',/)
+
+      CASE (RATE)
+C-----------------------------------------------------------------------
+C       Calculate daily nutrient uptake using Michaelis-Menten
+C-----------------------------------------------------------------------
+
+C       Growth stage factor (simplified - should link to plant model)
+C       Early growth: 0.3, Peak growth: 1.0, Senescence: 0.5
+        IF (RTDEP .LT. 20.0) THEN
+          UPTAKE_FACTOR = 0.3    ! Seedling stage
+        ELSEIF (RTDEP .LT. 50.0) THEN
+          UPTAKE_FACTOR = 0.7    ! Vegetative growth
+        ELSE
+          UPTAKE_FACTOR = 1.0    ! Peak growth
+        ENDIF
+
+C       Michaelis-Menten equation: V = Vmax * [S] / (Km + [S])
+
+C       NO3 uptake (mg/plant/day)
+        UNO3_plant = (Vmax_NO3 * UPTAKE_FACTOR * NO3_SOL) /
+     &               (Km_NO3 + NO3_SOL)
+
+C       NH4 uptake (mg/plant/day)
+        UNH4_plant = (Vmax_NH4 * UPTAKE_FACTOR * NH4_SOL) /
+     &               (Km_NH4 + NH4_SOL)
+
+C       P uptake (mg/plant/day)
+        UP_plant = (Vmax_P * UPTAKE_FACTOR * P_SOL) /
+     &             (Km_P + P_SOL)
+
+C       K uptake (mg/plant/day)
+        UK_plant = (Vmax_K * UPTAKE_FACTOR * K_SOL) /
+     &             (Km_K + K_SOL)
+
+C       Convert from mg/plant/day to kg/ha/day
+C       Formula: mg/plant/day * plants/m2 * 10000 m2/ha * 1e-6 kg/mg
+C              = mg/plant/day * plants/m2 * 0.01 kg/ha
+        UNO3 = UNO3_plant * PLTPOP * 0.01
+        UNH4 = UNH4_plant * PLTPOP * 0.01
+        UPO4 = UP_plant   * PLTPOP * 0.01
+        UK   = UK_plant   * PLTPOP * 0.01
+
+C       Prevent negative concentrations
+        UNO3 = MAX(0.0, UNO3)
+        UNH4 = MAX(0.0, UNH4)
+        UPO4 = MAX(0.0, UPO4)
+        UK   = MAX(0.0, UK)
+
+        WRITE(*,300) NO3_SOL, NH4_SOL, P_SOL, K_SOL,
+     &               UNO3, UNH4, UPO4, UK
+ 300    FORMAT(' HYDRO_NUTRIENT:',
+     &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' [P]=',F6.1,' [K]=',F6.1,
+     &         ' Uptake: N=',F6.2,' P=',F6.2,' K=',F6.2,' kg/ha/d')
+
+      CASE (INTEGR)
+C-----------------------------------------------------------------------
+C       Update solution concentrations after uptake
+C-----------------------------------------------------------------------
+C       Ensure SOLVOL is initialized (retrieve from ModuleData if needed)
+        IF (SOLVOL .LT. 1.0) THEN
+          CALL GET('HYDRO','SOLVOL',SOLVOL)
+          IF (SOLVOL .LT. 1.0) THEN
+            SOLVOL = 1000.0  ! Default if not set
+          ENDIF
+        ENDIF
+
+        IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
+C         Calculate depletion (mg/L)
+C         Uptake in kg/ha/day -> mg/L/day
+C         kg/ha/day * 1e6 mg/kg / (10000 m2/ha * SOLVOL/m2 L/m2)
+C         Assuming solution volume is per unit ground area
+
+C         Calculate solution volume per hectare
+C         SOLVOL is total volume (L) for the system
+C         Distribute over the planted area
+          VOL_PER_HA = SOLVOL * 10000.0  ! L/ha
+
+          DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted
+          DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
+          DEPL_P   = (UPO4 * 1.0E6) / VOL_PER_HA
+          DEPL_K   = (UK * 1.0E6)   / VOL_PER_HA
+
+C         Update solution concentrations
+          NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
+          NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
+          P_SOL   = MAX(0.0, P_SOL - DEPL_P)
+          K_SOL   = MAX(0.0, K_SOL - DEPL_K)
+
+          WRITE(*,400) DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K
+ 400      FORMAT(' Solution depletion:',
+     &           ' dNO3=',F6.3,' dNH4=',F6.3,
+     &           ' dP=',F6.3,' dK=',F6.3,' mg/L')
+        ENDIF
+
+      CASE (OUTPUT)
+C       Output handled by main model
+        CONTINUE
+
+      END SELECT
+
+      RETURN
+      END SUBROUTINE HYDRO_NUTRIENT

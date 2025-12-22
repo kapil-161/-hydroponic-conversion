@@ -13,16 +13,19 @@ C  Called from:  PLANT
 C  Calls:        ERROR, FIND, IGNORE
 C=======================================================================
 
-      SUBROUTINE NUPTAK(DYNAMIC,
+      SUBROUTINE NUPTAK(DYNAMIC, ISWITCH,
      &  DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT,   !Input
-     &  NH4, NO3, NLAYR, RLV, SAT, SW,                    !Input
+     &  NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,     !Input
      &  TRNH4U, TRNO3U, TRNU, UNH4, UNO3)                 !Output
 
 !-----------------------------------------------------------------------
       USE ModuleDefs
+      USE ModuleData
       IMPLICIT NONE
-      EXTERNAL GETLUN, FIND, ERROR, IGNORE
+      EXTERNAL GETLUN, FIND, ERROR, IGNORE, HYDRO_NUTRIENT
       SAVE
+
+      TYPE (SwitchType) ISWITCH
 
       CHARACTER*6 ERRKEY
       PARAMETER (ERRKEY = 'NUPTAK')
@@ -34,11 +37,21 @@ C=======================================================================
       INTEGER L, NLAYR, DYNAMIC
 
       REAL NUF, XMIN
+      CHARACTER*1 ISWHYDRO
+C     PLTPOP and RTDEP are input parameters - declared for clarity
+C     NDMTOT and NDMSDR are input parameters - declared for clarity  
+      REAL PLTPOP, RTDEP, NDMTOT, NDMSDR
+
+C     Hydroponic solution variables (SAVE to persist across calls)
+      REAL NO3_SOL, NH4_SOL, P_SOL, K_SOL
+      REAL UPO4_HYDRO, UK_HYDRO, UNO3_TOT, UNH4_TOT
+      TYPE (ControlType) :: CONTROL_DUMMY
+      SAVE NO3_SOL, NH4_SOL, P_SOL, K_SOL
       REAL DLAYR(NL), LL(NL), DUL(NL), SAT(NL), SW(NL), RLV(NL)
       REAL SNO3(NL), SNH4(NL), KG2PPM(NL), NO3(NL), NH4(NL)
       REAL RNO3U(NL), RNH4U(NL), UNO3(NL), UNH4(NL)
       REAL TRNO3U, TRNH4U, TRNU
-      REAL NDMTOT, NDMSDR, ANDEM, FNH4, FNO3, SMDFR, RFAC
+      REAL ANDEM, FNH4, FNO3, SMDFR, RFAC
       REAL RTNO3, RTNH4, MXNH4U, MXNO3U
 
 !***********************************************************************
@@ -84,11 +97,51 @@ C=======================================================================
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASINIT) THEN
 !-----------------------------------------------------------------------
-      TRNO3U = 0.0 
-      TRNH4U = 0.0 
-      TRNU   = 0.0 
+      ISWHYDRO = ISWITCH % ISWHYDRO
+
+      TRNO3U = 0.0
+      TRNH4U = 0.0
+      TRNU   = 0.0
       UNH4   = 0.0
       UNO3   = 0.0
+
+C     Initialize hydroponic solution concentrations from ModuleData
+      IF (ISWHYDRO .EQ. 'Y') THEN
+C       Get values from ModuleData (should be set by IPEXP)
+        CALL GET('HYDRO','NO3_CONC',NO3_SOL)
+        CALL GET('HYDRO','NH4_CONC',NH4_SOL)
+        CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL GET('HYDRO','K_CONC',K_SOL)
+
+C       Check if values were retrieved successfully (should be > 0 if set)
+C       If values are missing (still 0 or negative), use defaults from experiment file
+        IF (NO3_SOL .LT. 0.1 .OR. NH4_SOL .LT. 0.0) THEN
+          WRITE(*,*) 'NUPTAK WARNING: ModuleData values not found, using defaults'
+          IF (NO3_SOL .LT. 0.1) NO3_SOL = 180.0   ! Default NO3-N (mg/L)
+          IF (NH4_SOL .LT. 0.0) NH4_SOL = 15.0    ! Default NH4-N (mg/L)
+          IF (P_SOL .LT. 0.0) P_SOL = 60.0        ! Default P (mg/L)
+          IF (K_SOL .LT. 0.0) K_SOL = 240.0       ! Default K (mg/L)
+C         Store defaults back to ModuleData
+          CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
+          CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
+          CALL PUT('HYDRO','P_CONC',P_SOL)
+          CALL PUT('HYDRO','K_CONC',K_SOL)
+        ENDIF
+
+        WRITE(*,*) 'NUPTAK SEASINIT: Solution concentrations initialized:'
+        WRITE(*,*) '  NO3=',NO3_SOL,' NH4=',NH4_SOL,
+     &             ' P=',P_SOL,' K=',K_SOL
+
+C       Initialize HYDRO_NUTRIENT module - pass concentrations
+C       HYDRO_NUTRIENT will also read from ModuleData, but we pass current values
+        CONTROL_DUMMY % DYNAMIC = SEASINIT
+        CALL HYDRO_NUTRIENT(
+     &    CONTROL_DUMMY, ISWITCH,
+     &    PLTPOP, RTDEP, 999.0,
+     &    UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,
+     &    NO3_SOL, NH4_SOL, P_SOL, K_SOL)
+        WRITE(*,*) 'NUPTAK: Hydroponic mode initialized'
+      ENDIF
 
 !***********************************************************************
 !***********************************************************************
@@ -113,7 +166,88 @@ C-----------------------------------------------------------------------
         SNH4(L) = NH4(L) / KG2PPM(L)
       ENDDO
 C-----------------------------------------------------------------------
-C   Determine crop N demand (kg N/ha), after subtracting mobilized N
+C   HYDROPONIC MODE: Use solution-based nutrient uptake
+C   Make it demand-driven like soil mode - match exact soil behavior
+C-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+C       Calculate N demand (EXACT same as soil mode)
+        ANDEM = (NDMTOT - NDMSDR) * 10.0  ! kg N/ha
+
+        IF (ANDEM .GT. 1.E-9) THEN
+C         In hydroponic systems with adequate concentrations, uptake should meet demand
+C         Check if solution concentrations are adequate (similar to soil availability check)
+C         In hydroponic systems, when concentrations are adequate, uptake should meet demand
+C         This matches soil mode behavior when soil N is abundant
+          IF (NO3_SOL + NH4_SOL .GT. 10.0) THEN
+C           Concentrations are adequate (>= 10 mg/L total N) - uptake can meet full demand
+C           Distribute demand between NO3 and NH4 based on relative concentrations
+            IF ((NO3_SOL + NH4_SOL) .GT. 0.0) THEN
+              UNO3_TOT = ANDEM * (NO3_SOL / (NO3_SOL + NH4_SOL))
+              UNH4_TOT = ANDEM * (NH4_SOL / (NO3_SOL + NH4_SOL))
+            ELSE
+              UNO3_TOT = ANDEM * 0.9  ! Default: mostly NO3
+              UNH4_TOT = ANDEM * 0.1
+            ENDIF
+C           Still need to call HYDRO_NUTRIENT INTEGR to update solution concentrations
+C           But first set the uptake values so INTEGR can use them for depletion
+          ELSE
+C           Low concentrations - use Michaelis-Menten to calculate potential uptake
+            CONTROL_DUMMY % DYNAMIC = RATE
+            CALL HYDRO_NUTRIENT(
+     &        CONTROL_DUMMY, ISWITCH,                !Input
+     &        PLTPOP, RTDEP, 999.0,                  !Input (RWU_HYDRO=999)
+     &        UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,  !Output (kg/ha/d)
+     &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+
+C           Limit by demand (like soil mode)
+            IF ((UNO3_TOT + UNH4_TOT) .GT. ANDEM) THEN
+              IF ((UNO3_TOT + UNH4_TOT) .GT. 0.0) THEN
+                NUF = ANDEM / (UNO3_TOT + UNH4_TOT)
+                UNO3_TOT = UNO3_TOT * NUF
+                UNH4_TOT = UNH4_TOT * NUF
+              ENDIF
+            ENDIF
+          ENDIF
+
+C         Integrate to update solution concentrations
+          CONTROL_DUMMY % DYNAMIC = INTEGR
+          CALL HYDRO_NUTRIENT(
+     &      CONTROL_DUMMY, ISWITCH,                !Input
+     &      PLTPOP, RTDEP, 999.0,                  !Input
+     &      UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,  !Output
+     &      NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+
+C         Convert from kg/ha/day to g/m2 (divide by 10)
+          TRNO3U = UNO3_TOT / 10.0
+          TRNH4U = UNH4_TOT / 10.0
+          TRNU = TRNO3U + TRNH4U
+        ELSE
+C         No N demand - set uptake to zero
+          TRNO3U = 0.0
+          TRNH4U = 0.0
+          TRNU = 0.0
+        ENDIF
+
+C       Set layer uptake to zero (not layer-based in hydroponics)
+        DO L=1,NLAYR
+          UNO3(L) = 0.0
+          UNH4(L) = 0.0
+        ENDDO
+
+        WRITE(*,200) TRNO3U, TRNH4U, TRNU
+ 200    FORMAT(' Hydroponic N uptake: NO3=',F6.2,
+     &         ' NH4=',F6.2,' Total=',F6.2,' g/m2/d')
+
+C       Update stored solution concentrations
+        CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
+        CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
+        CALL PUT('HYDRO','P_CONC',P_SOL)
+        CALL PUT('HYDRO','K_CONC',K_SOL)
+
+C       Soil-based uptake will be skipped (handled by ELSE below)
+      ELSE
+C-----------------------------------------------------------------------
+C   SOIL MODE: Determine crop N demand (kg N/ha), after subtracting mobilized N
 C-----------------------------------------------------------------------
       ANDEM = (NDMTOT - NDMSDR) * 10.0
       IF (ANDEM .GT. 1.E-9) THEN
@@ -188,6 +322,7 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
         ENDIF
       ENDIF
+      ENDIF  ! End of IF (ISWHYDRO .EQ. 'Y') THEN ... ELSE
 
 !***********************************************************************
 !***********************************************************************

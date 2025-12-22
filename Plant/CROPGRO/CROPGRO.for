@@ -63,7 +63,7 @@ C=======================================================================
       SAVE
 !-----------------------------------------------------------------------
       CHARACTER*1 DETACH, IDETO, ISWNIT, ISWSYM,
-     &    ISWWAT, ISWDIS, ISWPHO, MEPHO, RNMODE
+     &    ISWWAT, ISWDIS, ISWPHO, ISWHYDRO, MEPHO, RNMODE
       CHARACTER*2 CROP
       CHARACTER*6 ECONO
       CHARACTER*30 FILEIO
@@ -215,6 +215,7 @@ C=======================================================================
       ISWSYM = ISWITCH % ISWSYM
       ISWPHO = ISWITCH % ISWPHO
       ISWWAT = ISWITCH % ISWWAT
+      ISWHYDRO = ISWITCH % ISWHYDRO
       MEPHO  = ISWITCH % MEPHO
 
       CO2    = WEATHER % CO2   
@@ -304,9 +305,9 @@ C-----------------------------------------------------------------------
      &    AGRSH2, AGRSTM, AGRVG, AGRVG2, SDPROR)          !Output
 
 !-----------------------------------------------------------------------
-        CALL NUPTAK(RUNINIT,
+        CALL NUPTAK(RUNINIT, ISWITCH,
      &     DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT,!Input
-     &     NH4, NO3, NLAYR, RLV, SAT, SW,                 !Input
+     &     NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,  !Input
      &     TRNH4U, TRNO3U, TRNU, UNH4, UNO3)              !Output
 
 !-----------------------------------------------------------------------
@@ -568,9 +569,9 @@ C     Initialize pest coupling point and damage variables
      &  ShutMob, RootMob, ShelMob,                        !Output
      &  TOSHMINE,TOCHMINE,HPODWT,HSDWT,HSHELWT)           !Output
 !-----------------------------------------------------------------------
-      CALL NUPTAK(SEASINIT, 
+      CALL NUPTAK(SEASINIT, ISWITCH,
      &    DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT, !Input
-     &    NH4, NO3, NLAYR, RLV, SAT, SW,                  !Input
+     &    NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,   !Input
      &    TRNH4U, TRNO3U, TRNU, UNH4, UNO3)               !Output
 
 !     Plant phosphorus module initialization
@@ -683,9 +684,17 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       ELSE IF (DYNAMIC .EQ. RATE) THEN
 !***********************************************************************
-      IF (YRDOY .GT. YREMRG .AND. YREMRG .GT. 0 
+!     Calculate daily water stress factors
+!     In hydroponic mode: no water stress (SWFAC = TURFAC = 1.0)
+!     In soil mode: calculate based on TRWUP vs EOP
+!***********************************************************************
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!       HYDROPONIC MODE: No water stress - unlimited water from solution
+        SWFAC  = 1.0
+        TURFAC = 1.0
+      ELSEIF (YRDOY .GT. YREMRG .AND. YREMRG .GT. 0 
      &                    .AND. ISWWAT .EQ. 'Y') THEN
-!       Calculate daily water stess factors (from SWFACS)
+!       SOIL MODE: Calculate daily water stress factors (from SWFACS)
 !       EOP in mm/d
 !       TRWUP and EP1 in cm/d
         SWFAC  = 1.0
@@ -900,6 +909,11 @@ C
 C-----------------------------------------------------------------------
       CMINEP = CMOBMX * (DTX + DXR57) * (WCRST + WCRRT + WCRSH +WCRLF)
       PGAVL = PG + CMINEP
+      IF (ISWHYDRO .EQ. 'Y' .AND. DAS .LE. 10) THEN
+        WRITE(*,911) PG, CMINEP, PGAVL, XLAI, SWFAC
+ 911     FORMAT(' CROPGRO: PG=',F8.3,' CMINEP=',F8.3,' PGAVL=',F8.3,
+     &         ' XLAI=',F6.3,' SWFAC=',F6.3)
+      ENDIF
 C-----------------------------------------------------------------------
 C       Compute maintenance respiration and subtract from available CH2O
 C-----------------------------------------------------------------------
@@ -972,9 +986,9 @@ C    If ISWNIT = Y - Call soil N routines. Balance Available C and N
 C    If ISWNIT = N - Do not call soil N routines, N assumed to be limited by C
 C-----------------------------------------------------------------------
       IF (ISWNIT .EQ. 'Y') THEN
-        CALL NUPTAK(INTEGR, 
+        CALL NUPTAK(INTEGR, ISWITCH,
      &    DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT, !Input
-     &    NH4, NO3, NLAYR, RLV, SAT, SW,                  !Input
+     &    NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,   !Input
      &    TRNH4U, TRNO3U, TRNU, UNH4, UNO3)               !Output
 
 C-----------------------------------------------------------------------
@@ -991,6 +1005,11 @@ C-----------------------------------------------------------------------
 C       Accumulate nitrogen for today's growth, NAVL
 C-----------------------------------------------------------------------
         NAVL = NAVL + TRNU
+        IF (ISWHYDRO .EQ. 'Y' .AND. DAS .LE. 10) THEN
+          WRITE(*,1001) TRNU, NAVL, PGAVL, PG
+ 1001     FORMAT(' CROPGRO: TRNU=',F6.3,' NAVL=',F6.3,
+     &           ' PGAVL=',F8.3,' PG=',F8.3,' g/m2/d')
+        ENDIF
       ENDIF
 C-----------------------------------------------------------------------
 C    CALL Nitrogen mobilization subroutine
