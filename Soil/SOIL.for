@@ -100,7 +100,7 @@ C=====================================================================
 !-----------------------------------------------------------------------
 !     Local variables:
       INTEGER DYNAMIC
-      CHARACTER*1  MESOM
+      CHARACTER*1  MESOM, ISWHYDRO
 
       REAL, DIMENSION(0:NL) :: newCO2 !DayCent
       REAL, DIMENSION(NL) :: DRN
@@ -120,6 +120,7 @@ C=====================================================================
 !     Transfer values from constructed data types into local variables.
       DYNAMIC = CONTROL % DYNAMIC
       MESOM   = ISWITCH % MESOM
+      ISWHYDRO = ISWITCH % ISWHYDRO
 
 !***********************************************************************
 !     Call Soil Dynamics module 
@@ -179,6 +180,21 @@ C=====================================================================
       CALL SoilKi(CONTROL, ISWITCH, 
      &    FERTDATA, KUptake, SOILPROP, TILLVALS,          !Input
      &    SKi_Avail)                                      !Output
+
+!-----------------------------------------------------------------------
+!     HYDROPONIC MODE: Zero out soil nutrient outputs
+!     In hydroponic systems, nutrients come from solution, not soil
+!-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!       Set all plant-available nutrients from soil to zero
+        NH4_plant = 0.0
+        NO3_plant = 0.0
+        SPi_AVAIL = 0.0
+        SKi_AVAIL = 0.0
+        
+!       Note: SOILPROP, SW, and other soil properties are still calculated
+!       for compatibility, but nutrients are not available to plants
+      ENDIF
 
       IF (DYNAMIC == SEASINIT) THEN
 !       Soil water balance -- call last for initialization

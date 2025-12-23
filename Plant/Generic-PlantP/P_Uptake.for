@@ -22,10 +22,10 @@
      &    N2P, PUptake, PUptakeProf)                      !Output
 
 !     ------------------------------------------------------------------
-      USE ModuleDefs 
+      USE ModuleDefs
       USE ModuleData
       IMPLICIT  NONE
-      EXTERNAL WARNING
+      EXTERNAL WARNING, SOLPi
       SAVE
 !     ------------------------------------------------------------------
 !      CHARACTER*1  ISWPHO
@@ -39,11 +39,16 @@
       REAL, DIMENSION(NL) :: RLV, SAT, SPi_AVAIL 
 
 !     TEMPORARY FOR PRINTOUT
-!      TYPE (ControlType) CONTROL
+      TYPE (ControlType) CONTROL
+      TYPE (SwitchType) ISWITCH
       TYPE (SoilType) SOILPROP
-!      LOGICAL FEXIST 
-!      INTEGER ERRNUM, YEAR, DOY 
-      REAL RLVTOT               
+!      LOGICAL FEXIST
+!      INTEGER ERRNUM, YEAR, DOY
+      REAL RLVTOT
+
+!     Hydroponic variables
+      CHARACTER*1 ISWHYDRO
+      REAL P_SOL, PLTPOP, RTDEP, UPO4_HYDRO               
 
 !***********************************************************************
 !***********************************************************************
@@ -92,6 +97,51 @@
 !     If there is no demand, then return
       IF (PTotDem < 1.E-4) RETURN
 
+!-----------------------------------------------------------------------
+!     Check for hydroponic mode
+!-----------------------------------------------------------------------
+      CALL GET(CONTROL)
+      CALL GET(ISWITCH)
+      ISWHYDRO = ISWITCH % ISWHYDRO
+
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!-----------------------------------------------------------------------
+!       HYDROPONIC MODE: Use solution-based P uptake
+!-----------------------------------------------------------------------
+!       Get solution P concentration and plant parameters
+        CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL GET('PLANT','PLTPOP',PLTPOP)
+        CALL GET('PLANT','RTDEP',RTDEP)
+
+!       Call hydroponic P uptake module
+        CALL SOLPi(CONTROL, ISWITCH,
+     &    PLTPOP, RTDEP, PTotDem,              !Input
+     &    UPO4_HYDRO,                          !Output - kg/ha/day
+     &    P_SOL)                               !I/O - Solution conc. mg/L
+
+!       Store updated P concentration
+        CALL PUT('HYDRO','P_CONC',P_SOL)
+
+!       Store P uptake rate in ModuleData for output
+        CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
+
+!       Set uptake profile total
+        PUptakeProf = UPO4_HYDRO
+
+!       Set layer uptake to zero (not layer-based in hydroponics)
+        PUptake = 0.0
+
+        WRITE(*,*) 'Hydroponic P uptake: Demand=',PTotDem,
+     &             ' Uptake=',PUptakeProf,' kg/ha/d'
+
+!       Skip soil-based uptake
+        GO TO 500
+
+      ENDIF
+
+!-----------------------------------------------------------------------
+!     SOIL MODE: Normal soil-based P uptake
+!-----------------------------------------------------------------------
       CALL GET(SOILPROP)
       DS    = SOILPROP % DS
       DUL   = SOILPROP % DUL
@@ -219,6 +269,8 @@
 !       NUPTRF = 1.0
 !     ENDIF
 
+ 500  CONTINUE   ! Label for hydroponic mode to skip soil uptake
+
 !***********************************************************************
 !***********************************************************************
 !     END OF DYNAMIC IF CONSTRUCT
@@ -233,7 +285,7 @@
 ! P_Uptake Variables - updated 9/29/2004
 !-----------------------------------------------------------------------
 ! DLAYR(L)     Thickness of soil layer L (cm)
-! KG2PPM(L)    Conversion factor to switch from kg [N] / ha to µg [N] / g 
+! KG2PPM(L)    Conversion factor to switch from kg [N] / ha to ï¿½g [N] / g 
 !                [soil] for soil layer L 
 ! NL           Maximum number of soil layers = 20 
 ! NLAYR        Actual number of soil layers 

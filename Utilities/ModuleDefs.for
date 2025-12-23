@@ -525,6 +525,10 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL NH4_CONC    ! NH4-N concentration (mg/L)
         REAL P_CONC      ! P concentration (mg/L)
         REAL K_CONC      ! K concentration (mg/L)
+        REAL UNO3        ! NO3 uptake rate (kg/ha/d)
+        REAL UNH4        ! NH4 uptake rate (kg/ha/d)
+        REAL UPO4        ! P uptake rate (kg/ha/d)
+        REAL UK          ! K uptake rate (kg/ha/d)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -814,6 +818,10 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('NH4_CONC');Value = SAVE_data % HYDRO % NH4_CONC
         Case ('P_CONC');   Value = SAVE_data % HYDRO % P_CONC
         Case ('K_CONC');   Value = SAVE_data % HYDRO % K_CONC
+        Case ('UNO3');     Value = SAVE_data % HYDRO % UNO3
+        Case ('UNH4');     Value = SAVE_data % HYDRO % UNH4
+        Case ('UPO4');     Value = SAVE_data % HYDRO % UPO4
+        Case ('UK');       Value = SAVE_data % HYDRO % UK
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -961,6 +969,10 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('NH4_CONC');SAVE_data % HYDRO % NH4_CONC = Value
         Case ('P_CONC');   SAVE_data % HYDRO % P_CONC  = Value
         Case ('K_CONC');   SAVE_data % HYDRO % K_CONC  = Value
+        Case ('UNO3');     SAVE_data % HYDRO % UNO3    = Value
+        Case ('UNH4');     SAVE_data % HYDRO % UNH4    = Value
+        Case ('UPO4');     SAVE_data % HYDRO % UPO4    = Value
+        Case ('UK');       SAVE_data % HYDRO % UK      = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 

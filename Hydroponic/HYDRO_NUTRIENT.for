@@ -45,6 +45,7 @@ C     Solution concentrations (mg/L) - updated by depletion
 
 C     Local variables
       REAL SOLVOL        ! Solution volume (L)
+      REAL SOLTEMP       ! Solution temperature (C)
       REAL NO3_CONC_INIT ! Initial NO3 concentration (mg/L)
       REAL NH4_CONC_INIT ! Initial NH4 concentration (mg/L)
       REAL P_CONC_INIT   ! Initial P concentration (mg/L)
@@ -69,8 +70,19 @@ C     Uptake calculations
       REAL UK_plant      ! K uptake per plant (mg/plant/day)
 
       REAL UPTAKE_FACTOR ! Scaling factor for crop growth stage
+      REAL TEMP_FACTOR   ! Temperature correction factor (0-1)
       REAL DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K  ! Depletion rates
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
+      REAL GROWING_AREA  ! Growing area (m2) - for area conversions
+      
+C     Temperature parameters for nutrient uptake
+C     Optimal temperature range for most crops: 20-25 C
+C     Minimum: 10 C (very low uptake), Maximum: 35 C (uptake declines)
+      REAL TEMP_OPT      ! Optimal temperature (C)
+      REAL TEMP_MIN      ! Minimum temperature (C)
+      REAL TEMP_MAX      ! Maximum temperature (C)
+      REAL Q10           ! Q10 factor for temperature response
+      
       INTEGER DYNAMIC
 
 C-----------------------------------------------------------------------
@@ -126,6 +138,13 @@ C       These are typical values - should be crop-specific ideally
         Km_P     = 0.3     ! mg/L
         Km_K     = 1.0     ! mg/L
 
+C       Temperature parameters for nutrient uptake
+C       Based on typical hydroponic crop responses
+        TEMP_OPT = 22.5    ! Optimal temperature (C) - midpoint of 20-25 C range
+        TEMP_MIN = 10.0    ! Minimum temperature (C) - very low uptake below this
+        TEMP_MAX = 32.0    ! Maximum temperature (C) - uptake declines above this
+        Q10      = 2.0     ! Q10 factor (uptake doubles per 10 C increase)
+
         UNO3 = 0.0
         UNH4 = 0.0
         UPO4 = 0.0
@@ -142,6 +161,40 @@ C       These are typical values - should be crop-specific ideally
 C-----------------------------------------------------------------------
 C       Calculate daily nutrient uptake using Michaelis-Menten
 C-----------------------------------------------------------------------
+C       Get current solution concentrations from ModuleData
+C       (These should have been updated from previous day's INTEGR phase)
+        CALL GET('HYDRO','NO3_CONC',NO3_SOL)
+        CALL GET('HYDRO','NH4_CONC',NH4_SOL)
+        CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL GET('HYDRO','K_CONC',K_SOL)
+
+C       Get solution temperature from ModuleData
+        CALL GET('HYDRO','TEMP',SOLTEMP)
+        IF (SOLTEMP .LT. -50.0) THEN
+C         If temperature not set, use default optimal temperature
+          SOLTEMP = TEMP_OPT
+        ENDIF
+
+C       Calculate temperature correction factor for nutrient uptake
+C       Uses a bell-shaped curve (trapezoidal) centered at optimal temperature
+C       Factor = 1.0 at optimal temp, decreases linearly to 0 at min/max temps
+C       This approach is similar to temperature_factor() in SAMUCA model
+        IF (SOLTEMP .LE. TEMP_MIN .OR. SOLTEMP .GE. TEMP_MAX) THEN
+C         Outside viable temperature range - minimal uptake
+          TEMP_FACTOR = 0.05  ! 5% of maximum (prevents zero uptake)
+        ELSEIF (SOLTEMP .GE. TEMP_OPT) THEN
+C         Above optimal - linear decline to maximum temperature
+C         Factor decreases from 1.0 at TEMP_OPT to 0.05 at TEMP_MAX
+          TEMP_FACTOR = 1.0 - 0.95 * (SOLTEMP - TEMP_OPT) / 
+     &                  (TEMP_MAX - TEMP_OPT)
+          TEMP_FACTOR = MAX(0.05, TEMP_FACTOR)  ! Minimum 5%
+        ELSE
+C         Below optimal - linear increase from minimum to optimal
+C         Factor increases from 0.05 at TEMP_MIN to 1.0 at TEMP_OPT
+          TEMP_FACTOR = 0.05 + 0.95 * (SOLTEMP - TEMP_MIN) / 
+     &                  (TEMP_OPT - TEMP_MIN)
+          TEMP_FACTOR = MAX(0.05, MIN(1.0, TEMP_FACTOR))  ! Clamp to 0.05-1.0
+        ENDIF
 
 C       Growth stage factor (simplified - should link to plant model)
 C       Early growth: 0.3, Peak growth: 1.0, Senescence: 0.5
@@ -154,21 +207,23 @@ C       Early growth: 0.3, Peak growth: 1.0, Senescence: 0.5
         ENDIF
 
 C       Michaelis-Menten equation: V = Vmax * [S] / (Km + [S])
+C       Apply both growth stage factor and temperature factor to Vmax
 
 C       NO3 uptake (mg/plant/day)
-        UNO3_plant = (Vmax_NO3 * UPTAKE_FACTOR * NO3_SOL) /
+C       Vmax is modified by both growth stage and temperature
+        UNO3_plant = (Vmax_NO3 * UPTAKE_FACTOR * TEMP_FACTOR * NO3_SOL) /
      &               (Km_NO3 + NO3_SOL)
 
 C       NH4 uptake (mg/plant/day)
-        UNH4_plant = (Vmax_NH4 * UPTAKE_FACTOR * NH4_SOL) /
+        UNH4_plant = (Vmax_NH4 * UPTAKE_FACTOR * TEMP_FACTOR * NH4_SOL) /
      &               (Km_NH4 + NH4_SOL)
 
 C       P uptake (mg/plant/day)
-        UP_plant = (Vmax_P * UPTAKE_FACTOR * P_SOL) /
+        UP_plant = (Vmax_P * UPTAKE_FACTOR * TEMP_FACTOR * P_SOL) /
      &             (Km_P + P_SOL)
 
 C       K uptake (mg/plant/day)
-        UK_plant = (Vmax_K * UPTAKE_FACTOR * K_SOL) /
+        UK_plant = (Vmax_K * UPTAKE_FACTOR * TEMP_FACTOR * K_SOL) /
      &             (Km_K + K_SOL)
 
 C       Convert from mg/plant/day to kg/ha/day
@@ -186,15 +241,23 @@ C       Prevent negative concentrations
         UK   = MAX(0.0, UK)
 
         WRITE(*,300) NO3_SOL, NH4_SOL, P_SOL, K_SOL,
-     &               UNO3, UNH4, UPO4, UK
+     &               UNO3, UNH4, UPO4, UK, SOLTEMP, TEMP_FACTOR
  300    FORMAT(' HYDRO_NUTRIENT:',
      &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' [P]=',F6.1,' [K]=',F6.1,
-     &         ' Uptake: N=',F6.2,' P=',F6.2,' K=',F6.2,' kg/ha/d')
+     &         ' Uptake: N=',F6.2,' P=',F6.2,' K=',F6.2,' kg/ha/d',
+     &         ' Temp=',F5.1,'C Tfac=',F4.2)
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       Update solution concentrations after uptake
 C-----------------------------------------------------------------------
+C       Get current solution concentrations from ModuleData
+C       (These should match the values used in RATE phase)
+        CALL GET('HYDRO','NO3_CONC',NO3_SOL)
+        CALL GET('HYDRO','NH4_CONC',NH4_SOL)
+        CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL GET('HYDRO','K_CONC',K_SOL)
+
 C       Ensure SOLVOL is initialized (retrieve from ModuleData if needed)
         IF (SOLVOL .LT. 1.0) THEN
           CALL GET('HYDRO','SOLVOL',SOLVOL)
@@ -211,8 +274,13 @@ C         Assuming solution volume is per unit ground area
 
 C         Calculate solution volume per hectare
 C         SOLVOL is total volume (L) for the system
-C         Distribute over the planted area
-          VOL_PER_HA = SOLVOL * 10000.0  ! L/ha
+C         Need to know growing area to convert to per-hectare basis
+C         Using same assumption as HYDRO_WATER: 2 L/m2 ratio
+C         GROWING_AREA (m2) = SOLVOL (L) / 2.0 (L/m2)
+C         VOL_PER_HA (L/ha) = SOLVOL (L) * 10000 (m2/ha) / GROWING_AREA (m2)
+          GROWING_AREA = SOLVOL / 2.0  ! m2 (consistent with HYDRO_WATER)
+          IF (GROWING_AREA .LT. 1.0) GROWING_AREA = 1.0
+          VOL_PER_HA = SOLVOL * 10000.0 / GROWING_AREA  ! L/ha
 
           DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted
           DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
@@ -224,6 +292,12 @@ C         Update solution concentrations
           NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
           P_SOL   = MAX(0.0, P_SOL - DEPL_P)
           K_SOL   = MAX(0.0, K_SOL - DEPL_K)
+
+C         Store updated concentrations back to ModuleData
+          CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
+          CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
+          CALL PUT('HYDRO','P_CONC',P_SOL)
+          CALL PUT('HYDRO','K_CONC',K_SOL)
 
           WRITE(*,400) DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K
  400      FORMAT(' Solution depletion:',

@@ -8,9 +8,12 @@ C  03/01/1993 WTB Modified.
 C  01/20/1997 GH  Modified.
 C  07/10/1998 CHP modified for modular format.
 C  05/11/1998 GH  Incorporated in CROPGRO
+C  12/22/2025 Added hydroponic K demand estimation from N demand
+C              (CROPGRO doesn't calculate K demand, so we estimate it
+C               using typical N:K ratio ~1:1.2 for leafy vegetables)
 C-----------------------------------------------------------------------
 C  Called from:  PLANT
-C  Calls:        ERROR, FIND, IGNORE
+C  Calls:        ERROR, FIND, IGNORE, HYDRO_NUTRIENT
 C=======================================================================
 
       SUBROUTINE NUPTAK(DYNAMIC, ISWITCH,
@@ -45,8 +48,11 @@ C     NDMTOT and NDMSDR are input parameters - declared for clarity
 C     Hydroponic solution variables (SAVE to persist across calls)
       REAL NO3_SOL, NH4_SOL, P_SOL, K_SOL
       REAL UPO4_HYDRO, UK_HYDRO, UNO3_TOT, UNH4_TOT
+      REAL UNO3_DUMMY, UNH4_DUMMY  ! Dummy variables for HYDRO_NUTRIENT call
+      REAL KDEMAND  ! Estimated K demand (kg/ha/day) - from N demand
+      REAL N_TO_K_RATIO  ! N:K ratio for demand estimation (typically 1:1 to 1:1.5)
       TYPE (ControlType) :: CONTROL_DUMMY
-      SAVE NO3_SOL, NH4_SOL, P_SOL, K_SOL
+      SAVE
       REAL DLAYR(NL), LL(NL), DUL(NL), SAT(NL), SW(NL), RLV(NL)
       REAL SNO3(NL), SNH4(NL), KG2PPM(NL), NO3(NL), NH4(NL)
       REAL RNO3U(NL), RNH4U(NL), UNO3(NL), UNH4(NL)
@@ -173,6 +179,11 @@ C-----------------------------------------------------------------------
 C       Calculate N demand (EXACT same as soil mode)
         ANDEM = (NDMTOT - NDMSDR) * 10.0  ! kg N/ha
 
+C       Estimate K demand from N demand (typical N:K ratio ~1:1.2 for many crops)
+C       This makes K uptake demand-driven like N and P
+        N_TO_K_RATIO = 1.2  ! K demand = N demand * 1.2 (typical for leafy vegetables)
+        KDEMAND = ANDEM * N_TO_K_RATIO  ! kg K/ha/day
+
         IF (ANDEM .GT. 1.E-9) THEN
 C         In hydroponic systems with adequate concentrations, uptake should meet demand
 C         Check if solution concentrations are adequate (similar to soil availability check)
@@ -189,7 +200,18 @@ C           Distribute demand between NO3 and NH4 based on relative concentratio
               UNH4_TOT = ANDEM * 0.1
             ENDIF
 C           Still need to call HYDRO_NUTRIENT INTEGR to update solution concentrations
-C           But first set the uptake values so INTEGR can use them for depletion
+C           But first calculate P and K uptake using RATE phase, then use INTEGR
+            CONTROL_DUMMY % DYNAMIC = RATE
+            CALL HYDRO_NUTRIENT(
+     &        CONTROL_DUMMY, ISWITCH,                !Input
+     &        PLTPOP, RTDEP, 999.0,                  !Input (RWU_HYDRO=999)
+     &        UNO3_DUMMY, UNH4_DUMMY, UPO4_HYDRO, UK_HYDRO,  !Output (kg/ha/d)
+     &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+
+C           Limit K uptake by estimated demand (like N uptake)
+            IF (UK_HYDRO .GT. KDEMAND) THEN
+              UK_HYDRO = KDEMAND
+            ENDIF
           ELSE
 C           Low concentrations - use Michaelis-Menten to calculate potential uptake
             CONTROL_DUMMY % DYNAMIC = RATE
@@ -207,6 +229,11 @@ C           Limit by demand (like soil mode)
                 UNH4_TOT = UNH4_TOT * NUF
               ENDIF
             ENDIF
+
+C           Limit K uptake by estimated demand
+            IF (UK_HYDRO .GT. KDEMAND) THEN
+              UK_HYDRO = KDEMAND
+            ENDIF
           ENDIF
 
 C         Integrate to update solution concentrations
@@ -222,10 +249,37 @@ C         Convert from kg/ha/day to g/m2 (divide by 10)
           TRNH4U = UNH4_TOT / 10.0
           TRNU = TRNO3U + TRNH4U
         ELSE
-C         No N demand - set uptake to zero
+C         No N demand - set N uptake to zero
           TRNO3U = 0.0
           TRNH4U = 0.0
           TRNU = 0.0
+          UNO3_TOT = 0.0
+          UNH4_TOT = 0.0
+C         Still calculate P and K uptake even if no N demand
+C         But limit K uptake by estimated demand (even if N demand is zero, K may still be needed)
+          KDEMAND = 0.0  ! No N demand means minimal K demand
+          CONTROL_DUMMY % DYNAMIC = RATE
+          CALL HYDRO_NUTRIENT(
+     &        CONTROL_DUMMY, ISWITCH,                !Input
+     &        PLTPOP, RTDEP, 999.0,                  !Input (RWU_HYDRO=999)
+     &        UNO3_DUMMY, UNH4_DUMMY, UPO4_HYDRO, UK_HYDRO,  !Output (kg/ha/d)
+     &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+
+C           Limit K uptake by demand (should be minimal if no N demand)
+          IF (UK_HYDRO .GT. KDEMAND) THEN
+            UK_HYDRO = MAX(0.0, KDEMAND)
+          ENDIF
+
+C         Update solution concentrations for P and K
+          CONTROL_DUMMY % DYNAMIC = INTEGR
+          CALL HYDRO_NUTRIENT(
+     &        CONTROL_DUMMY, ISWITCH,                !Input
+     &        PLTPOP, RTDEP, 999.0,                  !Input
+     &        UNO3_DUMMY, UNH4_DUMMY, UPO4_HYDRO, UK_HYDRO,  !Output
+     &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+C         Store P and K uptake rates
+          CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
+          CALL PUT('HYDRO','UK',UK_HYDRO)
         ENDIF
 
 C       Set layer uptake to zero (not layer-based in hydroponics)
@@ -243,6 +297,11 @@ C       Update stored solution concentrations
         CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
         CALL PUT('HYDRO','P_CONC',P_SOL)
         CALL PUT('HYDRO','K_CONC',K_SOL)
+C       Store uptake rates for output (convert from kg/ha/d to match output format)
+        CALL PUT('HYDRO','UNO3',UNO3_TOT)
+        CALL PUT('HYDRO','UNH4',UNH4_TOT)
+        CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
+        CALL PUT('HYDRO','UK',UK_HYDRO)
 
 C       Soil-based uptake will be skipped (handled by ELSE below)
       ELSE
