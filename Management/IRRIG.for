@@ -121,10 +121,24 @@ C=======================================================================
       DYNAMIC = CONTROL % DYNAMIC
       YRDOY   = CONTROL % YRDOY
 
-      DLAYR  = SOILPROP % DLAYR  
+!-----------------------------------------------------------------------
+!     HYDROPONIC MODE: Skip all irrigation processes
+!     In hydroponics, there is no irrigation - roots are always in solution
+!-----------------------------------------------------------------------
+      IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+!       Initialize irrigation outputs to zero
+        IRRAMT = 0.0
+        TIL_IRR = 0.0
+        NAP = 0
+        TOTIR = 0.0
+        IIRRI = 'N'
+        RETURN
+      ENDIF
+
+      DLAYR  = SOILPROP % DLAYR
       DS     = SOILPROP % DS
-      DUL    = SOILPROP % DUL    
-      LL     = SOILPROP % LL     
+      DUL    = SOILPROP % DUL
+      LL     = SOILPROP % LL
       NLAYR  = SOILPROP % NLAYR  
 
       IIRRI  = ISWITCH % IIRRI

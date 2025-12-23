@@ -14,7 +14,7 @@ C-----------------------------------------------------------------------
 
       SUBROUTINE SOLEC(
      &    CONTROL, ISWITCH,                    !Input
-     &    NO3_CONC, NH4_CONC, P_CONC, K_CONC,  !Input - mg/L
+     &    NO3_CONC, NH4_CONC, P_CONC, K_CONC,  !I/O - mg/L (adjusted for EC)
      &    EC_CALC, EC_TARGET)                  !Output - dS/m
 
       USE ModuleDefs
@@ -42,6 +42,8 @@ C     Local variables
       REAL P_ppm         ! P in ppm
       REAL K_ppm         ! K in ppm
       REAL TotalIons     ! Total ion concentration (ppm)
+      REAL NO3_INIT, NH4_INIT, P_INIT, K_INIT ! Initial nutrient concentrations
+      REAL EC_RATIO, EC_DEVIATION  ! For EC management
 
 C     Conversion factors for EC estimation
 C     Approximate relationship: EC (dS/m) ~ TotalIons (ppm) / 640
@@ -50,7 +52,7 @@ C     This is a rough empirical relationship for hydroponic solutions
       PARAMETER (EC_FACTOR = 640.0)
 
       INTEGER DYNAMIC
-      SAVE EC_INIT
+      SAVE EC_INIT, NO3_INIT, NH4_INIT, P_INIT, K_INIT
 
 C-----------------------------------------------------------------------
 
@@ -72,9 +74,17 @@ C-----------------------------------------------------------------------
         EC_TARGET = EC_INIT
         EC_CALC = EC_INIT
 
-        WRITE(*,100) EC_INIT
+C       Save initial nutrient concentrations for EC-based management
+        NO3_INIT = NO3_CONC
+        NH4_INIT = NH4_CONC
+        P_INIT = P_CONC
+        K_INIT = K_CONC
+
+        WRITE(*,100) EC_INIT, NO3_INIT, NH4_INIT, P_INIT, K_INIT
  100    FORMAT(/,' Hydroponic EC Module Initialized',
-     &         /,'   Target EC : ',F6.2,' dS/m',/)
+     &         /,'   Target EC : ',F6.2,' dS/m',
+     &         /,'   Target concentrations (mg/L):',
+     &         /,'     NO3=',F6.1,' NH4=',F6.1,' P=',F6.1,' K=',F6.1,/)
 
       CASE (RATE)
 C-----------------------------------------------------------------------
@@ -105,8 +115,41 @@ C       Ensure minimum EC
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
-C       Update EC in ModuleData
+C       EC-BASED NUTRIENT MANAGEMENT
+C       Commercial hydroponic systems maintain target EC by adding
+C       concentrated nutrient solution when EC drops below target
 C-----------------------------------------------------------------------
+C       Calculate EC deviation from target
+        EC_DEVIATION = EC_TARGET - EC_CALC
+
+C       If EC drops below 90% of target, replenish nutrients to target levels
+C       In commercial hydroponics, growers add concentrated nutrient solution
+C       or replace solution entirely to maintain target EC
+        IF (EC_CALC .LT. EC_TARGET * 0.90) THEN
+C         Restore all concentrations to initial target levels
+C         This simulates changing out or replenishing the nutrient solution
+          NO3_CONC = NO3_INIT
+          NH4_CONC = NH4_INIT
+          P_CONC   = P_INIT
+          K_CONC   = K_INIT
+
+C         Recalculate EC with adjusted concentrations
+          TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
+          EC_CALC = TotalIons / EC_FACTOR
+          IF (EC_CALC .LT. 0.1) EC_CALC = 0.1
+
+C         Update concentrations in ModuleData
+          CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
+          CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
+          CALL PUT('HYDRO','P_CONC',P_CONC)
+          CALL PUT('HYDRO','K_CONC',K_CONC)
+
+          WRITE(*,310) EC_RATIO, EC_CALC
+ 310      FORMAT(' SOLEC: EC replenishment - Ratio=',F6.3,
+     &           ' New EC=',F6.2,' dS/m')
+        ENDIF
+
+C       Update EC in ModuleData
         CALL PUT('HYDRO','EC',EC_CALC)
 
         WRITE(*,300) EC_CALC

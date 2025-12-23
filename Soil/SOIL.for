@@ -123,46 +123,81 @@ C=====================================================================
       ISWHYDRO = ISWITCH % ISWHYDRO
 
 !***********************************************************************
-!     Call Soil Dynamics module 
-!      IF (DYNAMIC < OUTPUT) THEN
-        CALL SOILDYN(CONTROL, ISWITCH, 
+!-----------------------------------------------------------------------
+!     HYDROPONIC MODE: Skip all soil processes
+!     In hydroponic systems, there is no soil - nutrients come from solution
+!-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!       Initialize minimal soil outputs to zero for hydroponic mode
+        NH4_plant = 0.0
+        NO3_plant = 0.0
+        SPi_AVAIL = 0.0
+        SKi_AVAIL = 0.0
+        SW = 0.0
+        SWDELTS = 0.0
+        SWDELTU = 0.0
+        DRN = 0.0
+        UPFLOW = 0.0
+        DRAIN = 0.0
+        WINF = 0.0
+        SNOW = 0.0
+        TDFC = 0.0
+        TDLNO = 0
+        UPPM = 0.0
+        SomLitC = 0.0
+        SomLitE = 0.0
+
+!       Note: SOILPROP must be initialized for system compatibility
+!       Other modules may access soil properties even in hydroponic mode
+        CALL SOILDYN(CONTROL, ISWITCH,
      &    KTRANS, MULCH, SomLit, SomLitC, SW, TILLVALS,   !Input
      &    WEATHER, XHLAI,                                 !Input
      &    SOILPROP)                                       !Output
-!      ENDIF
 
-!     Call WATBAL first for all except seasonal initialization
-      IF (DYNAMIC /= SEASINIT) THEN
-        CALL WATBAL(CONTROL, ISWITCH, 
-     &    ES, IRRAMT, SOILPROP, SWDELTX,                  !Input
-     &    TILLVALS, WEATHER,                              !Input
-     &    FLOODWAT, MULCH, SWDELTU,                       !I/O
-     &    DRAIN, DRN, SNOW, SW, SWDELTS,                  !Output
-     &    TDFC, TDLNO, UPFLOW, WINF)                      !Output
-      ENDIF
+!       Exit immediately - skip all soil water and nutrient calculations
+        RETURN
 
-!     Soil organic matter modules
-      IF (MESOM .EQ. 'P') THEN
-!       Parton (Century-based) soil organic matter module
-        CALL CENTURY(CONTROL, ISWITCH, 
-     &  DRAIN, FERTDATA, FLOODWAT, FLOODN, HARVRES,   !Input
-     &  NH4, NO3, OMADATA, RLV, SENESCE,              !Input
-     &  SOILPROP, SPi_Labile, ST, SW, TILLVALS,       !Input
-     &  CH4_data, IMM, LITC, MNR, MULCH, newCO2,      !Output
-     &  SomLit, SomLitC, SomLitE, SSOMC)              !Output
       ELSE
-!      ELSEIF (MESOM .EQ. 'G') THEN
-!       Godwin (Ceres-based) soil organic matter module (formerly NTRANS)
-        CALL SoilOrg (CONTROL, ISWITCH, 
-     &    DRAIN, FERTDATA, FLOODWAT, FLOODN, HARVRES,     !Input
-     &    NH4, NO3, OMAData, RLV,                         !Input
-     &    SENESCE, SOILPROP, SPi_Labile, ST, SW, TILLVALS,!Input
-     &    CH4_data, IMM, LITC, MNR, MULCH, newCO2,        !Output
-     &    SomLit, SomLitC, SomLitE, SSOMC)                !Output
-      ENDIF
+!-----------------------------------------------------------------------
+!       SOIL-BASED MODE: Run all normal soil processes
+!-----------------------------------------------------------------------
+!       Call Soil Dynamics module
+        CALL SOILDYN(CONTROL, ISWITCH,
+     &    KTRANS, MULCH, SomLit, SomLitC, SW, TILLVALS,   !Input
+     &    WEATHER, XHLAI,                                 !Input
+     &    SOILPROP)                                       !Output
 
-!     Inorganic N (formerly NTRANS)
-      CALL SoilNi (CONTROL, ISWITCH, 
+!       Call WATBAL first for all except seasonal initialization
+        IF (DYNAMIC /= SEASINIT) THEN
+          CALL WATBAL(CONTROL, ISWITCH,
+     &      ES, IRRAMT, SOILPROP, SWDELTX,                  !Input
+     &      TILLVALS, WEATHER,                              !Input
+     &      FLOODWAT, MULCH, SWDELTU,                       !I/O
+     &      DRAIN, DRN, SNOW, SW, SWDELTS,                  !Output
+     &      TDFC, TDLNO, UPFLOW, WINF)                      !Output
+        ENDIF
+
+!       Soil organic matter modules
+        IF (MESOM .EQ. 'P') THEN
+!         Parton (Century-based) soil organic matter module
+          CALL CENTURY(CONTROL, ISWITCH,
+     &    DRAIN, FERTDATA, FLOODWAT, FLOODN, HARVRES,   !Input
+     &    NH4, NO3, OMADATA, RLV, SENESCE,              !Input
+     &    SOILPROP, SPi_Labile, ST, SW, TILLVALS,       !Input
+     &    CH4_data, IMM, LITC, MNR, MULCH, newCO2,      !Output
+     &    SomLit, SomLitC, SomLitE, SSOMC)              !Output
+        ELSE
+!         Godwin (Ceres-based) soil organic matter module (formerly NTRANS)
+          CALL SoilOrg (CONTROL, ISWITCH,
+     &      DRAIN, FERTDATA, FLOODWAT, FLOODN, HARVRES,     !Input
+     &      NH4, NO3, OMAData, RLV,                         !Input
+     &      SENESCE, SOILPROP, SPi_Labile, ST, SW, TILLVALS,!Input
+     &      CH4_data, IMM, LITC, MNR, MULCH, newCO2,        !Output
+     &      SomLit, SomLitC, SomLitE, SSOMC)                !Output
+        ENDIF
+
+!       Inorganic N (formerly NTRANS)
+        CALL SoilNi (CONTROL, ISWITCH,
      &    CH4_data, DRN, ES, FERTDATA, FLOODWAT, IMM,     !Input
      &    LITC, MNR, newCO2, SNOW, SOILPROP, SSOMC, ST,   !Input
      &    SW, TDFC, TDLNO, TILLVALS, UNH4, UNO3, UPFLOW,  !Input
@@ -170,35 +205,23 @@ C=====================================================================
      &    FLOODN,                                         !I/O
      &    NH4, NO3, NH4_plant, NO3_plant, UPPM)           !Output
 
-!     Inorganic P
-      CALL SoilPi(CONTROL, ISWITCH, FLOODWAT, 
+!       Inorganic P
+        CALL SoilPi(CONTROL, ISWITCH, FLOODWAT,
      &    FERTDATA, IMM, MNR, PUptake, SOILPROP,          !Input
      &    FracRts, SW, TillVals,                          !Input
      &    SPi_AVAIL, SPi_Labile, YREND)                   !Output
 
-!     Inorganic K
-      CALL SoilKi(CONTROL, ISWITCH, 
+!       Inorganic K
+        CALL SoilKi(CONTROL, ISWITCH,
      &    FERTDATA, KUptake, SOILPROP, TILLVALS,          !Input
      &    SKi_Avail)                                      !Output
 
-!-----------------------------------------------------------------------
-!     HYDROPONIC MODE: Zero out soil nutrient outputs
-!     In hydroponic systems, nutrients come from solution, not soil
-!-----------------------------------------------------------------------
-      IF (ISWHYDRO .EQ. 'Y') THEN
-!       Set all plant-available nutrients from soil to zero
-        NH4_plant = 0.0
-        NO3_plant = 0.0
-        SPi_AVAIL = 0.0
-        SKi_AVAIL = 0.0
-        
-!       Note: SOILPROP, SW, and other soil properties are still calculated
-!       for compatibility, but nutrients are not available to plants
-      ENDIF
+      ENDIF  ! End of ISWHYDRO check
 
-      IF (DYNAMIC == SEASINIT) THEN
+!     Soil-based systems need WATBAL at SEASINIT
+      IF (DYNAMIC == SEASINIT .AND. ISWHYDRO .NE. 'Y') THEN
 !       Soil water balance -- call last for initialization
-        CALL WATBAL(CONTROL, ISWITCH, 
+        CALL WATBAL(CONTROL, ISWITCH,
      &    ES, IRRAMT, SOILPROP, SWDELTX,                  !Input
      &    TILLVALS, WEATHER,                              !Input
      &    FLOODWAT, MULCH, SWDELTU,                       !I/O

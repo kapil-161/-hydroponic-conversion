@@ -120,6 +120,32 @@ C=======================================================================
       DYNAMIC = CONTROL % DYNAMIC
       YRDOY   = CONTROL % YRDOY
 
+!-----------------------------------------------------------------------
+!     HYDROPONIC MODE: Skip all fertilizer processes
+!     In hydroponics, nutrients come from solution (EC-based management)
+!-----------------------------------------------------------------------
+      IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+!       Initialize fertilizer data structure to zero (no fertilizers)
+        FertData % FERTDAY = 0
+        FertData % FERTYPE = 0
+        FertData % NAPFER = 0
+        FertData % FERDEPTH = 0.0
+        FertData % FERMIXPERC = 0.0
+        FertData % ADDFNH4 = 0.0
+        FertData % ADDFNO3 = 0.0
+        FertData % ADDFUREA = 0.0
+        FertData % AMTFER = 0.0
+        FertData % ADDSNH4 = 0.0
+        FertData % ADDSNO3 = 0.0
+        FertData % ADDUREA = 0.0
+        FertData % ADDSPi = 0.0
+        FertData % ADDSKi = 0.0
+        FertData % ADDBuffer = 0.0
+        FertData % AppType = 'UNIFORM'
+        FertData % UNINCO = .FALSE.
+        RETURN
+      ENDIF
+
 !***********************************************************************
 !***********************************************************************
 !     Seasonal initialization - run once per season

@@ -21,7 +21,7 @@ C-----------------------------------------------------------------------
       CHARACTER*1  ISWHYDRO
       CHARACTER*6  ERRKEY,FINDCH
       CHARACTER*12 FILEX
-      CHARACTER*80 CHARTEST
+      CHARACTER*120 CHARTEST
 
       INTEGER LUNEXP,LNSOL,LN,LINEXP,ISECT,IFIND,ERRNUM
       REAL    SOLVOL,EC,PH,DO2,TEMP
@@ -57,14 +57,12 @@ C       Keep ISWHYDRO = 'N' and return
         RETURN
       ENDIF
 
-C     Section found - activate HYDROPONIC mode
-      ISWHYDRO = 'Y'
-
+C     Section found - read the data line
 C     Read the data line
  50   CALL IGNORE (LUNEXP,LINEXP,ISECT,CHARTEST)
 
       IF (ISECT .EQ. 1) THEN
-         READ (CHARTEST,60,IOSTAT=ERRNUM) LN,SOLVOL,EC,PH,DO2,TEMP,
+         READ (CHARTEST,*,IOSTAT=ERRNUM) LN,SOLVOL,EC,PH,DO2,TEMP,
      &        NO3_CONC,NH4_CONC,P_CONC,K_CONC
 
          IF (ERRNUM .NE. 0) THEN
@@ -77,9 +75,18 @@ C     Read the data line
 
       IF (LN .NE. LNSOL) GO TO 50
 
-C     Print confirmation message to indicate section was read
-      WRITE(*,100) SOLVOL,EC,PH,DO2,TEMP,NO3_CONC,NH4_CONC,P_CONC,
-     &             K_CONC
+C     Check if valid hydroponic data (SOLVOL > 0)
+      IF (SOLVOL .GT. 0.0) THEN
+C       Valid hydroponic parameters - activate HYDROPONIC mode
+        ISWHYDRO = 'Y'
+C       Print confirmation message to indicate section was read
+        WRITE(*,100) SOLVOL,EC,PH,DO2,TEMP,NO3_CONC,NH4_CONC,P_CONC,
+     &               K_CONC
+      ELSE
+C       SOLVOL <= 0 or -99: This treatment is soil-based
+C       Keep ISWHYDRO = 'N' and return silently
+        WRITE(*,*) ' Soil-based experiment (no hydroponic section found)'
+      ENDIF
 
       REWIND (LUNEXP)
 
@@ -89,7 +96,7 @@ C-----------------------------------------------------------------------
 C     FORMAT Strings
 C-----------------------------------------------------------------------
 
- 60   FORMAT (I4,9(F10.0))
+ 60   FORMAT (I4,9(1X,F9.0))
  100  FORMAT (/,' *** HYDROPONIC MODE ACTIVATED ***',
      &        /,' HYDROPONIC SOLUTION PARAMETERS:',
      &        /,'   Solution Volume  : ',F10.1,' L',

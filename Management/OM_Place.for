@@ -129,19 +129,38 @@
       ISWNIT  = ISWITCH % ISWNIT
       ISWPHO  = ISWITCH % ISWPHO
 
+C-----------------------------------------------------------------------
+C     HYDROPONIC MODE: Skip all organic matter applications
+C     In hydroponics, there is no soil to apply residues or organic matter
+C-----------------------------------------------------------------------
+      IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+!       Initialize organic matter outputs to zero
+        OMAData % NAPRes = 0
+        OMAData % ResDat = 0
+        OMAData % ResDepth = 0
+        OMAData % RESTYPE = ''
+        OMAData % ResMixPerc = 0.0
+        OMAData % ResWt  = 0.0
+        OMAData % ResLig = 0.0
+        OMAData % ResE   = 0.0
+        OMAData % CumResWt = 0.0
+        OMAData % CumResE  = 0.0
+        RETURN
+      ENDIF
+
 !-----------------------------------------------------------------------
-!     Residue types                                                    
-!     1 = Crop residue                                                 
-!     2 = Green manure                                                 
-!     3 = Barnyard manure                                              
-!     4 = Liquid manure                                                
-!                                                                     
-!     Residue Application (IRESI)                                             
-!     A = Auto residue for multiyear                                   
-!     N = No residue                                                   
-!     R = On reported dates                                            
-!     D = As reported, in DAP                                          
-!     F = Auto, with fixed amounts 
+!     Residue types
+!     1 = Crop residue
+!     2 = Green manure
+!     3 = Barnyard manure
+!     4 = Liquid manure
+!
+!     Residue Application (IRESI)
+!     A = Auto residue for multiyear
+!     N = No residue
+!     R = On reported dates
+!     D = As reported, in DAP
+!     F = Auto, with fixed amounts
 
 !***********************************************************************
 !***********************************************************************

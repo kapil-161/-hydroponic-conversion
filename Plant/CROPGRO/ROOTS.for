@@ -37,14 +37,15 @@ C  05/11/1999 GH  Incorporated in CROPGRO
      &    RLV, RTDEP, SATFAC, SENRT, SRDOT, TRLV)         !Output
 
 C-----------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
+      USE ModuleDefs     !Definitions of constructed variable types,
                          ! which contain control information, soil
                          ! parameters, hourly weather data.
+      USE ModuleData     !For GET/PUT of hydroponic switch
       IMPLICIT NONE
       EXTERNAL IPROOT, INROOT, TABEX
       SAVE
 
-      CHARACTER*1 ISWWAT
+      CHARACTER*1 ISWWAT, ISWHYDRO
       CHARACTER*2 CROP
       CHARACTER*92 FILECC
 
@@ -82,6 +83,9 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       IF (DYNAMIC .EQ. RUNINIT) THEN
 !-----------------------------------------------------------------------
+!     Get hydroponic switch from ModuleData
+      CALL GET('MGMT','ISWHYDRO',ISWHYDRO)
+
       CALL IPROOT(FILECC,                                 !Input
      &  PORMIN, RFAC1, RLDSM, RTDEPI, RTEXF,              !Output
      &  RTSEN, RTSDF, RTWTMIN, XRTFAC, YRTFAC)            !Output
@@ -146,6 +150,57 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. INTEGR) THEN
 !-----------------------------------------------------------------------
+C     HYDROPONIC NFT ROOT GROWTH
+C     In NFT hydroponics, roots grow in nutrient solution without
+C     soil layers, water stress, or depth progression
+C-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+!       Calculate new root growth based on photosynthate allocation
+        RLNEW = WRDOTN * RFAC1 / 10000.
+        CGRRT = AGRRT * WRDOTN
+
+!       Update RFAC3 based on yesterday's RTWT and TRLV
+        IF (RTWT - WRDOTN .GE. 0.0001 .AND. TRLV .GE. 0.00001) THEN
+          RFAC3 = TRLV * 10000.0 / RTWT
+        ELSE
+          RFAC3 = RFAC1
+        ENDIF
+
+!       Natural senescence only (no water stress in NFT)
+!       Hydroponic roots have lower senescence due to optimal conditions
+        SRDOT = TRLV * RTSEN * DTX * 0.5 / RFAC3 * 1.E5
+!       Factor 0.5 = reduced senescence in hydroponics vs soil
+        SRDOT = AMAX1(SRDOT, 0.0)
+
+!       Distribute root senescence uniformly (no layering in NFT)
+        DO L = 1, NLAYR
+          IF (NLAYR > 0) THEN
+            SENRT(L) = SRDOT * 10. / FLOAT(NLAYR)  !kg/ha per layer
+          ELSE
+            SENRT(L) = 0.0
+          ENDIF
+        ENDDO
+
+!       Update total root length density
+        TRLV = TRLV + RLNEW - (SRDOT / (RFAC3 * 1.E4))
+        TRLV = AMAX1(TRLV, 0.0)
+
+!       Distribute RLV uniformly across layers (no preference in NFT)
+        DO L = 1, NLAYR
+          RLV(L) = TRLV / (DLAYR(L) * FLOAT(NLAYR))
+        ENDDO
+
+!       No root depth progression in NFT - roots don't explore
+        RTDEP = RTDEPI
+
+!       No water stress in hydroponics
+        SATFAC = 0.0
+
+        CumRootMass = CumRootMass + WRDOTN * 10. - SRDOT * 10.
+
+      ELSE
+!-----------------------------------------------------------------------
+C     SOIL-BASED ROOT GROWTH (original code)
 C     Calculate Root Depth Rate of Increase, Physiological Day (RFAC2)
 C-----------------------------------------------------------------------
       RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
@@ -362,7 +417,9 @@ C     respiration, and update root length density for each layer.
 !          kg/ha  = -------- * ------- * -------- * ---------
 !                  cm2[soil]   cm[root]     m2         (g/m2)
 
-      CumRootMass = CumRootMass + WRDOTN * 10. - SRDOT * 10. 
+      CumRootMass = CumRootMass + WRDOTN * 10. - SRDOT * 10.
+
+      ENDIF  !End of ISWHYDRO check for INTEGR section
 
 !***********************************************************************
 !***********************************************************************

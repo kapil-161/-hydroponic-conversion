@@ -80,6 +80,55 @@ C=======================================================================
          SLPF  = 1.0
          NLAYR = 1
 
+!        HYDROPONIC MODE: Set minimal soil structure for compatibility
+!        In hydroponics, there is no soil, but some modules need
+!        soil structure to be defined (layer arrays, etc.)
+         IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+!          Set minimal hydroponic "soil" structure (3 layers for compatibility)
+           NLAYR = 3
+           PEDON = 'HYDRO_NFT'
+           SLNO  = 'HYDRO_NFT'
+           SLTXS = '-99'
+           SLDESC= 'Hydroponic NFT System - No Soil'
+           SLSOUR= 'DSSAT-Hydro'
+
+!          Minimal layer structure (10 cm layers for root distribution)
+           DS(1) = 10.0
+           DS(2) = 20.0
+           DS(3) = 30.0
+           DLAYR(1) = 10.0
+           DLAYR(2) = 10.0
+           DLAYR(3) = 10.0
+           DEPMAX = 30.0
+
+!          Water properties (not used in hydroponics, but set for compatibility)
+           DO I = 1, NLAYR
+             LL(I)   = 0.20
+             DUL(I)  = 0.30
+             SAT(I)  = 0.40
+             SWCN(I) = 1.0
+             SHF(I)  = 1.0
+             BD(I)   = 1.3
+             OC(I)   = 0.0
+             PH(I)   = 6.5
+             CLAY(I) = 0.0
+             SILT(I) = 0.0
+           ENDDO
+
+!          Surface properties (not used in hydroponics)
+           SALB  = 0.13
+           U     = 6.0
+           SWCON = 0.5
+           CN2   = 61.0
+           SLNF  = 1.0
+
+           WRITE(*,100)
+ 100       FORMAT(/,
+     &      ' *** HYDROPONIC MODE: Soil file not required ***',/,
+     &      ' Minimal soil structure set for system compatibility',/,
+     &      ' All soil processes bypassed in hydroponic simulation',/)
+         ENDIF
+
 !     Read soil file
        ELSE
          LINSOL = 0

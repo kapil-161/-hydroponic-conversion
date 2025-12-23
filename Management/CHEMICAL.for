@@ -59,9 +59,18 @@ C-----------------------------------------------------------------------
 !      IDETH   = ISWITCH % IDETH  - will be used to determine output
 !         for Chemical.OUT.
 
+C-----------------------------------------------------------------------
+C     HYDROPONIC MODE: Skip all chemical applications
+C     In hydroponics, pest/disease management is typically done differently
+C-----------------------------------------------------------------------
+      IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+        NCHEM = 0
+        RETURN
+      ENDIF
+
 C***********************************************************************
 C***********************************************************************
-C    Input and Initialization 
+C    Input and Initialization
 C***********************************************************************
       IF (DYNAMIC .EQ. INIT) THEN
 !-----------------------------------------------------------------------

@@ -63,9 +63,31 @@ C-----------------------------------------------------------------------
 
       NLAYR = SOILPROP % NLAYR
 
+C-----------------------------------------------------------------------
+C     HYDROPONIC MODE: Skip all tillage operations
+C     In hydroponics, there is no soil to cultivate
+C-----------------------------------------------------------------------
+      IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
+!       Initialize tillage outputs to zero for hydroponic mode
+        TILLVALS % NTIL      = 0
+        TILLVALS % TILDATE   = 0
+        TILLVALS % TILDEP    = 0.0
+        TILLVALS % TILMIX    = 0.0
+        TILLVALS % TILRESINC = 0.0
+        TILLVALS % NTil_today= 0
+        TILLVALS % NLYRS     = 0
+        TILLVALS % CNP       = 0.0
+        TILLVALS % TDEP      = 0.0
+        TILLVALS % BDP       = 0.0
+        TILLVALS % DEP       = 0.0
+        TILLVALS % SWCNP     = 0.0
+        TILLNO = 0
+        RETURN
+      ENDIF
+
 C***********************************************************************
 C***********************************************************************
-C    Input and Initialization 
+C    Input and Initialization
 C***********************************************************************
       IF (DYNAMIC .EQ. INIT) THEN
 C-----------------------------------------------------------------------
