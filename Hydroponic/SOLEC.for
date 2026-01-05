@@ -126,6 +126,9 @@ C       If EC drops below 90% of target, replenish nutrients to target levels
 C       In commercial hydroponics, growers add concentrated nutrient solution
 C       or replace solution entirely to maintain target EC
         IF (EC_CALC .LT. EC_TARGET * 0.90) THEN
+C         Save old EC to calculate replenishment ratio
+          EC_RATIO = EC_CALC / EC_TARGET
+
 C         Restore all concentrations to initial target levels
 C         This simulates changing out or replenishing the nutrient solution
           NO3_CONC = NO3_INIT

@@ -525,6 +525,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL NH4_CONC    ! NH4-N concentration (mg/L)
         REAL P_CONC      ! P concentration (mg/L)
         REAL K_CONC      ! K concentration (mg/L)
+        REAL AREA        ! Field/growing area (m2) - from *FIELDS section
         REAL UNO3        ! NO3 uptake rate (kg/ha/d)
         REAL UNH4        ! NH4 uptake rate (kg/ha/d)
         REAL UPO4        ! P uptake rate (kg/ha/d)
@@ -815,6 +816,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('DO2');     Value = SAVE_data % HYDRO % DO2
         Case ('TEMP');    Value = SAVE_data % HYDRO % TEMP
         Case ('NO3_CONC');Value = SAVE_data % HYDRO % NO3_CONC
+        Case ('AREA');    Value = SAVE_data % HYDRO % AREA
         Case ('NH4_CONC');Value = SAVE_data % HYDRO % NH4_CONC
         Case ('P_CONC');   Value = SAVE_data % HYDRO % P_CONC
         Case ('K_CONC');   Value = SAVE_data % HYDRO % K_CONC
@@ -966,6 +968,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('DO2');     SAVE_data % HYDRO % DO2     = Value
         Case ('TEMP');    SAVE_data % HYDRO % TEMP    = Value
         Case ('NO3_CONC');SAVE_data % HYDRO % NO3_CONC = Value
+        Case ('AREA');    SAVE_data % HYDRO % AREA    = Value
         Case ('NH4_CONC');SAVE_data % HYDRO % NH4_CONC = Value
         Case ('P_CONC');   SAVE_data % HYDRO % P_CONC  = Value
         Case ('K_CONC');   SAVE_data % HYDRO % K_CONC  = Value

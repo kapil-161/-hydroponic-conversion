@@ -48,6 +48,8 @@ IhingerHof Research Station
 *FIELDS
 @L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
  1 UHIH0001 {experiment_code}   -99   -99   -99   -99   -99   -99 -99    -99  -99        Hydroponic NFT System
+@L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
+ 1             -99             -99       -99                50   -99   -99   -99   -99   -99
 
 *INITIAL CONDITIONS
 @C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
@@ -97,7 +99,7 @@ IhingerHof Research Station
 @N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
  1 ME              M     M     E     R     S     L     Y     1     G     S     2
 @N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
- 1 MA              R     N     N     N     M
+ 1 MA              R     N     N     N     R
 @N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
  1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     Y     N     N     A
 
@@ -154,4 +156,4 @@ if __name__ == '__main__':
         experiment_code=experiment_code,
         harvest_date="25045"  # 35 days after planting
     )
-
+# use R for reported date for harvest

@@ -100,10 +100,13 @@ C       Get current solution volume
           SOLVOL = 1000.0  ! Default if not set
         ENDIF
 
-C       Calculate growing area from solution volume
-C       In NFT systems, solution volume per m2 is typically 2-5 L/m2
-C       Using 2 L/m2: GROWING_AREA (m2) = SOLVOL (L) / 2.0 (L/m2)
-        GROWING_AREA = SOLVOL / 2.0  ! m2 (2 L/m2 - solution in channels only)
+C       Get growing area from experimental file (*FIELDS section)
+C       If not set, fallback to calculating from solution volume (2 L/m2 for NFT)
+        CALL GET('HYDRO','AREA',GROWING_AREA)
+        IF (GROWING_AREA .LT. 1.0) THEN
+C         Fallback: calculate from solution volume (2 L/m2 typical for NFT)
+          GROWING_AREA = SOLVOL / 2.0  ! m2
+        ENDIF
         IF (GROWING_AREA .LT. 1.0) GROWING_AREA = 1.0  ! Minimum 1 m2
 
 C       Calculate potential water supply from solution
@@ -150,14 +153,19 @@ C       Get potential supply from RATE phase
           TRWUP_L = SOLVOL * 0.5  ! Fallback if not set
         ENDIF
 
-C       Calculate growing area (same as RATE phase)
-        GROWING_AREA = SOLVOL / 2.0  ! m2
-        IF (GROWING_AREA .LT. 1.0) GROWING_AREA = 1.0
+C       Get growing area from experimental file (*FIELDS section)
+C       If not set, fallback to calculating from solution volume (2 L/m2 for NFT)
+        CALL GET('HYDRO','AREA',GROWING_AREA)
+        IF (GROWING_AREA .LT. 1.0) THEN
+C         Fallback: calculate from solution volume (2 L/m2 typical for NFT)
+          GROWING_AREA = SOLVOL / 2.0  ! m2
+        ENDIF
+        IF (GROWING_AREA .LT. 1.0) GROWING_AREA = 1.0  ! Minimum 1 m2
 
 C       DEMAND-BASED: Calculate plant water demand from transpiration (EP)
-C       EP is in mm/d per hectare (standard DSSAT unit)
-C       Convert to L/d: EP (mm/d/ha) * GROWING_AREA (m2) / 10000 (m2/ha) = L/d
-        PLANT_DEMAND = EP * GROWING_AREA / 10000.0  ! L/d (demand)
+C       EP is in mm/d (rate per unit area)
+C       Convert to L/d: 1 mm = 1 L/m2, so EP (mm/d) * GROWING_AREA (m2) = L/d
+        PLANT_DEMAND = EP * GROWING_AREA  ! L/d
 
 C       Calculate water uptake factor (WUF) - similar to soil systems
 C       WUF = demand / supply ratio (0-1)
@@ -173,9 +181,9 @@ C       If demand > supply: WUF = 1.0 (limited by supply)
           WUF = 0.0  ! No supply available
         ENDIF
 
-C       ACTUAL UPTAKE: Scale potential supply by demand factor
-C       Then limit by available volume (safety check)
-        TRWU_L = TRWUP_L * WUF  ! L/d (scaled by demand)
+C       ACTUAL UPTAKE: Use plant demand directly (limited by supply if needed)
+C       In hydroponics, actual uptake equals demand (if supply is adequate)
+        TRWU_L = MIN(PLANT_DEMAND, TRWUP_L)  ! L/d (actual uptake = min(demand, supply))
 
 C       Final safety check: Can't withdraw more than available volume
         MAX_WITHDRAWAL = MAX(0.0, SOLVOL - 100.0)  ! L (available, minus reserve)

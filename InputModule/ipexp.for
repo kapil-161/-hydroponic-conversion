@@ -876,6 +876,7 @@ C     Store hydroponic parameters in CONTROL structure (via ModuleData)
         WRITE(*,*) 'IPEXP: Storing values:'
         WRITE(*,*) '  NO3_CONC=',NO3_CONC,' NH4_CONC=',NH4_CONC
         WRITE(*,*) '  P_CONC=',P_CONC,' K_CONC=',K_CONC
+        WRITE(*,*) '  AREA=',AREA,' m2'
         CALL PUT('HYDRO','SOLVOL',SOLVOL)
         CALL PUT('HYDRO','EC',EC_SOL)
         CALL PUT('HYDRO','PH',PH_SOL)
@@ -885,6 +886,7 @@ C     Store hydroponic parameters in CONTROL structure (via ModuleData)
         CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
         CALL PUT('HYDRO','P_CONC',P_CONC)
         CALL PUT('HYDRO','K_CONC',K_CONC)
+        CALL PUT('HYDRO','AREA',AREA)
         WRITE(*,*) 'IPEXP: Values stored in ModuleData'
       ELSE
         WRITE(*,*) 'Soil-based experiment (no hydroponic section found)'

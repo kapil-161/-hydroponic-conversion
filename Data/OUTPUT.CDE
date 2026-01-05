@@ -22,6 +22,7 @@ SoilOrg.OUT     SC Daily soil carbon output file
 SoilPi.OUT      SP Daily inorganic soil phosphorus output file
 SoilKi.OUT      SK Daily inorganic soil potassium output file
 SoilTemp.OUT    TS Daily soil temperature output file                 OUTT
+Solution.OUT    SL Daily hydroponic solution output file
 SoilWat.OUT     SW Daily soil water output file                       OUTWAT
 SOMLITC.OUT     LC Daily soil organic matter carbon output file       OUTSOMC
 SOMLITN.OUT     LN Daily soil organic matter nitrogen output file     OUTSOMN

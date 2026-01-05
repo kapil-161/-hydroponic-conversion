@@ -244,6 +244,12 @@ C         Integrate to update solution concentrations
      &      UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,  !Output
      &      NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
 
+C         Store nutrient uptake rates (needed by SPAM for output/pH calculations)
+          CALL PUT('HYDRO','UNO3',UNO3_TOT)
+          CALL PUT('HYDRO','UNH4',UNH4_TOT)
+          CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
+          CALL PUT('HYDRO','UK',UK_HYDRO)
+
 C         Convert from kg/ha/day to g/m2 (divide by 10)
           TRNO3U = UNO3_TOT / 10.0
           TRNH4U = UNH4_TOT / 10.0
@@ -277,7 +283,9 @@ C         Update solution concentrations for P and K
      &        PLTPOP, RTDEP, 999.0,                  !Input
      &        UNO3_DUMMY, UNH4_DUMMY, UPO4_HYDRO, UK_HYDRO,  !Output
      &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
-C         Store P and K uptake rates
+C         Store nutrient uptake rates (N is zero, but P and K may be non-zero)
+          CALL PUT('HYDRO','UNO3',UNO3_TOT)
+          CALL PUT('HYDRO','UNH4',UNH4_TOT)
           CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
           CALL PUT('HYDRO','UK',UK_HYDRO)
         ENDIF

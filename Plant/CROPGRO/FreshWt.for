@@ -98,9 +98,9 @@
         CROP   = CONTROL%CROP
 
 !     Currently only works for tomato, green bean, bell pepper, strawberry,
-!         and cucumber. Add other crops later. 
+!         cucumber, and lettuce. Add other crops later. 
 !     Send a message if not available crop
-        IF (INDEX('CU,GB,PR,SR,TM',CROP) < 0) THEN
+        IF (INDEX('CU,GB,LU,PR,SR,TM',CROP) < 0) THEN
           CALL GET_CROPD(CROP, CROPD)
           WRITE(MSG(1),'(A)') 
      &  "Fresh weight calculations not currently available for "
@@ -108,7 +108,7 @@
           CALL INFO(2,ERRKEY,MSG)
         ENDIF
 
-        IF (INDEX('CU,GB,PR,SR,TM',CROP) .GT. 0 
+        IF (INDEX('CU,GB,LU,PR,SR,TM',CROP) .GT. 0 
      &    .AND. XMAGE .LT. 1.0) THEN
           CALL GET_CROPD(CROP, CROPD)
           MSG(1) = 'Please check the value of XMAGE in Ecotype file.'
@@ -191,10 +191,12 @@
             WRITE (NOUTPF,230)
           CASE ('GB')       ! Snap bean
             WRITE (NOUTPF,231)
+          CASE ('LU')       ! Lettuce
+            WRITE (NOUTPF,230)
           CASE ('PR')       ! Bell pepper
-            WRITE (NOUTPF,230)            
+            WRITE (NOUTPF,230)
           CASE ('SR')       ! Strawberry
-            WRITE (NOUTPF,230)                        
+            WRITE (NOUTPF,230)
           CASE ('TM')       ! Tomato
             WRITE (NOUTPF,230)
           CASE DEFAULT
@@ -306,9 +308,15 @@ C-HBD from Wurbs et al. (2012) and Marcelis & Baan Hofman-Eijer (1995)
               DMC(NPP) = (5.6165+11.5396*EXP(-3.6197*PAGE/40.))/100.
 C-HBD                     R nls fitting considering DAA < 41
             CASE ('SR')       ! Strawberry
-              !Fixed value for Strawberry. 
+              !Fixed value for Strawberry.
               !From Code from Ken Boote / VSH
-              DMC(NPP) = 0.16 
+              DMC(NPP) = 0.16
+            CASE ('LU')       ! Lettuce
+              !Hydroponic lettuce DMC calibrated to experimental data
+              !DMC decreases with age (plant becomes more watery at maturity)
+              !At DAP 14: ~9.5%, DAP 21: ~9.6%, DAP 28: ~6.7%, DAP 35: ~6.1%
+              !Calibrated to C:\DSSAT48\Lettuce\merged_all_datasets.csv
+              DMC(NPP) = (5.5 + 4.5 * EXP(-0.06 * PAGE)) / 100.
             CASE ('TM')       ! Tomato
               DMC(NPP) = (5. + 7.2 * EXP(-7.5 * PAGE / 40.)) / 100.
             CASE DEFAULT

@@ -44,13 +44,12 @@ C     Solution concentrations (mg/L) - updated by depletion
       REAL K_SOL         ! Potassium in solution
 
 C     Local variables
-      REAL SOLVOL        ! Solution volume (L)
+      REAL SOLVOL        ! Solution volume (L) - saved between calls
       REAL SOLTEMP       ! Solution temperature (C)
       REAL NO3_CONC_INIT ! Initial NO3 concentration (mg/L)
       REAL NH4_CONC_INIT ! Initial NH4 concentration (mg/L)
       REAL P_CONC_INIT   ! Initial P concentration (mg/L)
       REAL K_CONC_INIT   ! Initial K concentration (mg/L)
-      SAVE SOLVOL        ! Save SOLVOL between calls
 
 C     Michaelis-Menten parameters (from hydroponic literature)
       REAL Vmax_NO3      ! Max uptake rate NO3 (mg/plant/day)
@@ -74,6 +73,7 @@ C     Uptake calculations
       REAL DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K  ! Depletion rates
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
       REAL GROWING_AREA  ! Growing area (m2) - for area conversions
+      REAL VOL_AREA_RATIO ! Solution volume per unit area (L/m2)
       
 C     Temperature parameters for nutrient uptake
 C     Optimal temperature range for most crops: 20-25 C
@@ -122,9 +122,20 @@ C       If ModuleData values are missing or invalid, use passed parameters
           WRITE(*,*) 'HYDRO_NUTRIENT: K_CONC not in ModuleData, using passed value'
         ENDIF
 
+C       Get volume-to-area ratio from ModuleData or use default
+C       This ratio depends on hydroponic system type:
+C       NFT systems: ~0.5-2 L/m2, DWC: ~5-20 L/m2, Ebb/Flow: ~3-10 L/m2
+        CALL GET('HYDRO','VOL_AREA_RATIO',VOL_AREA_RATIO)
+        IF (VOL_AREA_RATIO .LT. 0.1) THEN
+          VOL_AREA_RATIO = 2.0  ! Default for NFT systems (L/m2)
+          WRITE(*,*) 'HYDRO_NUTRIENT: Using default VOL_AREA_RATIO=',
+     &               VOL_AREA_RATIO,' L/m2'
+        ENDIF
+
         WRITE(*,*) 'HYDRO_NUTRIENT INIT: Initialized concentrations:'
         WRITE(*,*) '  NO3=',NO3_SOL,' NH4=',NH4_SOL,
      &             ' P=',P_SOL,' K=',K_SOL,' SOLVOL=',SOLVOL
+        WRITE(*,*) '  VOL_AREA_RATIO=',VOL_AREA_RATIO,' L/m2'
 
 C       Michaelis-Menten parameters (from literature for NFT systems)
 C       These are typical values - should be crop-specific ideally
@@ -269,17 +280,25 @@ C       Ensure SOLVOL is initialized (retrieve from ModuleData if needed)
         IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
 C         Calculate depletion (mg/L)
 C         Uptake in kg/ha/day -> mg/L/day
-C         kg/ha/day * 1e6 mg/kg / (10000 m2/ha * SOLVOL/m2 L/m2)
-C         Assuming solution volume is per unit ground area
+C         kg/ha/day * 1e6 mg/kg / (10000 m2/ha * VOL_AREA_RATIO L/m2)
 
-C         Calculate solution volume per hectare
-C         SOLVOL is total volume (L) for the system
-C         Need to know growing area to convert to per-hectare basis
-C         Using same assumption as HYDRO_WATER: 2 L/m2 ratio
-C         GROWING_AREA (m2) = SOLVOL (L) / 2.0 (L/m2)
-C         VOL_PER_HA (L/ha) = SOLVOL (L) * 10000 (m2/ha) / GROWING_AREA (m2)
-          GROWING_AREA = SOLVOL / 2.0  ! m2 (consistent with HYDRO_WATER)
+C         Get volume-to-area ratio (should be set in initialization)
+          CALL GET('HYDRO','VOL_AREA_RATIO',VOL_AREA_RATIO)
+          IF (VOL_AREA_RATIO .LT. 0.1) THEN
+            VOL_AREA_RATIO = 2.0  ! Fallback default
+          ENDIF
+
+C         Get growing area from experimental file (*FIELDS section)
+C         If not set, fallback to calculating from solution volume
+          CALL GET('HYDRO','AREA',GROWING_AREA)
+          IF (GROWING_AREA .LT. 1.0) THEN
+C           Fallback: calculate from solution volume using VOL_AREA_RATIO
+            GROWING_AREA = SOLVOL / VOL_AREA_RATIO  ! m2
+          ENDIF
           IF (GROWING_AREA .LT. 1.0) GROWING_AREA = 1.0
+          
+C         Calculate solution volume per hectare
+C         VOL_PER_HA (L/ha) = SOLVOL (L) * 10000 (m2/ha) / GROWING_AREA (m2)
           VOL_PER_HA = SOLVOL * 10000.0 / GROWING_AREA  ! L/ha
 
           DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted

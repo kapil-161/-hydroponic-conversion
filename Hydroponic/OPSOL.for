@@ -22,7 +22,7 @@ C-----------------------------------------------------------------------
       EXTERNAL GETLUN, HEADER, YR_DOY
       SAVE
 C-----------------------------------------------------------------------
-      CHARACTER*1  IDETW, ISWHYDRO, RNMODE
+      CHARACTER*1  IDETW, ISWHYDRO, RNMODE, FMOPT
       CHARACTER*13 OUTSOL
 
       INTEGER DAS, DOY, DYNAMIC, ERRNUM, FROP, NOUTSL
@@ -36,12 +36,10 @@ C-----------------------------------------------------------------------
 
       REAL SOLVOL, SOLTEMP                        ! L and C
 
-      LOGICAL FEXIST, FIRST
+      LOGICAL FEXIST
 
       TYPE (ControlType) CONTROL
       TYPE (SwitchType)  ISWITCH
-
-      DATA FIRST /.TRUE./
 
 C-----------------------------------------------------------------------
 C     Get values from control and switch structures
@@ -55,10 +53,7 @@ C-----------------------------------------------------------------------
 
       IDETW    = ISWITCH % IDETW
       ISWHYDRO = ISWITCH % ISWHYDRO
-
-C     Only proceed if hydroponic mode and output detail requested
-      IF (ISWHYDRO .NE. 'Y') RETURN
-      IF (IDETW .EQ. 'N') RETURN
+      FMOPT    = ISWITCH % FMOPT
 
 C***********************************************************************
 C***********************************************************************
@@ -66,18 +61,9 @@ C     Run initialization - run once per simulation
 C***********************************************************************
       IF (DYNAMIC .EQ. RUNINIT) THEN
 C-----------------------------------------------------------------------
-C     Get file unit and delete old file on first run
+C     Get file unit number (call only once per simulation)
       OUTSOL = 'Solution.OUT'
       CALL GETLUN(OUTSOL, NOUTSL)
-
-      IF (FIRST) THEN
-C       Delete old file by opening with REPLACE status
-        OPEN (UNIT = NOUTSL, FILE = OUTSOL, STATUS = 'REPLACE',
-     &    IOSTAT = ERRNUM)
-        WRITE(NOUTSL,'("*Hydroponic Solution Daily Output")')
-        CLOSE(NOUTSL)
-        FIRST = .FALSE.
-      ENDIF
 
 C***********************************************************************
 C***********************************************************************
@@ -85,10 +71,12 @@ C     Seasonal initialization - run once per season
 C***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASINIT) THEN
 C-----------------------------------------------------------------------
-C     Open file for this season (append mode for multi-season runs)
-      OUTSOL = 'Solution.OUT'
-      CALL GETLUN(OUTSOL, NOUTSL)
+C     Only proceed if hydroponic mode and output detail requested
+      IF (ISWHYDRO .NE. 'Y') RETURN
+      IF (IDETW .EQ. 'N') RETURN
+      IF (FMOPT .NE. 'A' .AND. FMOPT .NE. ' ') RETURN
 
+C     Open file for this season (append mode for multi-season runs)
       INQUIRE (FILE = OUTSOL, EXIST = FEXIST)
       IF (FEXIST) THEN
         OPEN (UNIT = NOUTSL, FILE = OUTSOL, STATUS = 'OLD',
@@ -121,21 +109,20 @@ C***********************************************************************
 C***********************************************************************
 C     DAILY OUTPUT
 C***********************************************************************
-      ELSEIF (DYNAMIC .EQ. OUTPUT .OR. DYNAMIC .EQ. SEASEND) THEN
+      ELSEIF (DYNAMIC .EQ. OUTPUT) THEN
 C-----------------------------------------------------------------------
+C     Only proceed if hydroponic mode and output detail requested
+      IF (ISWHYDRO .NE. 'Y') RETURN
+      IF (IDETW .EQ. 'N') RETURN
+
 C     Get planting date from ModuleData
       CALL GET('MGMT','YRPLT',YRPLT)
 
 C     Only output after planting (same logic as PlantGro.OUT)
       IF (YRDOY .LT. YRPLT .OR. YRPLT .LT. 0) RETURN
 
-C     Check if file is open
-      IF (NOUTSL .EQ. 0) RETURN
-
-C     Write on output frequency or at season end
-      IF ((DYNAMIC .EQ. OUTPUT .AND. MOD(DAS,FROP) .EQ. 0) .OR.
-     &    (DYNAMIC .EQ. SEASEND .AND. MOD(DAS,FROP) .NE. 0) .OR.
-     &     YRDOY .EQ. YRPLT) THEN
+C     Write on output frequency or on planting day
+      IF (MOD(DAS,FROP) .EQ. 0 .OR. YRDOY .EQ. YRPLT) THEN
 
 C       Get solution volume and temperature from ModuleData
         CALL GET('HYDRO','SOLVOL',SOLVOL)
@@ -169,10 +156,44 @@ C       Write daily output
 
 C***********************************************************************
 C***********************************************************************
-C     SEASONAL OUTPUT
+C     SEASONAL OUTPUT - Close file
 C***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASEND) THEN
 C-----------------------------------------------------------------------
+C     Only proceed if hydroponic mode and output detail requested
+      IF (ISWHYDRO .NE. 'Y') RETURN
+      IF (IDETW .EQ. 'N') RETURN
+
+C     Write final output if not already written
+      IF (MOD(DAS,FROP) .NE. 0) THEN
+C       Get planting date from ModuleData
+        CALL GET('MGMT','YRPLT',YRPLT)
+
+C       Only output after planting
+        IF (YRDOY .GE. YRPLT .AND. YRPLT .GE. 0) THEN
+C         Get solution volume and temperature from ModuleData
+          CALL GET('HYDRO','SOLVOL',SOLVOL)
+          CALL GET('HYDRO','TEMP',SOLTEMP)
+
+C         Default values if not set
+          IF (SOLVOL .LT. 1.0) SOLVOL = 1000.0
+          IF (SOLTEMP .LT. -50.0) SOLTEMP = 20.0
+
+C         Get date
+          CALL YR_DOY(YRDOY, YEAR, DOY)
+
+C         Write final day output
+          WRITE (NOUTSL,200) YEAR, DOY, DAS,
+     &      NO3_CONC, NH4_CONC, P_CONC, K_CONC,
+     &      UNO3, UNH4, UPO4, UK,
+     &      EC_CALC, EC_TARGET,
+     &      PH_CALC, PH_TARGET,
+     &      DO2_CALC, DO2_SAT,
+     &      SOLVOL, SOLTEMP
+        ENDIF
+      ENDIF
+
+C     Close file
       IF (NOUTSL .GT. 0) THEN
         CLOSE (NOUTSL)
       ENDIF

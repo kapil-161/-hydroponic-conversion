@@ -6,7 +6,7 @@ import os
 import sys
 
 def create_soil_lettuce_experiment(
-    experiment_code="UHIH2501",
+    experiment_code="UHIH2502",
     cultivar_code="990001",
     cultivar_name="Buttercrunch",
     planting_date="25010",
@@ -125,7 +125,7 @@ IhingerHof Research Station
 @N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
  1 ME              M     M     E     R     S     L     N     1     G     S     2
 @N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
- 1 MA              R     {irrigation_method}     R     N     M
+ 1 MA              R     {irrigation_method}     R     N     R
 @N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
  1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     Y     N     N     A
 
@@ -172,11 +172,11 @@ IhingerHof Research Station
     return output_path
 
 if __name__ == '__main__':
-    # Default: Create UHIH2501_SOIL experiment with 35-day harvest
+    # Default: Create UHIH2502_SOIL experiment with 35-day harvest
     if len(sys.argv) > 1:
         experiment_code = sys.argv[1]
     else:
-        experiment_code = "UHIH2501"
+        experiment_code = "UHIH2502"
     
     create_soil_lettuce_experiment(
         experiment_code=experiment_code,
