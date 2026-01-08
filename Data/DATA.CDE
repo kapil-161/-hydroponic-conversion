@@ -1610,4 +1610,20 @@ N2O8D  N2O flux lyr 8  Daily N2O flux, soil layer 8 (g[N]/ha)                   
 N2O9D  N2O flux lyr 9  Daily N2O flux, soil layer 9 (g[N]/ha)                   .
 NCEQC  CO2eq-N2O       N2O emissions as CO2 equivalent (kg[CO2eq]/ha)           .
 TCEQC  CO2eq-Total     Total GHG emissions as CO2 equivalent (kg[CO2eq]/ha)     .
+*HYDROPONIC SOLUTION OUTPUT
+@CDE   LABEL           DESCRIPTION............................................  SYNONYMS
+NO3CL  NO3-N mg/L      NO3-N concentration in solution (mg[N]/L)                .
+NH4CL  NH4-N mg/L      NH4-N concentration in solution (mg[N]/L)                .
+PCCL   P mg/L          Phosphorus concentration in solution (mg[P]/L)            .
+KCCL   K mg/L          Potassium concentration in solution (mg[K]/L)             .
+UNO3D  NO3 uptake      NO3-N uptake rate (kg[N]/ha/d)                           .
+UNH4D  NH4 uptake      NH4-N uptake rate (kg[N]/ha/d)                           .
+UPO4D  PO4 uptake      PO4-P uptake rate (kg[P]/ha/d)                            .
+UKD    K uptake        K uptake rate (kg[K]/ha/d)                                .
+ECCAL  EC dS/m         Electrical conductivity calculated (dS/m)                .
+PHCAL  pH               pH calculated                                            .
+DO2CL  DO2 mg/L         Dissolved oxygen calculated (mg[O2]/L)                    .
+DO2ST  DO2 sat mg/L     Dissolved oxygen at saturation (mg[O2]/L)                .
+SOLVL  Sol depth mm     Solution depth/volume (mm, 1 mm = 1 L/m²)                .
+SOLTC  Sol temp C       Solution temperature (°C)                                 .
 
