@@ -456,6 +456,7 @@ C             CHP Added TRTNUM to CONTROL variable.
       Type MgmtType
         REAL DEPIR, EFFIRR, FERNIT, IRRAMT, TOTIR, TOTEFFIRR
         REAL MgmtWTD, ICWD, AdjWTD
+        INTEGER YRPLT  ! Planting date (YYDDD) for output routines
 
 !       Vectors to save growth stage based irrigation
         REAL V_AVWAT(20)    
@@ -530,6 +531,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL UNH4        ! NH4 uptake rate (kg/ha/d)
         REAL UPO4        ! P uptake rate (kg/ha/d)
         REAL UK          ! K uptake rate (kg/ha/d)
+        REAL TRWUP_MM    ! Potential water uptake (mm/d) - for hydroponic system
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -824,6 +826,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('UNH4');     Value = SAVE_data % HYDRO % UNH4
         Case ('UPO4');     Value = SAVE_data % HYDRO % UPO4
         Case ('UK');       Value = SAVE_data % HYDRO % UK
+        Case ('TRWUP_MM'); Value = SAVE_data % HYDRO % TRWUP_MM
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -908,6 +911,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('WATTAB'); SAVE_data % MGMT % MgmtWTD = Value
         Case ('ADJWTD'); SAVE_data % MGMT % AdjWTD = Value
         Case ('ICWD'); SAVE_data % MGMT % ICWD = Value
+        Case ('YRPLT'); SAVE_data % MGMT % YRPLT = NINT(Value)
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -976,6 +980,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('UNH4');     SAVE_data % HYDRO % UNH4    = Value
         Case ('UPO4');     SAVE_data % HYDRO % UPO4    = Value
         Case ('UK');       SAVE_data % HYDRO % UK      = Value
+        Case ('TRWUP_MM'); SAVE_data % HYDRO % TRWUP_MM = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1086,6 +1091,12 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
+      Case ('MGMT')
+        SELECT CASE (VarName)
+        Case ('YRPLT'); Value = SAVE_data % MGMT % YRPLT
+        Case DEFAULT; ERR = .TRUE.
+        END SELECT
+
       CASE ('MHARVEST')
         SELECT CASE(VarName)
         CASE('HARVF'); Value = SAVE_data % MHARVEST % HARVF
@@ -1130,6 +1141,12 @@ C             CHP Added TRTNUM to CONTROL variable.
       Case ('WEATHER')
         SELECT CASE (VarName)
         Case ('WYEAR'); SAVE_data % WEATH % WYEAR = Value
+        Case DEFAULT; ERR = .TRUE.
+        END SELECT
+
+      Case ('MGMT')
+        SELECT CASE (VarName)
+        Case ('YRPLT'); SAVE_data % MGMT % YRPLT = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
         

@@ -40,6 +40,7 @@ C=====================================================================
 
 C-----------------------------------------------------------------------
       USE ModuleDefs
+      USE ModuleData
       USE FloodModule
       USE SumModule
 
@@ -153,6 +154,12 @@ C-----------------------------------------------------------------------
       CALL AUTPLT (CONTROL, ISWWAT,
      &    DLAYR, DUL, FLOOD, IDETO, IPLTI, LL, ST, SW,    !Input
      &    MDATE, YRPLT)                                   !Output
+      
+C     Store YRPLT in ModuleData for output routines (like OPSOL) to retrieve
+      IF (YRPLT .GT. 0) THEN
+        CALL PUT('MGMT','YRPLT',YRPLT)
+      ENDIF
+      
 C-----------------------------------------------------------------------
 C     Adjust harvest dates for seasonal or sequenced runs.
 C     For potato, sets harvest date.
