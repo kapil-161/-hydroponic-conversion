@@ -76,10 +76,13 @@ C     Read the data line
       IF (LN .NE. LNSOL) GO TO 50
 
 C     Check if valid hydroponic data (SOLVOL > 0)
+C     Note: SOLVOL in experiment file is in mm (solution depth)
+C     We'll convert to L for ModuleData storage using growing area
       IF (SOLVOL .GT. 0.0) THEN
 C       Valid hydroponic parameters - activate HYDROPONIC mode
         ISWHYDRO = 'Y'
 C       Print confirmation message to indicate section was read
+C       SOLVOL is in mm from experiment file
         WRITE(*,100) SOLVOL,EC,PH,DO2,TEMP,NO3_CONC,NH4_CONC,P_CONC,
      &               K_CONC
       ELSE
@@ -99,7 +102,7 @@ C-----------------------------------------------------------------------
  60   FORMAT (I4,9(1X,F9.0))
  100  FORMAT (/,' *** HYDROPONIC MODE ACTIVATED ***',
      &        /,' HYDROPONIC SOLUTION PARAMETERS:',
-     &        /,'   Solution Volume  : ',F10.1,' L',
+     &        /,'   Solution Depth   : ',F10.1,' mm (1 mm = 1 L/m²)',
      &        /,'   EC               : ',F10.2,' dS/m',
      &        /,'   pH               : ',F10.2,
      &        /,'   DO2              : ',F10.2,' mg/L',

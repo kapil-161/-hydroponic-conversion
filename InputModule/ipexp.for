@@ -109,7 +109,7 @@ C=======================================================================
       REAL    PMWD
 !     HYDROPONIC SOLUTION VARIABLES
       CHARACTER*1 ISWHYDRO
-      REAL    SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL
+      REAL    SOLVOL,SOLVOL_L,EC_SOL,PH_SOL,DO2,TEMP_SOL
       REAL    NO3_CONC,NH4_CONC,P_CONC,K_CONC
 
       LOGICAL FEXIST, UseSimCtr, SimLevel
@@ -877,6 +877,7 @@ C     Store hydroponic parameters in CONTROL structure (via ModuleData)
         WRITE(*,*) '  NO3_CONC=',NO3_CONC,' NH4_CONC=',NH4_CONC
         WRITE(*,*) '  P_CONC=',P_CONC,' K_CONC=',K_CONC
         WRITE(*,*) '  AREA=',AREA,' m2'
+C       Store SOLVOL directly in mm (no conversion needed)
         CALL PUT('HYDRO','SOLVOL',SOLVOL)
         CALL PUT('HYDRO','EC',EC_SOL)
         CALL PUT('HYDRO','PH',PH_SOL)

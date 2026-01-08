@@ -227,6 +227,10 @@ C=======================================================================
           RWU   = 0.0
           TRWUP = 0.0
           ES    = 0.0
+!         Initialize hydroponic water module
+          CALL HYDRO_WATER(CONTROL, ISWITCH,
+     &      0.0,                                !Input - EP not needed in SEASINIT
+     &      TRWUP, TRWU, ES)                    !Output
         ELSE
 !         SOIL MODE: Initialize root water uptake and soil evaporation
           CALL ROOTWU(SEASINIT,

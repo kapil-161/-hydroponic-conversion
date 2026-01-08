@@ -7,12 +7,12 @@ import sys
 
 def create_hydroponic_lettuce_experiment(
     experiment_code="UHIH2501",
-    cultivar_code="990001",
+    cultivar_code="LU0201",
     cultivar_name="Buttercrunch",
     planting_date="25010",
     harvest_date="25045",  # 35 days after planting
     plant_density=16,  # plants per m²
-    solution_volume=1000.0,
+    solution_depth=20.0,  # solution depth in mm (1 mm = 1 L/m²)
     ec=2.0,
     ph=6.0,
     do2=8.0,
@@ -22,7 +22,9 @@ def create_hydroponic_lettuce_experiment(
     p_conc=50.0,
     k_conc=200.0
 ):
-    """Create a hydroponic lettuce experiment file with *HYDROPONIC SOLUTION section"""
+    """Create a hydroponic lettuce experiment file with *HYDROPONIC SOLUTION section
+    Note: solution_depth is in mm (1 mm = 1 L/m²)
+    """
 
     # Calculate initial conditions date (1 day before planting)
     icdate = str(int(planting_date) - 1)
@@ -88,8 +90,8 @@ IhingerHof Research Station
  1 {harvest_date} GS000   -99   -99   -99   -99 Harvest at {int(harvest_date[-2:]) - int(planting_date[-2:])} days
 
 *HYDROPONIC SOLUTION
-@  L    SOLVOL        EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC
-   1   {solution_volume:7.1f}      {ec:4.1f}     {ph:4.1f}     {do2:4.1f}    {solution_temp:5.1f}     {no3_conc:7.1f}     {nh4_conc:7.1f}    {p_conc:7.1f}    {k_conc:7.1f}
+@  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC
+   1   {solution_depth:7.1f}      {ec:4.1f}     {ph:4.1f}     {do2:4.1f}    {solution_temp:5.1f}     {no3_conc:7.1f}     {nh4_conc:7.1f}    {p_conc:7.1f}    {k_conc:7.1f}
 
 *SIMULATION CONTROLS
 @N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
@@ -131,7 +133,7 @@ IhingerHof Research Station
     print(f"Growing Period: {int(harvest_date[-2:]) - int(planting_date[-2:])} days")
     print(f"Plant Density: {plant_density} plants/m² ({plant_density * 10000} plants/ha)")
     print("\nHydroponic Solution Parameters:")
-    print(f"  - Solution Volume: {solution_volume:.1f} L")
+    print(f"  - Solution Depth: {solution_depth:.1f} mm (1 mm = 1 L/m²)")
     print(f"  - EC: {ec:.1f} dS/m")
     print(f"  - pH: {ph:.1f}")
     print(f"  - DO2: {do2:.1f} mg/L")
@@ -154,6 +156,7 @@ if __name__ == '__main__':
     
     create_hydroponic_lettuce_experiment(
         experiment_code=experiment_code,
+        solution_depth=20.0,  # 20 mm depth (equivalent to 20 L/m²)
         harvest_date="25045"  # 35 days after planting
     )
 # use R for reported date for harvest

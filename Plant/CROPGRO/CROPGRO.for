@@ -308,6 +308,7 @@ C-----------------------------------------------------------------------
         CALL NUPTAK(RUNINIT, ISWITCH,
      &     DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT,!Input
      &     NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,  !Input
+     &     TRLV, VSTAGE,                                    !Input
      &     TRNH4U, TRNO3U, TRNU, UNH4, UNO3)              !Output
 
 !-----------------------------------------------------------------------
@@ -572,6 +573,7 @@ C     Initialize pest coupling point and damage variables
       CALL NUPTAK(SEASINIT, ISWITCH,
      &    DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT, !Input
      &    NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,   !Input
+     &    TRLV, VSTAGE,                                    !Input
      &    TRNH4U, TRNO3U, TRNU, UNH4, UNO3)               !Output
 
 !     Plant phosphorus module initialization
@@ -989,6 +991,7 @@ C-----------------------------------------------------------------------
         CALL NUPTAK(INTEGR, ISWITCH,
      &    DLAYR, DUL, FILECC, KG2PPM, LL, NDMSDR, NDMTOT, !Input
      &    NH4, NO3, NLAYR, RLV, SAT, SW, PLTPOP, RTDEP,   !Input
+     &    TRLV, VSTAGE,                                    !Input
      &    TRNH4U, TRNO3U, TRNU, UNH4, UNO3)               !Output
 
 C-----------------------------------------------------------------------
