@@ -36,6 +36,13 @@ C     Output variables
       REAL PH_CALC       ! Calculated pH
       REAL PH_TARGET     ! Target pH from initialization
 
+C     pH stress variables
+      REAL PH_OPT_LOW    ! Optimal pH lower bound
+      REAL PH_OPT_HIGH   ! Optimal pH upper bound
+      REAL PH_STRESS_LOW ! Stress factor for low pH (0-1)
+      REAL PH_STRESS_HIGH ! Stress factor for high pH (0-1)
+      REAL PH_STRESS_TOTAL ! Combined pH stress (0-1)
+
 C     Local variables
       REAL PH_INIT       ! Initial pH value
       REAL PH_CHANGE     ! Daily pH change
@@ -175,15 +182,25 @@ C       If calculated HCO3- is very small, use minimum (typical in hydroponics)
         PH_CALC = PH_INIT
         PH_CHANGE = 0.0  ! Initialize pH change
 
+C-----------------------------------------------------------------------
+C       INITIALIZE pH STRESS PARAMETERS
+C-----------------------------------------------------------------------
+C       Optimal pH range for lettuce: 5.5-6.0
+C       Below 5.5: nutrient availability problems (Fe, Mn deficiency)
+C       Above 6.0: reduced nutrient availability (Ca, Mg, micronutrients)
+        PH_OPT_LOW  = 5.5   ! Below this, low pH stress
+        PH_OPT_HIGH = 6.0   ! Above this, high pH stress
+
 C       Calculate buffering capacity from calculated HCO3-
 C       Buffer capacity ≈ (HCO3- concentration × volume) / pH range
-        SOLVOL_L = SOLVOL_INIT * AREA / 1000.0  ! Convert mm to L
+C       CRITICAL: Use maximum to prevent very small volumes
+        SOLVOL_L = MAX(5.0, SOLVOL_INIT * AREA) / 1000.0  ! L (min 5.0 L/m²)
         BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
 C       Factor /2.0 = approximate buffering range (pH 6-8)
-        
+
 C       If buffer capacity too small, use volume-based minimum
         IF (BUFFER_CAP .LT. 0.01) THEN
-          BUFFER_CAP = SOLVOL_L * 0.001  ! Minimum: 1 mmol/L per pH unit
+          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
         ENDIF
 
 C       Store initial pH values in ModuleData
@@ -216,11 +233,12 @@ C       Get current nutrient concentrations for charge balance
         
 C       Recalculate other ions (may change with nutrient depletion)
 C       In a full model, these would be tracked separately
-        Ca_CONC = K_CONC * 0.6
-        Mg_CONC = K_CONC * 0.2
-        SO4_CONC = K_CONC * 0.5
-        Na_CONC = K_CONC * 0.1
-        Cl_CONC = K_CONC * 0.1
+C       Set minimum values to prevent charge balance issues when K depletes
+        Ca_CONC = MAX(10.0, K_CONC * 0.6)
+        Mg_CONC = MAX(5.0, K_CONC * 0.2)
+        SO4_CONC = MAX(20.0, K_CONC * 0.5)
+        Na_CONC = MAX(5.0, K_CONC * 0.1)
+        Cl_CONC = MAX(5.0, K_CONC * 0.1)
         
 C       Recalculate phosphate speciation based on current pH
         P_RATIO = 10.0 ** (PH_CALC - PKA_PHOSPHATE)
@@ -256,7 +274,8 @@ C       Convert kg/ha/day to mol/ha/day: kg / (MW g/mol / 1000 g/kg) = mol
 
 C       Convert to H+ concentration change (mol/L)
 C       Solution volume in L = SOLVOL_CURRENT (mm) * AREA (m2) / 1000.0
-        SOLVOL_L = SOLVOL_CURRENT * AREA / 1000.0  ! L
+C       CRITICAL: Use maximum to prevent division by zero with very small volumes
+        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
         IF (SOLVOL_L .GT. 0.01) THEN
 C         Convert mol/ha to mol/L: mol/ha / (ha in m2 / m2 per L)
 C         ha = 10000 m2, so: mol/ha / (10000 * AREA / SOLVOL_L)
@@ -281,13 +300,55 @@ C       Calculate pH change from H+ concentration change
 C       Limit daily pH change to realistic range (±1.0 pH units/day max)
         PH_CHANGE = MAX(-1.0, MIN(1.0, PH_CHANGE))
 
+C-----------------------------------------------------------------------
+C       CALCULATE pH STRESS FACTORS
+C       Similar to EC stress: Low pH (acidic) and High pH (alkaline)
+C-----------------------------------------------------------------------
+C       Optimal pH range for lettuce: 5.5-6.0
+        PH_OPT_LOW  = 5.5
+        PH_OPT_HIGH = 6.0
+
+C       Calculate stress from LOW pH (too acidic)
+        IF (PH_CALC .LT. PH_OPT_LOW) THEN
+C         Linear decline: pH=4.5 → stress=0.3, pH=5.5 → stress=1.0
+C         Below pH 4.5, severe toxicity and membrane damage
+          PH_STRESS_LOW = 0.3 + 0.7 * ((PH_CALC - 4.5) / (PH_OPT_LOW - 4.5))
+          PH_STRESS_LOW = MAX(0.3, MIN(1.0, PH_STRESS_LOW))
+        ELSE
+C         No stress from low pH
+          PH_STRESS_LOW = 1.0
+        ENDIF
+
+C       Calculate stress from HIGH pH (too alkaline)
+        IF (PH_CALC .GT. PH_OPT_HIGH) THEN
+C         Exponential decline: simulate cumulative nutrient precipitation
+C         At pH = 7.0, stress ≈ 0.75; At pH = 8.0, stress ≈ 0.37
+C         High pH reduces Fe, Mn, Zn, Cu availability (precipitation)
+          PH_STRESS_HIGH = EXP(-0.25 * (PH_CALC - PH_OPT_HIGH))
+          PH_STRESS_HIGH = MAX(0.1, MIN(1.0, PH_STRESS_HIGH))
+        ELSE
+C         No stress from high pH
+          PH_STRESS_HIGH = 1.0
+        ENDIF
+
+C       Combined pH stress (take minimum = most limiting)
+        PH_STRESS_TOTAL = MIN(PH_STRESS_LOW, PH_STRESS_HIGH)
+
+C       Store pH stress factors in ModuleData for use by other modules
+        CALL PUT('HYDRO','PHSTRESS_ROOT',PH_STRESS_TOTAL)
+        CALL PUT('HYDRO','PHSTRESS_LEAF',PH_STRESS_TOTAL)
+        CALL PUT('HYDRO','PHSTRESS_UPTAKE',PH_STRESS_TOTAL)
+
         WRITE(*,200) NH4_UPTAKE, NO3_UPTAKE, NET_H_PRODUCTION,
      &               CONCENTRATION_FACTOR, SOLVOL_CURRENT, HCO3_CONC,
-     &               PH_CHANGE
+     &               PH_CHANGE, PH_CALC, PH_OPT_LOW, PH_OPT_HIGH,
+     &               PH_STRESS_LOW, PH_STRESS_HIGH, PH_STRESS_TOTAL
  200    FORMAT(' SOLPH: NH4=',F6.3,' NO3=',F6.3,' kg/ha/d',
      &         ' => Net H+=',F8.4,' mol/ha/d',/,
      &         '   ConcFactor=',F5.2,' (Vol=',F6.1,' mm)',
-     &         ' HCO3=',F5.1,' mg/L => pH change=',F6.3)
+     &         ' HCO3=',F5.1,' mg/L => pH change=',F6.3,/,
+     &         '   pH=',F5.2,' (Opt=',F4.2,'-',F4.2,')',
+     &         ' pH Stress: Low=',F5.3,' High=',F5.3,' Total=',F5.3)
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
@@ -322,28 +383,30 @@ C       Get current buffering capacity (recalculate with current HCO3-)
 C       First recalculate HCO3- from charge balance to get current buffer capacity
         P_RATIO = 10.0 ** (PH_CALC - PKA_PHOSPHATE)
         P_CHARGE = (-1.0 - 2.0*P_RATIO) / (1.0 + P_RATIO)
-        
-        Ca_CONC = K_CONC * 0.6
-        Mg_CONC = K_CONC * 0.2
-        SO4_CONC = K_CONC * 0.5
-        Na_CONC = K_CONC * 0.1
-        Cl_CONC = K_CONC * 0.1
-        
+
+C       Set minimum values to prevent charge balance issues when K depletes
+        Ca_CONC = MAX(10.0, K_CONC * 0.6)
+        Mg_CONC = MAX(5.0, K_CONC * 0.2)
+        SO4_CONC = MAX(20.0, K_CONC * 0.5)
+        Na_CONC = MAX(5.0, K_CONC * 0.1)
+        Cl_CONC = MAX(5.0, K_CONC * 0.1)
+
         TotalCations = (K_CONC/MW_K) + 2.0*(Ca_CONC/MW_Ca) +
      &                 2.0*(Mg_CONC/MW_Mg) + (Na_CONC/MW_Na) +
      &                 (NH4_CONC/MW_NH4)
-        
+
         TotalAnions = (NO3_CONC/MW_NO3) + 2.0*(SO4_CONC/MW_SO4) +
      &                (Cl_CONC/MW_Cl) + (P_CONC/MW_P) * ABS(P_CHARGE)
-        
+
         HCO3_CONC = (TotalCations - TotalAnions) * MW_HCO3
         HCO3_CONC = MAX(20.0, HCO3_CONC)
-        
+
 C       Calculate current buffering capacity
-        SOLVOL_L = SOLVOL_CURRENT * AREA / 1000.0  ! L
+C       CRITICAL: Use maximum to prevent division by zero with very small volumes
+        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
         BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
         IF (BUFFER_CAP .LT. 0.01) THEN
-          BUFFER_CAP = SOLVOL_L * 0.001  ! Minimum: 1 mmol/L per pH unit
+          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
         ENDIF
 
 C       Calculate pH change using buffering capacity
@@ -403,10 +466,11 @@ C       (Phosphate speciation changes with pH)
         HCO3_CONC = MAX(20.0, HCO3_CONC)
 
 C       Update buffering capacity with new HCO3-
-        SOLVOL_L = SOLVOL_CURRENT * AREA / 1000.0
+C       CRITICAL: Use maximum to prevent division by zero with very small volumes
+        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
         BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0
         IF (BUFFER_CAP .LT. 0.01) THEN
-          BUFFER_CAP = SOLVOL_L * 0.001
+          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
         ENDIF
 
 C       Store updated pH

@@ -17,8 +17,8 @@ C-----------------------------------------------------------------------
       SUBROUTINE HYDRO_NUTRIENT(
      &    CONTROL, ISWITCH,                    !Input
      &    FILECC, PLTPOP, RTDEP, RWU_HYDRO, TRLV, VSTAGE,  !Input
-     &    UNO3, UNH4, UPO4, UK,                !Output
-     &    NO3_SOL, NH4_SOL, P_SOL, K_SOL)      !I/O - Solution conc.
+     &    UNO3, UNH4,                          !Output
+     &    NO3_SOL, NH4_SOL)                    !I/O - Solution conc.
 
       USE ModuleDefs
       USE ModuleData
@@ -47,14 +47,10 @@ C     Input variables
 C     Output variables - uptake rates (kg/ha/day)
       REAL UNO3          ! Nitrate uptake
       REAL UNH4          ! Ammonium uptake
-      REAL UPO4          ! Phosphate uptake
-      REAL UK            ! Potassium uptake
 
 C     Solution concentrations (mg/L) - updated by depletion
       REAL NO3_SOL       ! Nitrate in solution
       REAL NH4_SOL       ! Ammonium in solution
-      REAL P_SOL         ! Phosphorus in solution
-      REAL K_SOL         ! Potassium in solution
 
 C     Local variables
       REAL SOLVOL        ! Solution volume (mm) - saved between calls
@@ -62,8 +58,6 @@ C     Local variables
       REAL SOLTEMP       ! Solution temperature (C)
       REAL NO3_CONC_INIT ! Initial NO3 concentration (mg/L)
       REAL NH4_CONC_INIT ! Initial NH4 concentration (mg/L)
-      REAL P_CONC_INIT   ! Initial P concentration (mg/L)
-      REAL K_CONC_INIT   ! Initial K concentration (mg/L)
 
 C     Water-nutrient coupling variables
       REAL WATER_FACTOR  ! Water availability factor (0-1)
@@ -78,13 +72,9 @@ C     Michaelis-Menten parameters for LETTUCE (from literature)
 C     Values from general multi-ion model (lettuce/sorghum calibration)
       REAL Jmax_NO3      ! Max uptake rate NO3 (mol/m2/s)
       REAL Jmax_NH4      ! Max uptake rate NH4 (mol/m2/s)
-      REAL Jmax_P        ! Max uptake rate P (mol/m2/s)
-      REAL Jmax_K        ! Max uptake rate K (mol/m2/s)
 
       REAL Km_NO3        ! Half-saturation constant NO3 (mol/m3)
       REAL Km_NH4        ! Half-saturation constant NH4 (mol/m3)
-      REAL Km_P          ! Half-saturation constant P (mol/m3)
-      REAL Km_K          ! Half-saturation constant K (mol/m3)
 
 C     Conversion factors and intermediate variables
       REAL ROOT_AREA     ! Root surface area per plant (m2/plant)
@@ -94,32 +84,33 @@ C     Conversion factors and intermediate variables
 C     Uptake calculations
       REAL UNO3_plant    ! NO3 uptake per plant (mg/plant/day)
       REAL UNH4_plant    ! NH4 uptake per plant (mg/plant/day)
-      REAL UP_plant      ! P uptake per plant (mg/plant/day)
-      REAL UK_plant      ! K uptake per plant (mg/plant/day)
 
 C     Uptake in mol/m2/s (from M-M equation)
       REAL J_NO3         ! NO3 influx (mol/m2/s)
       REAL J_NH4         ! NH4 influx (mol/m2/s)
-      REAL J_P           ! P influx (mol/m2/s)
-      REAL J_K           ! K influx (mol/m2/s)
+
+C     EC and pH stress-modified parameters
+      REAL Jmax_NO3_stressed  ! NO3 Jmax after EC and pH stress
+      REAL Jmax_NH4_stressed  ! NH4 Jmax after EC and pH stress
+      REAL Km_NO3_stressed    ! NO3 Km after EC stress
+      REAL ECSTRESS_JMAX_NO3  ! EC stress factor for NO3 Jmax
+      REAL ECSTRESS_JMAX_NH4  ! EC stress factor for NH4 Jmax
+      REAL ECSTRESS_KM_NO3    ! EC stress factor for NO3 Km
+      REAL PHSTRESS_UPTAKE    ! pH stress factor for uptake
 
       REAL UPTAKE_FACTOR ! Scaling factor for crop growth stage
       REAL TEMP_FACTOR   ! Temperature correction factor (0-1)
-      REAL DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K  ! Depletion rates
+      REAL DEPL_NO3, DEPL_NH4  ! Depletion rates
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
       REAL GROWING_AREA  ! Growing area (m2) - for area conversions
       REAL VOL_AREA_RATIO ! Solution volume per unit area (L/m2)
-      
+
 C     Concentration conversion (mg/L to mol/m3)
       REAL NO3_CONC_MOL  ! NO3 concentration (mol/m3)
       REAL NH4_CONC_MOL  ! NH4 concentration (mol/m3)
-      REAL P_CONC_MOL    ! P concentration (mol/m3)
-      REAL K_CONC_MOL    ! K concentration (mol/m3)
       
 C     Molecular weights (g/mol)
       REAL MW_N          ! Nitrogen molecular weight
-      REAL MW_P          ! Phosphorus molecular weight
-      REAL MW_K          ! Potassium molecular weight
       
 C     Temperature parameters for nutrient uptake (from species file)
       REAL FNNUT(4)      ! Temperature effect function values (Tmin, Topt1, Topt2, Tmax)
@@ -225,15 +216,13 @@ C-----------------------------------------------------------------------
         CALL GET('HYDRO','SOLVOL',SOLVOL)
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
-        CALL GET('HYDRO','P_CONC',P_SOL)
-        CALL GET('HYDRO','K_CONC',K_SOL)
 
 C       Store initial solution volume for water-nutrient coupling
         SOLVOL_INIT = SOLVOL
 
         WRITE(*,*) 'HYDRO_NUTRIENT INIT: Concentrations:'
         WRITE(*,*) '  NO3=',NO3_SOL,' NH4=',NH4_SOL,
-     &             ' P=',P_SOL,' K=',K_SOL,' SOLVOL=',SOLVOL,' mm'
+     &             ' SOLVOL=',SOLVOL,' mm'
 
 C-----------------------------------------------------------------------
 C       Michaelis-Menten parameters for LETTUCE
@@ -242,14 +231,10 @@ C-----------------------------------------------------------------------
 C       Jmax values (mol/m2/s) - from literature
         Jmax_NO3 = 3.23E-8   ! mol/m2/s
         Jmax_NH4 = 4.20E-8   ! mol/m2/s
-        Jmax_P   = 1.06E-8   ! mol/m2/s
-        Jmax_K   = 4.82E-8   ! mol/m2/s
 
 C       Km values (mol/m3) - from literature
         Km_NO3   = 0.015     ! mol/m3 (= 0.015 mM = 0.21 mg N/L)
         Km_NH4   = 0.0539    ! mol/m3 (= 0.0539 mM = 0.75 mg N/L)
-        Km_P     = 0.005     ! mol/m3 (= 0.005 mM = 0.155 mg P/L)
-        Km_K     = 0.0127    ! mol/m3 (= 0.0127 mM = 0.497 mg K/L)
 
 C       Root morphological parameters
 C       ROOT_RADIUS is a species-specific parameter (lettuce)
@@ -258,33 +243,25 @@ C       Root length (TRLV) comes dynamically from CROPGRO ROOTS module
 
 C       Molecular weights (g/mol)
         MW_N = 14.007         ! g/mol
-        MW_P = 30.974         ! g/mol
-        MW_K = 39.098         ! g/mol
 
         UNO3 = 0.0
         UNH4 = 0.0
-        UPO4 = 0.0
-        UK   = 0.0
 
-        WRITE(*,200) NO3_SOL, NH4_SOL, P_SOL, K_SOL,
+        WRITE(*,200) NO3_SOL, NH4_SOL,
      &               FNNUT(1), FNNUT(2), FNNUT(3), FNNUT(4), TYPNUT
- 200    FORMAT(/,' Hydroponic Nutrient Module',
+ 200    FORMAT(/,' Hydroponic Nitrogen Module',
      &         /,'   Initial NO3-N : ',F8.2,' mg/L',
      &         /,'   Initial NH4-N : ',F8.2,' mg/L',
-     &         /,'   Initial P     : ',F8.2,' mg/L',
-     &         /,'   Initial K     : ',F8.2,' mg/L',
      &         /,'   Temp range    : ',F4.0,' to ',F4.0,' C',
      &         ' (opt: ',F4.0,'-',F4.0,' C) Type: ',A3,/)
 
       CASE (RATE)
 C-----------------------------------------------------------------------
-C       Calculate daily nutrient uptake using Michaelis-Menten
+C       Calculate daily N uptake using Michaelis-Menten
 C       with water-nutrient coupling for realistic hydroponic behavior
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
-        CALL GET('HYDRO','P_CONC',P_SOL)
-        CALL GET('HYDRO','K_CONC',K_SOL)
 
         CALL GET('HYDRO','TEMP',SOLTEMP)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
@@ -305,8 +282,6 @@ C       Check if solution volume is critically low
           WRITE(*,*) '    Nutrient uptake STOPPED - system failure'
           UNO3 = 0.0
           UNH4 = 0.0
-          UPO4 = 0.0
-          UK = 0.0
           RETURN
         ENDIF
 
@@ -325,7 +300,12 @@ C       Range: 0.3 (at MIN_SOLVOL) to 1.0 (at full volume)
 C       Flow/circulation factor (non-linear decline)
 C       Accounts for reduced mixing and nutrient delivery at low volume
 C       Based on turbulent flow principles: Flow ∝ Volume^0.67
-        FLOW_FACTOR = (SOLVOL / SOLVOL_INIT) ** 0.67
+C       CRITICAL: Prevent division by zero with very small volumes
+        IF (SOLVOL .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
+          FLOW_FACTOR = (SOLVOL / SOLVOL_INIT) ** 0.67
+        ELSE
+          FLOW_FACTOR = 0.2  ! Minimum flow factor for very low volumes
+        ENDIF
         FLOW_FACTOR = MIN(1.0, MAX(0.2, FLOW_FACTOR))
 
 C       Get transpiration for mass flow calculation
@@ -378,39 +358,50 @@ C       mol/m3 = (g/m3) / (MW g/mol) = mg/L / MW
 C-----------------------------------------------------------------------
         NO3_CONC_MOL = NO3_SOL / MW_N  ! mol/m3
         NH4_CONC_MOL = NH4_SOL / MW_N  ! mol/m3
-        P_CONC_MOL   = P_SOL / MW_P    ! mol/m3
-        K_CONC_MOL   = K_SOL / MW_K    ! mol/m3
+
+C-----------------------------------------------------------------------
+C       Get EC and pH stress factors from SOLEC and SOLPH modules
+C       These factors modify Jmax (non-competitive inhibition) and Km (competitive)
+C-----------------------------------------------------------------------
+        CALL GET('HYDRO','ECSTRESS_JMAX_NO3',ECSTRESS_JMAX_NO3)
+        CALL GET('HYDRO','ECSTRESS_JMAX_NH4',ECSTRESS_JMAX_NH4)
+        CALL GET('HYDRO','ECSTRESS_KM_NO3',ECSTRESS_KM_NO3)
+
+C       Get pH stress factor
+        CALL GET('HYDRO','PHSTRESS_UPTAKE',PHSTRESS_UPTAKE)
+
+C       Default to 1.0 if not set (no stress)
+        IF (ECSTRESS_JMAX_NO3 .LT. 0.1) ECSTRESS_JMAX_NO3 = 1.0
+        IF (ECSTRESS_JMAX_NH4 .LT. 0.1) ECSTRESS_JMAX_NH4 = 1.0
+        IF (ECSTRESS_KM_NO3 .LT. 0.1) ECSTRESS_KM_NO3 = 1.0
+        IF (PHSTRESS_UPTAKE .LT. 0.1) PHSTRESS_UPTAKE = 1.0
+
+C       Apply both EC and pH stress: reduce Jmax and increase Km
+C       Combined stress = EC_stress × pH_stress (multiplicative)
+        Jmax_NO3_stressed = Jmax_NO3 * ECSTRESS_JMAX_NO3 * PHSTRESS_UPTAKE
+        Jmax_NH4_stressed = Jmax_NH4 * ECSTRESS_JMAX_NH4 * PHSTRESS_UPTAKE
+        Km_NO3_stressed = Km_NO3 * ECSTRESS_KM_NO3
 
 C-----------------------------------------------------------------------
 C       Michaelis-Menten equation: J = Jmax * [S] / (Km + [S])
 C       J is in mol/m2/s (influx per unit root surface area)
-C       Apply ALL environmental factors: temperature, growth stage, water, flow
+C       Apply ALL environmental factors: temperature, growth stage, water, flow, EC stress
 C-----------------------------------------------------------------------
-        J_NO3 = (Jmax_NO3 * UPTAKE_FACTOR * TEMP_FACTOR *
+        J_NO3 = (Jmax_NO3_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
      &           WATER_FACTOR * FLOW_FACTOR * NO3_CONC_MOL)/
-     &          (Km_NO3 + NO3_CONC_MOL)  ! mol/m2/s
+     &          (Km_NO3_stressed + NO3_CONC_MOL)  ! mol/m2/s
 
-        J_NH4 = (Jmax_NH4 * UPTAKE_FACTOR * TEMP_FACTOR *
+        J_NH4 = (Jmax_NH4_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
      &           WATER_FACTOR * FLOW_FACTOR * NH4_CONC_MOL)/
      &          (Km_NH4 + NH4_CONC_MOL)  ! mol/m2/s
 
-        J_P = (Jmax_P * UPTAKE_FACTOR * TEMP_FACTOR *
-     &         WATER_FACTOR * FLOW_FACTOR * P_CONC_MOL) /
-     &        (Km_P + P_CONC_MOL)  ! mol/m2/s
-
-        J_K = (Jmax_K * UPTAKE_FACTOR * TEMP_FACTOR *
-     &         WATER_FACTOR * FLOW_FACTOR * K_CONC_MOL) /
-     &        (Km_K + K_CONC_MOL)  ! mol/m2/s
-
 C-----------------------------------------------------------------------
 C       Convert from influx (mol/m2/s) to uptake per plant (mg/plant/day)
-C       Uptake = J (mol/m2/s) * ROOT_AREA (m2/plant) * 
+C       Uptake = J (mol/m2/s) * ROOT_AREA (m2/plant) *
 C                86400 (s/day) * MW (g/mol) * 1000 (mg/g)
 C-----------------------------------------------------------------------
         UNO3_plant = J_NO3 * ROOT_AREA * 86400.0 * MW_N * 1000.0  ! mg N/plant/day
         UNH4_plant = J_NH4 * ROOT_AREA * 86400.0 * MW_N * 1000.0  ! mg N/plant/day
-        UP_plant   = J_P   * ROOT_AREA * 86400.0 * MW_P * 1000.0  ! mg P/plant/day
-        UK_plant   = J_K   * ROOT_AREA * 86400.0 * MW_K * 1000.0  ! mg K/plant/day
 
 C-----------------------------------------------------------------------
 C       Convert from mg/plant/day to kg/ha/day
@@ -419,83 +410,70 @@ C                 = mg/plant/day * plants/m2 * 0.01
 C-----------------------------------------------------------------------
         UNO3 = UNO3_plant * PLTPOP * 0.01  ! kg N/ha/day (active)
         UNH4 = UNH4_plant * PLTPOP * 0.01  ! kg N/ha/day (active)
-        UPO4 = UP_plant   * PLTPOP * 0.01  ! kg P/ha/day (active)
-        UK   = UK_plant   * PLTPOP * 0.01  ! kg K/ha/day (active)
 
 C-----------------------------------------------------------------------
 C       Add MASS FLOW component for passive uptake via transpiration
 C       Mass flow uptake = Transpiration (mm/d) × Concentration (mg/L)
-C       Applies mainly to NO3- and K+ (highly mobile in xylem)
+C       Applies mainly to NO3- (highly mobile in xylem)
 C       Coefficient b represents fraction of water influx carrying nutrient
+C       EC stress also affects mass flow (reduces transpiration stream efficiency)
 C-----------------------------------------------------------------------
         IF (TRANSP_MM .GT. 0.0) THEN
 C         Convert transpiration to L/ha: mm × 10000 m²/ha = L/ha
 C         Mass flow (kg/ha/d) = Transp (mm/d) × 10000 × Conc (mg/L) × 1e-6
-          MASS_FLOW_NO3 = TRANSP_MM * 10000.0 * NO3_SOL * 1.0E-6 * 0.15
-          MASS_FLOW_K   = TRANSP_MM * 10000.0 * K_SOL * 1.0E-6 * 0.10
-C         Coefficients: NO3 (b=0.15), K (b=0.10) from literature
-C         These represent fraction of transpiration stream carrying nutrient
+C         Apply EC stress to mass flow (reduces efficiency of transpiration stream)
+          MASS_FLOW_NO3 = TRANSP_MM * 10000.0 * NO3_SOL * 1.0E-6 * 0.15 
+     &                    * ECSTRESS_JMAX_NO3
+C         Coefficient: NO3 (b=0.15) from literature
+C         This represents fraction of transpiration stream carrying nutrient
+C         EC stress reduces this efficiency
         ELSE
           MASS_FLOW_NO3 = 0.0
-          MASS_FLOW_K = 0.0
         ENDIF
 
 C       Total uptake = Active (Michaelis-Menten) + Passive (Mass flow)
         UNO3 = UNO3 + MASS_FLOW_NO3
-        UK   = UK + MASS_FLOW_K
 
         UNO3 = MAX(0.0, UNO3)
         UNH4 = MAX(0.0, UNH4)
-        UPO4 = MAX(0.0, UPO4)
-        UK   = MAX(0.0, UK)
 
-        WRITE(*,300) NO3_SOL, NH4_SOL, P_SOL, K_SOL,
-     &               UNO3, UNH4, UPO4, UK, SOLTEMP, TEMP_FACTOR,
+        WRITE(*,300) NO3_SOL, NH4_SOL,
+     &               UNO3, UNH4, SOLTEMP, TEMP_FACTOR,
      &               SOLVOL, WATER_FACTOR, FLOW_FACTOR,
-     &               MASS_FLOW_NO3, MASS_FLOW_K
+     &               MASS_FLOW_NO3
  300    FORMAT(' HYDRO_NUTRIENT (LETTUCE):',
-     &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' [P]=',F6.1,' [K]=',F6.1,
-     &         ' mg/L',/,
-     &         '   Uptake: NO3=',F6.3,' NH4=',F6.3,' P=',F6.3,
-     &         ' K=',F6.3,' kg/ha/d',/,
+     &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' mg/L',/,
+     &         '   Uptake: NO3=',F6.3,' NH4=',F6.3,' kg/ha/d',/,
      &         '   Temp=',F5.1,'C Tfac=',F4.2,
      &         ' SolVol=',F6.1,' mm Wfac=',F4.2,' Ffac=',F4.2,/,
-     &         '   MassFlow: NO3=',F6.3,' K=',F6.3,' kg/ha/d')
+     &         '   MassFlow: NO3=',F6.3,' kg/ha/d')
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
-C       Update solution concentrations after uptake
+C       Update N solution concentrations after uptake
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
-        CALL GET('HYDRO','P_CONC',P_SOL)
-        CALL GET('HYDRO','K_CONC',K_SOL)
 
         CALL GET('HYDRO','SOLVOL',SOLVOL)
         CALL GET('HYDRO','AREA',GROWING_AREA)
 
 C       SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
-        VOL_PER_HA = SOLVOL * 10000.0  ! L/ha
+C       CRITICAL: Ensure minimum volume to prevent division overflow
+        VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)  ! L/ha (min 10 L/ha = 0.001 mm)
 
         DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted
         DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
-        DEPL_P   = (UPO4 * 1.0E6) / VOL_PER_HA
-        DEPL_K   = (UK * 1.0E6)   / VOL_PER_HA
 
         NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
         NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
-        P_SOL   = MAX(0.0, P_SOL - DEPL_P)
-        K_SOL   = MAX(0.0, K_SOL - DEPL_K)
 
         CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
         CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
-        CALL PUT('HYDRO','P_CONC',P_SOL)
-        CALL PUT('HYDRO','K_CONC',K_SOL)
 
-        WRITE(*,400) DEPL_NO3, DEPL_NH4, DEPL_P, DEPL_K
- 400    FORMAT(' Solution depletion (LETTUCE):',
-     &         ' dNO3=',F6.3,' dNH4=',F6.3,
-     &         ' dP=',F6.3,' dK=',F6.3,' mg/L')
+        WRITE(*,400) DEPL_NO3, DEPL_NH4
+ 400    FORMAT(' N solution depletion (LETTUCE):',
+     &         ' dNO3=',F6.3,' dNH4=',F6.3,' mg/L')
 
       CASE (OUTPUT)
         CONTINUE

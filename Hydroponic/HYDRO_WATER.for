@@ -50,6 +50,7 @@ C     Local variables - all in mm
       REAL TRWUP_MM       ! Potential uptake in mm/d
       REAL TRWU_MM        ! Actual uptake in mm/d
       REAL SOLVOL_L       ! Temporary: solution volume in L (from ModuleData)
+      REAL ECSTRESS_ROOT  ! EC stress factor for root function (affects water uptake)
       INTEGER DYNAMIC
 
 C-----------------------------------------------------------------------
@@ -129,13 +130,31 @@ C       DEMAND-BASED: Plant water demand from transpiration (EP)
 C       EP is already in mm/d (rate per unit area)
         PLANT_DEMAND_MM = EP  ! mm/d
 
+C       Get EC stress factor for root function (affects water uptake capacity)
+C       EC stress reduces root hydraulic conductivity and water uptake
+        ECSTRESS_ROOT = -999.0  ! Sentinel to detect if GET works
+        CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
+        
+C       Debug: Always show what was retrieved
+        WRITE(*,*) 'HYDRO_WATER: After GET, ECSTRESS_ROOT=',ECSTRESS_ROOT
+        
+C       Validate and limit range
+        IF (ECSTRESS_ROOT .LT. 0.1 .OR. ECSTRESS_ROOT .GT. 1.0) THEN
+          IF (ECSTRESS_ROOT .LT. -500.0) THEN
+            WRITE(*,*) 'HYDRO_WATER ERROR: GET failed, ECSTRESS_ROOT not found!'
+          ELSE
+            WRITE(*,*) 'HYDRO_WATER: ECSTRESS_ROOT out of range (',ECSTRESS_ROOT,')'
+          ENDIF
+          ECSTRESS_ROOT = 1.0
+        ENDIF
+
 C       Store EP for nutrient uptake module (for mass flow calculations)
         CALL PUT('HYDRO','EP',EP)
 
-C       In hydroponics with unlimited water: actual uptake = demand
-C       No water stress, so WUF = 1.0
-        TRWU_MM = PLANT_DEMAND_MM  ! mm/d (actual = demand)
-        WUF = 1.0  ! No water stress in hydroponics
+C       In hydroponics with unlimited water: actual uptake = demand * EC stress
+C       EC stress reduces root function, limiting water uptake capacity
+        TRWU_MM = PLANT_DEMAND_MM * ECSTRESS_ROOT  ! mm/d (limited by EC stress)
+        WUF = ECSTRESS_ROOT  ! Water uptake factor = EC stress factor
 
 C       Get potential supply from RATE phase for reporting only
         CALL GET('HYDRO','TRWUP_MM',TRWUP_MM)
@@ -163,6 +182,16 @@ C       Update solution depth
      &         + WATER_ADD_MM                    ! Water addition (mm)
      &         - PLANT_UPTAKE_MM                 ! Plant uptake (mm)
      &         - SOL_EVAP_MM                     ! Evaporation (mm)
+
+C       CRITICAL: Enforce minimum solution volume to prevent crashes
+C       When volume drops below minimum, plants should experience severe stress
+C       but simulation should continue (growth stops, senescence may occur)
+C       Minimum of 2.0 mm prevents numerical instability in nutrient calculations
+        IF (SOLVOL_MM .LT. 5.0) THEN
+          SOLVOL_MM = 5.0  ! Minimum 5.0 mm (5.0 L/m²)
+          WRITE(*,'(A)') ' HYDRO_WATER WARNING: Solution volume at '//
+     &                   'minimum - severe water/nutrient stress!'
+        ENDIF
 
 C       Store updated solution depth back to ModuleData (in mm)
         CALL PUT('HYDRO','SOLVOL',SOLVOL_MM)

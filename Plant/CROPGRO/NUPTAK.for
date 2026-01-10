@@ -144,21 +144,21 @@ C         Store defaults back to ModuleData
         WRITE(*,*) '  NO3=',NO3_SOL,' NH4=',NH4_SOL,
      &             ' P=',P_SOL,' K=',K_SOL
 
-C       Initialize HYDRO_NUTRIENT module for N uptake
+C       Initialize HYDRO_NUTRIENT module for N uptake only
 C       HYDRO_NUTRIENT will also read from ModuleData, but we pass current values
         CONTROL_DUMMY % DYNAMIC = SEASINIT
         CALL HYDRO_NUTRIENT(
      &    CONTROL_DUMMY, ISWITCH,
      &    FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,
-     &    UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,
-     &    NO3_SOL, NH4_SOL, P_SOL, K_SOL)
+     &    UNO3_TOT, UNH4_TOT,
+     &    NO3_SOL, NH4_SOL)
 
 C       Initialize SOLPi module for P uptake
         PDEMAND = 0.0
         CONTROL_DUMMY % DYNAMIC = SEASINIT
         CALL SOLPi(
      &    CONTROL_DUMMY, ISWITCH,
-     &    PLTPOP, RTDEP, PDEMAND,
+     &    FILECC, PLTPOP, RTDEP, PDEMAND,
      &    UPO4_HYDRO,
      &    P_SOL)
 
@@ -167,7 +167,7 @@ C       Initialize SOLKI module for K uptake
         CONTROL_DUMMY % DYNAMIC = SEASINIT
         CALL SOLKI(
      &    CONTROL_DUMMY, ISWITCH,
-     &    PLTPOP, RTDEP, KDEMAND,
+     &    FILECC, PLTPOP, RTDEP, KDEMAND,
      &    UK_HYDRO,
      &    K_SOL)
 
@@ -231,7 +231,7 @@ C           Calculate P uptake using SOLPi module (demand-based)
             CONTROL_DUMMY % DYNAMIC = RATE
             CALL SOLPi(
      &        CONTROL_DUMMY, ISWITCH,                !Input
-     &        PLTPOP, RTDEP, PDEMAND,                !Input
+     &        FILECC, PLTPOP, RTDEP, PDEMAND,        !Input
      &        UPO4_HYDRO,                            !Output (kg/ha/d)
      &        P_SOL)                                 !I/O
 
@@ -239,7 +239,7 @@ C           Calculate K uptake using SOLKI module (demand-based)
             CONTROL_DUMMY % DYNAMIC = RATE
             CALL SOLKI(
      &        CONTROL_DUMMY, ISWITCH,                !Input
-     &        PLTPOP, RTDEP, KDEMAND,                !Input
+     &        FILECC, PLTPOP, RTDEP, KDEMAND,        !Input
      &        UK_HYDRO,                              !Output (kg/ha/d)
      &        K_SOL)                                 !I/O
           ELSE
@@ -247,9 +247,9 @@ C           Low concentrations - use Michaelis-Menten for N
             CONTROL_DUMMY % DYNAMIC = RATE
             CALL HYDRO_NUTRIENT(
      &        CONTROL_DUMMY, ISWITCH,                !Input
-     &        FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,            !Input
-     &        UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,  !Output (kg/ha/d)
-     &        NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+     &        FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,  !Input
+     &        UNO3_TOT, UNH4_TOT,                    !Output (kg/ha/d)
+     &        NO3_SOL, NH4_SOL)                      !I/O
 
 C           Limit N by demand (like soil mode)
             IF ((UNO3_TOT + UNH4_TOT) .GT. ANDEM) THEN
@@ -265,14 +265,14 @@ C           (SOLPi and SOLKI handle low concentration cases internally)
             CONTROL_DUMMY % DYNAMIC = RATE
             CALL SOLPi(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, PDEMAND,
+     &        FILECC, PLTPOP, RTDEP, PDEMAND,
      &        UPO4_HYDRO,
      &        P_SOL)
 
             CONTROL_DUMMY % DYNAMIC = RATE
             CALL SOLKI(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, KDEMAND,
+     &        FILECC, PLTPOP, RTDEP, KDEMAND,
      &        UK_HYDRO,
      &        K_SOL)
           ENDIF
@@ -282,15 +282,15 @@ C         Update N concentrations using HYDRO_NUTRIENT
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL HYDRO_NUTRIENT(
      &      CONTROL_DUMMY, ISWITCH,                !Input
-     &      FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,            !Input
-     &      UNO3_TOT, UNH4_TOT, UPO4_HYDRO, UK_HYDRO,  !Output
-     &      NO3_SOL, NH4_SOL, P_SOL, K_SOL)        !I/O
+     &      FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,  !Input
+     &      UNO3_TOT, UNH4_TOT,                    !Output
+     &      NO3_SOL, NH4_SOL)                      !I/O
 
 C         Update P concentration using SOLPi
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL SOLPi(
      &      CONTROL_DUMMY, ISWITCH,
-     &      PLTPOP, RTDEP, PDEMAND,
+     &      FILECC, PLTPOP, RTDEP, PDEMAND,
      &      UPO4_HYDRO,
      &      P_SOL)
 
@@ -298,7 +298,7 @@ C         Update K concentration using SOLKI
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL SOLKI(
      &      CONTROL_DUMMY, ISWITCH,
-     &      PLTPOP, RTDEP, KDEMAND,
+     &      FILECC, PLTPOP, RTDEP, KDEMAND,
      &      UK_HYDRO,
      &      K_SOL)
 
@@ -330,14 +330,14 @@ C         Calculate P and K uptake using dedicated modules
           CONTROL_DUMMY % DYNAMIC = RATE
           CALL SOLPi(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, PDEMAND,
+     &        FILECC, PLTPOP, RTDEP, PDEMAND,
      &        UPO4_HYDRO,
      &        P_SOL)
 
           CONTROL_DUMMY % DYNAMIC = RATE
           CALL SOLKI(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, KDEMAND,
+     &        FILECC, PLTPOP, RTDEP, KDEMAND,
      &        UK_HYDRO,
      &        K_SOL)
 
@@ -345,14 +345,14 @@ C         Update solution concentrations for P and K
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL SOLPi(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, PDEMAND,
+     &        FILECC, PLTPOP, RTDEP, PDEMAND,
      &        UPO4_HYDRO,
      &        P_SOL)
 
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL SOLKI(
      &        CONTROL_DUMMY, ISWITCH,
-     &        PLTPOP, RTDEP, KDEMAND,
+     &        FILECC, PLTPOP, RTDEP, KDEMAND,
      &        UK_HYDRO,
      &        K_SOL)
 

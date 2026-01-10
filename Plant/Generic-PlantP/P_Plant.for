@@ -60,6 +60,7 @@
 !       (DYNAMIC=EMERG) within the integration section of CROPGRO.
 !     ------------------------------------------------------------------
       USE ModuleDefs
+      USE ModuleData
       IMPLICIT  NONE
       EXTERNAL P_IPPLNT, P_Demand, P_Uptake, OPPlantP, P_Partition, 
      &  PValue
@@ -129,13 +130,18 @@
 
 !     Misc.
       REAL PShutDem, PRootDem, PShelDem, PSeedDem, PTotDem
-      REAL PSTRESS_RATIO
+      REAL PSTRESS_RATIO, PSTRESS_SUPPLY
       REAL PUptakeProf
       REAL Plant_kg
       REAL N2P, N2P_max, N2P_min
       REAL PestShutP, PestRootP, PestShelP, PestSeedP
+      REAL PSTFAC
+      PARAMETER (PSTFAC = 0.70)  ! P stress threshold factor (similar to NSTFAC)
 !      REAL PShutMob, PRootMob, PShelMob   !, PTotMob
-!      REAL PShutMobPool, PRootMobPool, PShelMobPool 
+!      REAL PShutMobPool, PRootMobPool, PShelMobPool
+      
+!     Hydroponic mode variables
+      REAL UPO4_HYDRO 
 
 !     From species file:
       REAL, DIMENSION(3) :: PCShutOpt, PCRootOpt, PCShelOpt, PCSeedOpt
@@ -368,10 +374,38 @@
 
 !-----------------------------------------------------------------------
 !     P uptake
-      CALL P_Uptake (DYNAMIC,   
+!     Check if in hydroponic mode - try to get P uptake from ModuleData
+!     In hydroponic mode, NUPTAK stores UPO4 before P_CGRO is called
+      CALL GET('HYDRO','UPO4',UPO4_HYDRO)
+!     Use hydroponic P uptake if ISWPHO allows P simulation
+!     (In hydroponic mode, ISWPHO is typically 'Y', and UPO4 is stored by NUPTAK)
+!     We assume that if UPO4 is available from HYDRO module, we're in hydroponic mode
+!     In pure soil mode without hydroponics, UPO4 won't be in ModuleData, 
+!     and we'll fall through to soil P uptake calculation below
+      IF (ISWPHO .NE. 'N' .AND. UPO4_HYDRO .GE. 0.0) THEN
+!       Hydroponic mode - use P uptake from NUPTAK/SOLPi
+        PUptakeProf = UPO4_HYDRO
+!       Debug: Check if UPO4_HYDRO is being retrieved correctly
+        IF (DYNAMIC .EQ. INTEGR) THEN
+          WRITE(*,*) ' P_PLANT: UPO4_HYDRO=',UPO4_HYDRO,' PUptakeProf=',PUptakeProf
+        ENDIF
+!       Set layer-wise uptake to zero (all uptake in solution, not from soil layers)
+        DO I = 1, NL
+          PUptake(I) = 0.0
+        ENDDO
+!       Calculate N2P ratio for stress calculation (needed for P stress factors)
+        IF (PConc_Veg .GT. 0.0 .AND. PCNVeg .GT. 0.0) THEN
+          N2P = (PCNVeg / 100.0) / PConc_Veg
+        ELSE
+          N2P = N2P_min
+        ENDIF
+      ELSE
+!       Soil mode - calculate P uptake from soil using standard P_Uptake routine
+        CALL P_Uptake (DYNAMIC,   
      &    N2P_min, PCNVeg, PConc_Veg, PTotDem,            !Input
      &    RLV, SPi_AVAIL,                                 !Input
      &    N2P, PUptake, PUptakeProf)                      !Output
+      ENDIF
 
 !-----------------------------------------------------------------------
       CALL P_Partition(
@@ -430,9 +464,26 @@ C MA problem of transfer of shoot ( stems) to panicle at grain filling
 
 !-----------------------------------------------------------------------
 !     From MB's P_Partition
-C     Calculate PSTRESS_RATIO
+!     Calculate PSTRESS_RATIO from tissue concentration (original method)
         PSTRESS_RATIO = MIN(1.0, (PConc_Shut - PConc_Shut_Min) /  
      &                       (PConc_Shut_opt - PConc_Shut_Min))
+        
+!     ALSO calculate P stress from supply vs demand (like N and K stress)
+!     This provides immediate response when P uptake is insufficient
+        IF (PTotDem .GT. 1.E-6) THEN
+          IF (PUptakeProf .LT. PSTFAC * PTotDem) THEN
+!           P supply (uptake) is insufficient - calculate stress from supply vs demand
+            PSTRESS_SUPPLY = MIN(1.0, PUptakeProf / (PTotDem * PSTFAC))
+          ELSE
+            PSTRESS_SUPPLY = 1.0
+          ENDIF
+        ELSE
+          PSTRESS_SUPPLY = 1.0  ! No demand = no stress
+        ENDIF
+        
+C     Use the MINIMUM of tissue-based and supply-based stress ratios
+C     (if either is limiting, stress occurs - similar to N and K stress)
+        PSTRESS_RATIO = MIN(PSTRESS_RATIO, PSTRESS_SUPPLY)
 
 C     Calculate PStres1 (Photosynthesis)
       IF (PSTRESS_RATIO .GE. SRATPHOTO) THEN
@@ -451,6 +502,17 @@ C     Calculate PStres2 (Partitioning)
       ELSE
         PStres2 = 0.0
       ENDIF
+      
+!     Debug output for P stress calculation (print AFTER PStres1/PStres2 are calculated)
+        IF (DYNAMIC .EQ. INTEGR) THEN
+          WRITE(*,400) PConc_Shut, PConc_Shut_opt, PConc_Shut_min,
+     &                 PSTRESS_RATIO, PStres1, PStres2, PUptakeProf,
+     &                 PTotDem, PSTRESS_SUPPLY, SRATPART
+400       FORMAT(' P STRESS: PConc=',F6.4,' Opt=',F6.4,' Min=',F6.4,
+     &           ' Ratio=',F5.2,' PStres1=',F4.2,' PStres2=',F4.2,
+     &           ' Uptake=',F6.3,' Demand=',F6.3,' kg/ha/d',
+     &           ' SupplyStress=',F4.2,' SRATPART=',F4.2)
+        ENDIF
 
 !***********************************************************************
 !***********************************************************************

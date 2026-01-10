@@ -126,7 +126,12 @@ C         g CO2/m2/day * (1 mol/44g) * (1 mol O2/mol CO2) * (32g/mol)
 C         = g O2/m2/day * 1000 mg/g = mg O2/m2/day
           O2_CONSUME = ROOT_RESP * (32.0/44.0) * 1000.0
 C         Convert to mg/L/day using solution volume per m2
-          O2_CONSUME = O2_CONSUME / SOLVOL
+C         CRITICAL: Prevent division by zero with very small volumes
+          IF (SOLVOL .GT. 0.1) THEN
+            O2_CONSUME = O2_CONSUME / SOLVOL
+          ELSE
+            O2_CONSUME = O2_CONSUME / 0.1  ! Use minimum volume
+          ENDIF
         ELSE
 C         No root respiration data - use simple estimate
 C         Typical: 0.5-2.0 mg/L/day depending on plant size

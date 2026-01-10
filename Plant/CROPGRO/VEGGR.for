@@ -38,7 +38,7 @@ C========================================================================
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
-     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN)                 !Output
+     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
 
 !-----------------------------------------------------------------------
       USE ModuleDefs
@@ -69,7 +69,7 @@ C========================================================================
       REAL CRUSLF, CRUSRT, CRUSST, CRUSSH, CUMTUR
       REAL EXCESS, FRLF, FRRT, FRSTM, NADLF, NADRT, NADST
       REAL NGRLF, NGRRT, NGRST, NSTRES, PGAVL
-      REAL TNLEAK, VSTAGE, WLDOTN, WRDOTN, WSDOTN
+      REAL TNLEAK, VSTAGE, WLDOTN, WRDOTN, WSDOTN, KSTRES
 
       REAL ATOP, CADSTF, FNINLG, FNINRG, FNINSG
       REAL PROLFG, PRORTG, PROSTG
@@ -79,6 +79,13 @@ C========================================================================
       REAL VGRDEM, SUPPN, PGLEFT, LSTR, CSAVEV
       REAL NLEAK
       REAL NMINEA, NFIXN, TRNU
+!     K stress variables  
+      REAL KSUPP, KDEMAND_G, UK_HYDRO, XKSTRES, PKSTRES
+      REAL N_TO_K_RATIO, KSTFAC
+      PARAMETER (N_TO_K_RATIO = 1.2)  ! K demand = N demand * 1.2 (typical for lettuce)
+      PARAMETER (KSTFAC = 0.70)       ! K stress threshold factor (similar to NSTFAC)
+!     EC stress variable
+      REAL ECSTRESS_LEAF  ! EC stress factor for leaf expansion (0-1)
 
       REAL TGRO(TS)
       
@@ -203,6 +210,10 @@ C========================================================================
 !     FO/KJB - Running average      
       PNSTRES= 1.0
       XNSTRES= 1.0
+!     K stress initialization
+      PKSTRES = 1.0
+      XKSTRES = 1.0
+      KSUPP = 0.0
       
       CALL CANOPY(SEASINIT,
      &    ECONO, FILECC, FILEGC, KCAN, PAR, ROWSPC,       !Input
@@ -245,9 +256,33 @@ C-----------------------------------------------------------------------
 !     FO/KJB - Running average
       PNSTRES = XNSTRES
 
-      IF (SUPPN .LT. NSTFAC * NDMNEW .AND. NDMNEW .GT. 0. .AND. 
-     &        YRDOY .NE. YREMRG) THEN
-        XNSTRES = MIN(1.0,SUPPN/(NDMNEW * NSTFAC))
+!-----------------------------------------------------------------------
+!     Calculate N stress from supply vs demand
+!     Low concentration → low uptake (via Michaelis-Menten) → low supply
+!     Supply/demand ratio naturally captures nutrient availability
+!     FIX: When supply is very low relative to potential demand, 
+!          apply minimum stress to prevent circular dependency
+!-----------------------------------------------------------------------
+!     CRITICAL: Ensure no division by zero - check all denominators
+      IF (NDMNEW .GT. 1.E-6 .AND. NSTFAC .GT. 1.E-6 .AND. 
+     &    YRDOY .NE. YREMRG) THEN
+        IF (SUPPN .LT. NSTFAC * NDMNEW) THEN
+!         Calculate supply/demand stress with protection against division by zero
+          IF (NDMNEW * NSTFAC .GT. 1.E-9) THEN
+            XNSTRES = MIN(1.0, SUPPN / (NDMNEW * NSTFAC))
+          ELSE
+            XNSTRES = 0.1  ! Very low demand - default to stress
+          ENDIF
+!         CRITICAL FIX: When supply is near zero but demand adjusted down,
+!         ensure stress reflects actual nutrient availability
+!         If supply is extremely low (< 0.01 g/m2/d), apply minimum stress
+          IF (SUPPN .LT. 0.01 .AND. NDMNEW .GT. 0.01) THEN
+!           Supply near zero - apply severe stress regardless of demand
+            XNSTRES = MAX(XNSTRES, 0.1)
+          ENDIF
+        ELSE
+          XNSTRES = 1.0
+        ENDIF
       ELSE
         XNSTRES = 1.0
       ENDIF
@@ -255,8 +290,65 @@ C-----------------------------------------------------------------------
 !     FO/KJB - Running average
       NSTRES = XNSTRES * 0.5 + PNSTRES * 0.5
       
+!-----------------------------------------------------------------------
+!     K stress calculation (similar to N stress)
+!-----------------------------------------------------------------------
+!     Get K uptake from hydroponic module (if available) or set to zero for soil mode
+!     CRITICAL: Initialize to 0.0 in case GET fails or value not set
+      UK_HYDRO = 0.0
+      CALL GET('HYDRO','UK',UK_HYDRO)
+!     Ensure UK_HYDRO is non-negative (safety check)
+      IF (UK_HYDRO .LT. 0.0) UK_HYDRO = 0.0
+!     Convert K uptake from kg/ha/d to g/m2/d (divide by 10)
+      KSUPP = UK_HYDRO / 10.0
+!     Calculate K demand from N demand (K demand = N demand * 1.2 for lettuce)
+      KDEMAND_G = NDMNEW * N_TO_K_RATIO
+!     Running average for K stress (similar to N stress)
+      PKSTRES = XKSTRES
+
+!-----------------------------------------------------------------------
+!     Calculate K stress from supply vs demand
+!     Low concentration → low uptake (via Michaelis-Menten) → low supply
+!     Supply/demand ratio naturally captures nutrient availability
+!     FIX: When supply is very low relative to potential demand, 
+!          apply minimum stress to prevent circular dependency
+!-----------------------------------------------------------------------
+!     CRITICAL: Ensure no division by zero - check all denominators
+      IF (KDEMAND_G .GT. 1.E-6 .AND. KSTFAC .GT. 1.E-6 .AND. 
+     &    YRDOY .NE. YREMRG) THEN
+        IF (KSUPP .LT. KSTFAC * KDEMAND_G) THEN
+!         Calculate supply/demand stress with protection against division by zero
+          IF (KDEMAND_G * KSTFAC .GT. 1.E-9) THEN
+            XKSTRES = MIN(1.0, KSUPP / (KDEMAND_G * KSTFAC))
+          ELSE
+            XKSTRES = 0.1  ! Very low demand - default to stress
+          ENDIF
+!         CRITICAL FIX: When supply is near zero but demand adjusted down,
+!         ensure stress reflects actual nutrient availability
+!         If supply is extremely low (< 0.01 g/m2/d), apply minimum stress
+          IF (KSUPP .LT. 0.01 .AND. KDEMAND_G .GT. 0.01) THEN
+!           Supply near zero - apply severe stress regardless of demand
+            XKSTRES = MAX(XKSTRES, 0.1)
+          ENDIF
+        ELSE
+          XKSTRES = 1.0
+        ENDIF
+      ELSE
+        XKSTRES = 1.0
+      ENDIF
+      
+!     Running average for K stress
+      KSTRES = XKSTRES * 0.5 + PKSTRES * 0.5
+      
+!     Debug output for stress factors (print daily)
+      WRITE(*,300) NSTRES, PStres2, KSTRES, SUPPN, KSUPP, 
+     &             NDMNEW, KDEMAND_G
+300   FORMAT(' STRESS: N=',F4.2,' P2=',F4.2,' K=',F4.2,
+     &       ' N_sup=',F5.2,' K_sup=',F5.2,
+     &       ' N_dem=',F5.2,' K_dem=',F5.2)
+      
 !      FRRT  = ATOP * (1.0 - (MIN(TURFAC,NSTRES)))*(1.0-FRRT) + FRRT
-      FRRT  = ATOP * (1.0 - (MIN(TURFAC, NSTRES, PStres2))) * 
+      FRRT  = ATOP * (1.0 - (MIN(TURFAC, NSTRES, PStres2, KSTRES))) *
      &                    (1.0 - FRRT) + FRRT
 C-----------------------------------------------------------------------
 C     Cumulative turgor factor that remembers veg drought stress
@@ -291,6 +383,12 @@ C-----------------------------------------------------------------------
       WLDOTN = FRLF * VGRDEM
       WSDOTN = FRSTM * VGRDEM
       WRDOTN = FRRT * VGRDEM
+      
+C     Apply EC stress to leaf expansion (morphological suppression)
+C     Plants maintain functional balance: reduced root growth → reduced leaf expansion
+      CALL GET('HYDRO','ECSTRESS_LEAF',ECSTRESS_LEAF)
+      IF (ECSTRESS_LEAF .LT. 0.1) ECSTRESS_LEAF = 1.0
+      WLDOTN = WLDOTN * ECSTRESS_LEAF
 C-----------------------------------------------------------------------
 C     Compute maximum N required for tissue growth
 C-----------------------------------------------------------------------

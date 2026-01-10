@@ -76,6 +76,7 @@ C-----------------------------------------------------------------------
 !     TRLV_MIN  = conversion of RTWTMIN to RLV units per layer
       REAL TRLV_MIN, RLSENTOT, FACTOR, RTWTMIN
       REAL TotRootMass, CumRootMass
+      REAL ECSTRESS_ROOT  ! EC stress factor for root growth (0-1)
 
 !***********************************************************************
 !***********************************************************************
@@ -157,6 +158,12 @@ C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
 !       Calculate new root growth based on photosynthate allocation
         RLNEW = WRDOTN * RFAC1 / 10000.
+        
+C       Apply EC stress to root growth (morphological suppression)
+        CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
+        IF (ECSTRESS_ROOT .LT. 0.1) ECSTRESS_ROOT = 1.0
+        RLNEW = RLNEW * ECSTRESS_ROOT
+        
         CGRRT = AGRRT * WRDOTN
 
 !       Update RFAC3 based on yesterday's RTWT and TRLV
@@ -205,6 +212,12 @@ C     Calculate Root Depth Rate of Increase, Physiological Day (RFAC2)
 C-----------------------------------------------------------------------
       RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
       RLNEW = WRDOTN * RFAC1 / 10000.
+      
+C     Apply EC stress to root growth (morphological suppression)
+      CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
+      IF (ECSTRESS_ROOT .LT. 0.1) ECSTRESS_ROOT = 1.0
+      RLNEW = RLNEW * ECSTRESS_ROOT
+      
       CGRRT = AGRRT * WRDOTN
 
 C-----------------------------------------------------------------------

@@ -359,7 +359,7 @@ C-----------------------------------------------------------------------
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
-     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN)                 !Output
+     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
 
 !-----------------------------------------------------------------------
 C     Call leaf senescence routine for initialization
@@ -630,7 +630,7 @@ C     Initialize pest coupling point and damage variables
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
-     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN)                 !Output
+     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
 
 !-----------------------------------------------------------------------
 C     Call leaf senescence routine for initialization
@@ -863,7 +863,7 @@ C-----------------------------------------------------------------------
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
-     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN)                 !Output
+     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
 
         IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
 !       Plant phosphorus module initialization at plant emergence
@@ -1185,7 +1185,10 @@ C-----------------------------------------------------------------------
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
-     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN)                 !Output
+     &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
+
+C     KSTRES is now calculated in VEGGR based on K supply vs demand
+C     (KSTRES was previously hardcoded to 1.0 in CROPGRO)
 
 C-----------------------------------------------------------------------
 C     Compute C required for LF, ST, and RT growth, and remaining C and N

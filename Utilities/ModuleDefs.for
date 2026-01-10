@@ -532,6 +532,23 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL UPO4        ! P uptake rate (kg/ha/d)
         REAL UK          ! K uptake rate (kg/ha/d)
         REAL TRWUP_MM    ! Potential water uptake (mm/d) - for hydroponic system
+        REAL EP          ! Plant transpiration (mm/d) - from SPAM
+        ! EC stress ballast ions
+        REAL NA_CONC     ! Sodium concentration (mg/L)
+        REAL CL_CONC     ! Chloride concentration (mg/L)
+        REAL CA_CONC     ! Calcium concentration (mg/L)
+        ! EC stress factors (0.0 to 1.0, where 1.0 = no stress)
+        REAL ECSTRESS_JMAX_NO3  ! Stress factor for NO3 Jmax (non-competitive inhibition)
+        REAL ECSTRESS_JMAX_NH4  ! Stress factor for NH4 Jmax
+        REAL ECSTRESS_JMAX_K    ! Stress factor for K Jmax
+        REAL ECSTRESS_JMAX_P    ! Stress factor for P Jmax
+        REAL ECSTRESS_KM_NO3    ! Stress factor for NO3 Km (competitive inhibition)
+        REAL ECSTRESS_ROOT      ! Stress factor for root growth (morphological)
+        REAL ECSTRESS_LEAF      ! Stress factor for leaf expansion (morphological)
+        ! pH stress factors
+        REAL PHSTRESS_ROOT      ! pH stress factor for root growth
+        REAL PHSTRESS_LEAF      ! pH stress factor for leaf expansion
+        REAL PHSTRESS_UPTAKE    ! pH stress factor for nutrient uptake
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -827,6 +844,20 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('UPO4');     Value = SAVE_data % HYDRO % UPO4
         Case ('UK');       Value = SAVE_data % HYDRO % UK
         Case ('TRWUP_MM'); Value = SAVE_data % HYDRO % TRWUP_MM
+        Case ('EP');       Value = SAVE_data % HYDRO % EP
+        Case ('NA_CONC');  Value = SAVE_data % HYDRO % NA_CONC
+        Case ('CL_CONC');  Value = SAVE_data % HYDRO % CL_CONC
+        Case ('CA_CONC');  Value = SAVE_data % HYDRO % CA_CONC
+        Case ('ECSTRESS_JMAX_NO3'); Value = SAVE_data % HYDRO % ECSTRESS_JMAX_NO3
+        Case ('ECSTRESS_JMAX_NH4'); Value = SAVE_data % HYDRO % ECSTRESS_JMAX_NH4
+        Case ('ECSTRESS_JMAX_K');   Value = SAVE_data % HYDRO % ECSTRESS_JMAX_K
+        Case ('ECSTRESS_JMAX_P');   Value = SAVE_data % HYDRO % ECSTRESS_JMAX_P
+        Case ('ECSTRESS_KM_NO3');   Value = SAVE_data % HYDRO % ECSTRESS_KM_NO3
+        Case ('ECSTRESS_ROOT');     Value = SAVE_data % HYDRO % ECSTRESS_ROOT
+        Case ('ECSTRESS_LEAF');     Value = SAVE_data % HYDRO % ECSTRESS_LEAF
+        Case ('PHSTRESS_ROOT');     Value = SAVE_data % HYDRO % PHSTRESS_ROOT
+        Case ('PHSTRESS_LEAF');     Value = SAVE_data % HYDRO % PHSTRESS_LEAF
+        Case ('PHSTRESS_UPTAKE');   Value = SAVE_data % HYDRO % PHSTRESS_UPTAKE
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -981,6 +1012,20 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('UPO4');     SAVE_data % HYDRO % UPO4    = Value
         Case ('UK');       SAVE_data % HYDRO % UK      = Value
         Case ('TRWUP_MM'); SAVE_data % HYDRO % TRWUP_MM = Value
+        Case ('EP');       SAVE_data % HYDRO % EP     = Value
+        Case ('NA_CONC');  SAVE_data % HYDRO % NA_CONC = Value
+        Case ('CL_CONC');  SAVE_data % HYDRO % CL_CONC = Value
+        Case ('CA_CONC');  SAVE_data % HYDRO % CA_CONC = Value
+        Case ('ECSTRESS_JMAX_NO3'); SAVE_data % HYDRO % ECSTRESS_JMAX_NO3 = Value
+        Case ('ECSTRESS_JMAX_NH4'); SAVE_data % HYDRO % ECSTRESS_JMAX_NH4 = Value
+        Case ('ECSTRESS_JMAX_K');   SAVE_data % HYDRO % ECSTRESS_JMAX_K = Value
+        Case ('ECSTRESS_JMAX_P');   SAVE_data % HYDRO % ECSTRESS_JMAX_P = Value
+        Case ('ECSTRESS_KM_NO3');   SAVE_data % HYDRO % ECSTRESS_KM_NO3 = Value
+        Case ('ECSTRESS_ROOT');     SAVE_data % HYDRO % ECSTRESS_ROOT = Value
+        Case ('ECSTRESS_LEAF');     SAVE_data % HYDRO % ECSTRESS_LEAF = Value
+        Case ('PHSTRESS_ROOT');     SAVE_data % HYDRO % PHSTRESS_ROOT = Value
+        Case ('PHSTRESS_LEAF');     SAVE_data % HYDRO % PHSTRESS_LEAF = Value
+        Case ('PHSTRESS_UPTAKE');   SAVE_data % HYDRO % PHSTRESS_UPTAKE = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
