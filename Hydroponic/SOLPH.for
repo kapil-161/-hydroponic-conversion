@@ -36,12 +36,15 @@ C     Output variables
       REAL PH_CALC       ! Calculated pH
       REAL PH_TARGET     ! Target pH from initialization
 
-C     pH stress variables
-      REAL PH_OPT_LOW    ! Optimal pH lower bound
-      REAL PH_OPT_HIGH   ! Optimal pH upper bound
-      REAL PH_STRESS_LOW ! Stress factor for low pH (0-1)
-      REAL PH_STRESS_HIGH ! Stress factor for high pH (0-1)
-      REAL PH_STRESS_TOTAL ! Combined pH stress (0-1)
+C     pH-dependent availability and Km variables
+      REAL PH_OPT        ! Optimal pH (center of range)
+      REAL PH_STRESS_TOTAL ! Combined pH stress (0-1) for backward compatibility
+      REAL PH_AVAIL_NO3, PH_AVAIL_NH4, PH_AVAIL_P, PH_AVAIL_K  ! Availability factors
+      REAL PH_KM_FACTOR_NO3, PH_KM_FACTOR_NH4, PH_KM_FACTOR_P, PH_KM_FACTOR_K
+      REAL PH_EXP_NO3, PH_EXP_NH4, PH_EXP_P, PH_EXP_K  ! Intermediate exp arguments
+      REAL PH_DEVIATION  ! |pH - pH_opt|
+      REAL PH_SCALE_NO3, PH_SCALE_NH4, PH_SCALE_P, PH_SCALE_K  ! Scaling factors
+      REAL PH_KM_ALPHA_NO3, PH_KM_ALPHA_NH4, PH_KM_ALPHA_P, PH_KM_ALPHA_K  ! Km sensitivity
 
 C     Local variables
       REAL PH_INIT       ! Initial pH value
@@ -98,6 +101,21 @@ C     Molecular weights (g/mol)
 C     Phosphate dissociation constant (pKa = 7.21)
       REAL PKA_PHOSPHATE
       PARAMETER (PKA_PHOSPHATE = 7.21)
+      
+C     pH-dependent availability scaling factors (s in sigmoidal function)
+      PARAMETER (PH_SCALE_NO3 = 0.8)  ! NO3: moderate sensitivity
+      PARAMETER (PH_SCALE_NH4 = 0.8)  ! NH4: moderate sensitivity  
+      PARAMETER (PH_SCALE_P = 0.5)    ! P: high sensitivity (precipitation)
+      PARAMETER (PH_SCALE_K = 1.0)    ! K: low sensitivity
+      
+C     pH-dependent Km sensitivity factors (α in exponential function)
+      PARAMETER (PH_KM_ALPHA_NO3 = 0.15)  ! NO3: moderate sensitivity
+      PARAMETER (PH_KM_ALPHA_NH4 = 0.15)  ! NH4: moderate sensitivity
+      PARAMETER (PH_KM_ALPHA_P = 0.20)    ! P: higher sensitivity
+      PARAMETER (PH_KM_ALPHA_K = 0.10)    ! K: lower sensitivity
+      
+C     Optimal pH for lettuce
+      PARAMETER (PH_OPT = 5.75)  ! Center of 5.5-6.0 range
 
       INTEGER DYNAMIC
       SAVE PH_INIT, SOLVOL_INIT, AREA
@@ -301,54 +319,83 @@ C       Limit daily pH change to realistic range (±1.0 pH units/day max)
         PH_CHANGE = MAX(-1.0, MIN(1.0, PH_CHANGE))
 
 C-----------------------------------------------------------------------
-C       CALCULATE pH STRESS FACTORS
-C       Similar to EC stress: Low pH (acidic) and High pH (alkaline)
+C       CALCULATE pH-DEPENDENT NUTRIENT AVAILABILITY FACTORS
+C       Using sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
+C       This models nutrient availability as a function of pH
+C       Also calculate pH-dependent Km (transporter affinity)
 C-----------------------------------------------------------------------
-C       Optimal pH range for lettuce: 5.5-6.0
-        PH_OPT_LOW  = 5.5
-        PH_OPT_HIGH = 6.0
+C       pH-dependent availability factors (0-1, where 1 = full availability)
+C       Sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
+        
+        PH_EXP_NO3 = (PH_CALC - PH_OPT) / PH_SCALE_NO3
+        PH_EXP_NH4 = (PH_CALC - PH_OPT) / PH_SCALE_NH4
+        PH_EXP_P = (PH_CALC - PH_OPT) / PH_SCALE_P
+        PH_EXP_K = (PH_CALC - PH_OPT) / PH_SCALE_K
+        
+C       Prevent overflow in exp() function
+        PH_EXP_NO3 = MAX(-10.0, MIN(10.0, PH_EXP_NO3))
+        PH_EXP_NH4 = MAX(-10.0, MIN(10.0, PH_EXP_NH4))
+        PH_EXP_P = MAX(-10.0, MIN(10.0, PH_EXP_P))
+        PH_EXP_K = MAX(-10.0, MIN(10.0, PH_EXP_K))
+        
+        PH_AVAIL_NO3 = 1.0 / (1.0 + EXP(PH_EXP_NO3))
+        PH_AVAIL_NH4 = 1.0 / (1.0 + EXP(PH_EXP_NH4))
+        PH_AVAIL_P = 1.0 / (1.0 + EXP(PH_EXP_P))
+        PH_AVAIL_K = 1.0 / (1.0 + EXP(PH_EXP_K))
+        
+C       Ensure factors are in valid range (0-1)
+        PH_AVAIL_NO3 = MAX(0.01, MIN(1.0, PH_AVAIL_NO3))
+        PH_AVAIL_NH4 = MAX(0.01, MIN(1.0, PH_AVAIL_NH4))
+        PH_AVAIL_P = MAX(0.01, MIN(1.0, PH_AVAIL_P))
+        PH_AVAIL_K = MAX(0.01, MIN(1.0, PH_AVAIL_K))
 
-C       Calculate stress from LOW pH (too acidic)
-        IF (PH_CALC .LT. PH_OPT_LOW) THEN
-C         Linear decline: pH=4.5 → stress=0.3, pH=5.5 → stress=1.0
-C         Below pH 4.5, severe toxicity and membrane damage
-          PH_STRESS_LOW = 0.3 + 0.7 * ((PH_CALC - 4.5) / (PH_OPT_LOW - 4.5))
-          PH_STRESS_LOW = MAX(0.3, MIN(1.0, PH_STRESS_LOW))
-        ELSE
-C         No stress from low pH
-          PH_STRESS_LOW = 1.0
-        ENDIF
+C-----------------------------------------------------------------------
+C       CALCULATE pH-DEPENDENT Km (transporter affinity)
+C       Km(pH) = Km_opt × exp(α × |pH - pH_opt|)
+C       Higher pH deviation → higher Km → lower affinity
+C-----------------------------------------------------------------------
+        PH_DEVIATION = ABS(PH_CALC - PH_OPT)
+        
+        PH_KM_FACTOR_NO3 = EXP(PH_KM_ALPHA_NO3 * PH_DEVIATION)
+        PH_KM_FACTOR_NH4 = EXP(PH_KM_ALPHA_NH4 * PH_DEVIATION)
+        PH_KM_FACTOR_P = EXP(PH_KM_ALPHA_P * PH_DEVIATION)
+        PH_KM_FACTOR_K = EXP(PH_KM_ALPHA_K * PH_DEVIATION)
+        
+C       Limit Km factors to reasonable range (1.0 to 5.0)
+        PH_KM_FACTOR_NO3 = MAX(1.0, MIN(5.0, PH_KM_FACTOR_NO3))
+        PH_KM_FACTOR_NH4 = MAX(1.0, MIN(5.0, PH_KM_FACTOR_NH4))
+        PH_KM_FACTOR_P = MAX(1.0, MIN(5.0, PH_KM_FACTOR_P))
+        PH_KM_FACTOR_K = MAX(1.0, MIN(5.0, PH_KM_FACTOR_K))
 
-C       Calculate stress from HIGH pH (too alkaline)
-        IF (PH_CALC .GT. PH_OPT_HIGH) THEN
-C         Exponential decline: simulate cumulative nutrient precipitation
-C         At pH = 7.0, stress ≈ 0.75; At pH = 8.0, stress ≈ 0.37
-C         High pH reduces Fe, Mn, Zn, Cu availability (precipitation)
-          PH_STRESS_HIGH = EXP(-0.25 * (PH_CALC - PH_OPT_HIGH))
-          PH_STRESS_HIGH = MAX(0.1, MIN(1.0, PH_STRESS_HIGH))
-        ELSE
-C         No stress from high pH
-          PH_STRESS_HIGH = 1.0
-        ENDIF
-
-C       Combined pH stress (take minimum = most limiting)
-        PH_STRESS_TOTAL = MIN(PH_STRESS_LOW, PH_STRESS_HIGH)
-
-C       Store pH stress factors in ModuleData for use by other modules
+C       Store pH-dependent factors in ModuleData for use by other modules
+        CALL PUT('HYDRO','PH_AVAIL_NO3',PH_AVAIL_NO3)
+        CALL PUT('HYDRO','PH_AVAIL_NH4',PH_AVAIL_NH4)
+        CALL PUT('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
+        CALL PUT('HYDRO','PH_AVAIL_K',PH_AVAIL_K)
+        CALL PUT('HYDRO','PH_KM_FACTOR_NO3',PH_KM_FACTOR_NO3)
+        CALL PUT('HYDRO','PH_KM_FACTOR_NH4',PH_KM_FACTOR_NH4)
+        CALL PUT('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
+        CALL PUT('HYDRO','PH_KM_FACTOR_K',PH_KM_FACTOR_K)
+        
+C       Also store general pH stress for backward compatibility (membrane effects)
+C       Use minimum availability as general stress indicator
+        PH_STRESS_TOTAL = MIN(PH_AVAIL_NO3, PH_AVAIL_NH4, PH_AVAIL_P, PH_AVAIL_K)
         CALL PUT('HYDRO','PHSTRESS_ROOT',PH_STRESS_TOTAL)
         CALL PUT('HYDRO','PHSTRESS_LEAF',PH_STRESS_TOTAL)
         CALL PUT('HYDRO','PHSTRESS_UPTAKE',PH_STRESS_TOTAL)
 
         WRITE(*,200) NH4_UPTAKE, NO3_UPTAKE, NET_H_PRODUCTION,
      &               CONCENTRATION_FACTOR, SOLVOL_CURRENT, HCO3_CONC,
-     &               PH_CHANGE, PH_CALC, PH_OPT_LOW, PH_OPT_HIGH,
-     &               PH_STRESS_LOW, PH_STRESS_HIGH, PH_STRESS_TOTAL
+     &               PH_CHANGE, PH_CALC, PH_OPT,
+     &               PH_AVAIL_NO3, PH_AVAIL_NH4, PH_AVAIL_P, PH_AVAIL_K,
+     &               PH_KM_FACTOR_NO3, PH_KM_FACTOR_NH4
  200    FORMAT(' SOLPH: NH4=',F6.3,' NO3=',F6.3,' kg/ha/d',
      &         ' => Net H+=',F8.4,' mol/ha/d',/,
      &         '   ConcFactor=',F5.2,' (Vol=',F6.1,' mm)',
      &         ' HCO3=',F5.1,' mg/L => pH change=',F6.3,/,
-     &         '   pH=',F5.2,' (Opt=',F4.2,'-',F4.2,')',
-     &         ' pH Stress: Low=',F5.3,' High=',F5.3,' Total=',F5.3)
+     &         '   pH=',F5.2,' (Opt=',F4.2,')',
+     &         ' Availability: NO3=',F5.3,' NH4=',F5.3,' P=',F5.3,' K=',F5.3,/,
+     &         '   Km factors: NO3=',F5.3,' NH4=',F5.3)
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------

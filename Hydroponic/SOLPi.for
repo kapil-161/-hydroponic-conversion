@@ -50,7 +50,11 @@ C     Michaelis-Menten parameters for P
       REAL Vmax_P        ! Max uptake rate P (mg/plant/day)
       REAL Km_P          ! Half-saturation constant P (mg/L)
       REAL Vmax_P_stressed ! Vmax_P after EC stress
+      REAL Km_P_stressed   ! Km_P after pH stress
       REAL ECSTRESS_JMAX_P ! EC stress factor for P Jmax
+      REAL PH_AVAIL_P      ! pH-dependent P availability factor
+      REAL PH_KM_FACTOR_P  ! pH-dependent P Km factor
+      REAL P_SOL_EFFECTIVE ! Effective P concentration (× pH availability)
 
 C     Uptake calculations
       REAL UP_plant      ! P uptake per plant (mg/plant/day)
@@ -213,23 +217,35 @@ C       In hydroponic systems with adequate concentrations, uptake meets demand
 C       Only temperature limits uptake (water/flow factors don't apply in recirculating systems)
 C-----------------------------------------------------------------------
         IF (PDEMAND .GT. 1.E-9) THEN
-          IF (P_SOL .GT. 5.0) THEN
-C           Adequate P concentration (>5 mg/L) - uptake meets demand
-C           Apply temperature factor and EC stress (water/flow maintained in recirculating systems)
+C         Get pH-dependent availability and Km factors
+          CALL GET('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
+          CALL GET('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
+          IF (PH_AVAIL_P .LT. 0.01) PH_AVAIL_P = 1.0
+          IF (PH_KM_FACTOR_P .LT. 0.1) PH_KM_FACTOR_P = 1.0
+          
+C         Calculate effective P concentration using pH availability
+          P_SOL_EFFECTIVE = P_SOL * PH_AVAIL_P
+          
+          IF (P_SOL_EFFECTIVE .GT. 5.0) THEN
+C           Adequate effective P concentration - uptake meets demand
+C           Apply temperature factor and EC stress
             CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
             IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
             UPO4 = PDEMAND * TEMP_FACTOR * ECSTRESS_JMAX_P
           ELSE
-C           Low P concentration - use Michaelis-Menten kinetics
-C           Apply temperature factor and EC stress (water/flow maintained in recirculating systems)
+C           Low effective P concentration - use Michaelis-Menten kinetics
+C           Apply temperature factor and EC stress
             IF (Vmax_P .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
 C             Get EC stress factor for P uptake (reduces Vmax_P)
               CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
               IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
               
+C             Apply pH-dependent Km (transporter affinity)
+              Km_P_stressed = Km_P * PH_KM_FACTOR_P
+              
               Vmax_P_stressed = Vmax_P * ECSTRESS_JMAX_P
-              UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR * TEMP_FACTOR * P_SOL) /
-     &                   (Km_P + P_SOL)
+              UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR * TEMP_FACTOR * P_SOL_EFFECTIVE) /
+     &                   (Km_P_stressed + P_SOL_EFFECTIVE)
 
 C             Convert from mg/plant/day to kg/ha/day
               UP_potential = UP_plant * PLTPOP * 0.01

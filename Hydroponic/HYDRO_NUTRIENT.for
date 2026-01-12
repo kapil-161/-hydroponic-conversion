@@ -90,13 +90,19 @@ C     Uptake in mol/m2/s (from M-M equation)
       REAL J_NH4         ! NH4 influx (mol/m2/s)
 
 C     EC and pH stress-modified parameters
-      REAL Jmax_NO3_stressed  ! NO3 Jmax after EC and pH stress
-      REAL Jmax_NH4_stressed  ! NH4 Jmax after EC and pH stress
-      REAL Km_NO3_stressed    ! NO3 Km after EC stress
+      REAL Jmax_NO3_stressed  ! NO3 Jmax after EC stress
+      REAL Jmax_NH4_stressed  ! NH4 Jmax after EC stress
+      REAL Km_NO3_stressed    ! NO3 Km after EC and pH stress
+      REAL Km_NH4_stressed    ! NH4 Km after pH stress
       REAL ECSTRESS_JMAX_NO3  ! EC stress factor for NO3 Jmax
       REAL ECSTRESS_JMAX_NH4  ! EC stress factor for NH4 Jmax
       REAL ECSTRESS_KM_NO3    ! EC stress factor for NO3 Km
-      REAL PHSTRESS_UPTAKE    ! pH stress factor for uptake
+      REAL PH_AVAIL_NO3       ! pH-dependent NO3 availability factor
+      REAL PH_AVAIL_NH4       ! pH-dependent NH4 availability factor
+      REAL PH_KM_FACTOR_NO3   ! pH-dependent NO3 Km factor
+      REAL PH_KM_FACTOR_NH4   ! pH-dependent NH4 Km factor
+      REAL NO3_CONC_EFFECTIVE ! Effective NO3 concentration (× pH availability)
+      REAL NH4_CONC_EFFECTIVE ! Effective NH4 concentration (× pH availability)
 
       REAL UPTAKE_FACTOR ! Scaling factor for crop growth stage
       REAL TEMP_FACTOR   ! Temperature correction factor (0-1)
@@ -360,40 +366,59 @@ C-----------------------------------------------------------------------
         NH4_CONC_MOL = NH4_SOL / MW_N  ! mol/m3
 
 C-----------------------------------------------------------------------
-C       Get EC and pH stress factors from SOLEC and SOLPH modules
-C       These factors modify Jmax (non-competitive inhibition) and Km (competitive)
+C       Get EC stress factors from SOLEC module
+C       Get pH-dependent availability and Km factors from SOLPH module
+C       New approach: pH affects both nutrient availability and transporter affinity
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','ECSTRESS_JMAX_NO3',ECSTRESS_JMAX_NO3)
         CALL GET('HYDRO','ECSTRESS_JMAX_NH4',ECSTRESS_JMAX_NH4)
         CALL GET('HYDRO','ECSTRESS_KM_NO3',ECSTRESS_KM_NO3)
 
-C       Get pH stress factor
-        CALL GET('HYDRO','PHSTRESS_UPTAKE',PHSTRESS_UPTAKE)
+C       Get pH-dependent availability factors (sigmoidal function)
+        CALL GET('HYDRO','PH_AVAIL_NO3',PH_AVAIL_NO3)
+        CALL GET('HYDRO','PH_AVAIL_NH4',PH_AVAIL_NH4)
+
+C       Get pH-dependent Km factors (transporter affinity)
+        CALL GET('HYDRO','PH_KM_FACTOR_NO3',PH_KM_FACTOR_NO3)
+        CALL GET('HYDRO','PH_KM_FACTOR_NH4',PH_KM_FACTOR_NH4)
 
 C       Default to 1.0 if not set (no stress)
         IF (ECSTRESS_JMAX_NO3 .LT. 0.1) ECSTRESS_JMAX_NO3 = 1.0
         IF (ECSTRESS_JMAX_NH4 .LT. 0.1) ECSTRESS_JMAX_NH4 = 1.0
         IF (ECSTRESS_KM_NO3 .LT. 0.1) ECSTRESS_KM_NO3 = 1.0
-        IF (PHSTRESS_UPTAKE .LT. 0.1) PHSTRESS_UPTAKE = 1.0
+        IF (PH_AVAIL_NO3 .LT. 0.01) PH_AVAIL_NO3 = 1.0
+        IF (PH_AVAIL_NH4 .LT. 0.01) PH_AVAIL_NH4 = 1.0
+        IF (PH_KM_FACTOR_NO3 .LT. 0.1) PH_KM_FACTOR_NO3 = 1.0
+        IF (PH_KM_FACTOR_NH4 .LT. 0.1) PH_KM_FACTOR_NH4 = 1.0
 
-C       Apply both EC and pH stress: reduce Jmax and increase Km
-C       Combined stress = EC_stress × pH_stress (multiplicative)
-        Jmax_NO3_stressed = Jmax_NO3 * ECSTRESS_JMAX_NO3 * PHSTRESS_UPTAKE
-        Jmax_NH4_stressed = Jmax_NH4 * ECSTRESS_JMAX_NH4 * PHSTRESS_UPTAKE
-        Km_NO3_stressed = Km_NO3 * ECSTRESS_KM_NO3
+C       Apply EC stress to Jmax (non-competitive inhibition)
+        Jmax_NO3_stressed = Jmax_NO3 * ECSTRESS_JMAX_NO3
+        Jmax_NH4_stressed = Jmax_NH4 * ECSTRESS_JMAX_NH4
+
+C       Apply pH-dependent Km (transporter affinity) and EC stress to Km
+C       Combined: Km = Km_opt × ECSTRESS_KM × PH_KM_FACTOR
+        Km_NO3_stressed = Km_NO3 * ECSTRESS_KM_NO3 * PH_KM_FACTOR_NO3
+        Km_NH4_stressed = Km_NH4 * PH_KM_FACTOR_NH4
+
+C       Calculate effective concentrations using pH-dependent availability
+C       Effective [S] = Actual [S] × f(pH)
+        NO3_CONC_EFFECTIVE = NO3_CONC_MOL * PH_AVAIL_NO3
+        NH4_CONC_EFFECTIVE = NH4_CONC_MOL * PH_AVAIL_NH4
 
 C-----------------------------------------------------------------------
-C       Michaelis-Menten equation: J = Jmax * [S] / (Km + [S])
+C       Modified Michaelis-Menten equation with pH-dependent availability:
+C       J = Jmax × [S]_effective / (Km_stressed + [S]_effective)
+C       where [S]_effective = [S] × f(pH)
 C       J is in mol/m2/s (influx per unit root surface area)
 C       Apply ALL environmental factors: temperature, growth stage, water, flow, EC stress
 C-----------------------------------------------------------------------
         J_NO3 = (Jmax_NO3_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
-     &           WATER_FACTOR * FLOW_FACTOR * NO3_CONC_MOL)/
-     &          (Km_NO3_stressed + NO3_CONC_MOL)  ! mol/m2/s
+     &           WATER_FACTOR * FLOW_FACTOR * NO3_CONC_EFFECTIVE)/
+     &          (Km_NO3_stressed + NO3_CONC_EFFECTIVE)  ! mol/m2/s
 
         J_NH4 = (Jmax_NH4_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
-     &           WATER_FACTOR * FLOW_FACTOR * NH4_CONC_MOL)/
-     &          (Km_NH4 + NH4_CONC_MOL)  ! mol/m2/s
+     &           WATER_FACTOR * FLOW_FACTOR * NH4_CONC_EFFECTIVE)/
+     &          (Km_NH4_stressed + NH4_CONC_EFFECTIVE)  ! mol/m2/s
 
 C-----------------------------------------------------------------------
 C       Convert from influx (mol/m2/s) to uptake per plant (mg/plant/day)

@@ -50,9 +50,12 @@ C     Local variables
 C     Michaelis-Menten parameters for K
       REAL Vmax_K        ! Max uptake rate K (mg/plant/day)
       REAL Km_K          ! Half-saturation constant K (mg/L)
-      REAL Vmax_K_stressed ! Vmax_K after EC and pH stress
+      REAL Vmax_K_stressed ! Vmax_K after EC stress
+      REAL Km_K_stressed   ! Km_K after pH stress
       REAL ECSTRESS_JMAX_K ! EC stress factor for K Jmax
-      REAL PHSTRESS_UPTAKE ! pH stress factor for uptake
+      REAL PH_AVAIL_K      ! pH-dependent K availability factor
+      REAL PH_KM_FACTOR_K  ! pH-dependent K Km factor
+      REAL K_SOL_EFFECTIVE ! Effective K concentration (× pH availability)
 
 C     Uptake calculations
       REAL UK_plant      ! K uptake per plant (mg/plant/day)
@@ -216,25 +219,33 @@ C-----------------------------------------------------------------------
         IF (K_SOL .LT. 0.0) K_SOL = 0.0
         
         IF (KDEMAND .GT. 1.E-9) THEN
-          IF (K_SOL .GT. 10.0) THEN
-C           Adequate K concentration (>10 mg/L) - uptake meets demand
-C           Apply temperature factor, EC stress, and pH stress
+C         Get pH-dependent availability and Km factors
+          CALL GET('HYDRO','PH_AVAIL_K',PH_AVAIL_K)
+          CALL GET('HYDRO','PH_KM_FACTOR_K',PH_KM_FACTOR_K)
+          IF (PH_AVAIL_K .LT. 0.01) PH_AVAIL_K = 1.0
+          IF (PH_KM_FACTOR_K .LT. 0.1) PH_KM_FACTOR_K = 1.0
+          
+C         Calculate effective K concentration using pH availability
+          K_SOL_EFFECTIVE = K_SOL * PH_AVAIL_K
+          
+          IF (K_SOL_EFFECTIVE .GT. 10.0) THEN
+C           Adequate effective K concentration - uptake meets demand
+C           Apply temperature factor and EC stress
             CALL GET('HYDRO','ECSTRESS_JMAX_K',ECSTRESS_JMAX_K)
-            CALL GET('HYDRO','PHSTRESS_UPTAKE',PHSTRESS_UPTAKE)
             IF (ECSTRESS_JMAX_K .LT. 0.1) ECSTRESS_JMAX_K = 1.0
-            IF (PHSTRESS_UPTAKE .LT. 0.1) PHSTRESS_UPTAKE = 1.0
-            UK = KDEMAND * TEMP_FACTOR * ECSTRESS_JMAX_K * PHSTRESS_UPTAKE
+            UK = KDEMAND * TEMP_FACTOR * ECSTRESS_JMAX_K
           ELSE
-C           Low K concentration - use Michaelis-Menten kinetics
-C           Apply temperature factor, EC stress, and pH stress
+C           Low effective K concentration - use Michaelis-Menten kinetics
+C           Apply temperature factor and EC stress
             CALL GET('HYDRO','ECSTRESS_JMAX_K',ECSTRESS_JMAX_K)
-            CALL GET('HYDRO','PHSTRESS_UPTAKE',PHSTRESS_UPTAKE)
             IF (ECSTRESS_JMAX_K .LT. 0.1) ECSTRESS_JMAX_K = 1.0
-            IF (PHSTRESS_UPTAKE .LT. 0.1) PHSTRESS_UPTAKE = 1.0
 
-            Vmax_K_stressed = Vmax_K * ECSTRESS_JMAX_K * PHSTRESS_UPTAKE
-            UK_plant = (Vmax_K_stressed * UPTAKE_FACTOR * TEMP_FACTOR * K_SOL) /
-     &                 (Km_K + K_SOL)
+C           Apply pH-dependent Km (transporter affinity)
+            Km_K_stressed = Km_K * PH_KM_FACTOR_K
+            
+            Vmax_K_stressed = Vmax_K * ECSTRESS_JMAX_K
+            UK_plant = (Vmax_K_stressed * UPTAKE_FACTOR * TEMP_FACTOR * K_SOL_EFFECTIVE) /
+     &                 (Km_K_stressed + K_SOL_EFFECTIVE)
 
 C           Convert from mg/plant/day to kg/ha/day
             UK_potential = UK_plant * PLTPOP * 0.01
