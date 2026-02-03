@@ -351,12 +351,12 @@ C-----------------------------------------------------------------------
         ENDIF
 
 !-----------------------------------------------------------------------
-        CALL VEGGR (RUNINIT, 
+        CALL VEGGR (RUNINIT,
      &    AGRLF, AGRRT, AGRSTM, CMINEP, CSAVEV, DTX,      !Input
      &    DXR57, ECONO, FILECC, FILEGC, FNINL, FNINR,     !Input
      &    FNINS, KCAN, NAVL, NDMNEW, NDMOLD,              !Input
      &    NFIXN, NMINEA, NR1, PAR, PCH2O, PG, PGAVL,      !Input
-     &    PStres2, ROWSPC, RVSTGE, STMWT, TGRO,           !Input
+     &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
@@ -633,12 +633,12 @@ C     Initialize pest coupling point and damage variables
      &    TOSHMINE,TOCHMINE,HPODWT,HSDWT,HSHELWT)         !Output
 
 !-----------------------------------------------------------------------
-      CALL VEGGR (SEASINIT, 
+      CALL VEGGR (SEASINIT,
      &    AGRLF, AGRRT, AGRSTM, CMINEP, CSAVEV, DTX,      !Input
      &    DXR57, ECONO, FILECC, FILEGC, FNINL, FNINR,     !Input
      &    FNINS, KCAN, NAVL, NDMNEW, NDMOLD,              !Input
      &    NFIXN, NMINEA, NR1, PAR, PCH2O, PG, PGAVL,      !Input
-     &    PStres2, ROWSPC, RVSTGE, STMWT, TGRO,           !Input
+     &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
@@ -866,12 +866,12 @@ C-----------------------------------------------------------------------
      &    TOSHMINE,TOCHMINE,HPODWT,HSDWT,HSHELWT)         !Output
 
 !-----------------------------------------------------------------------
-        CALL VEGGR(EMERG, 
+        CALL VEGGR(EMERG,
      &    AGRLF, AGRRT, AGRSTM, CMINEP, CSAVEV, DTX,      !Input
      &    DXR57, ECONO, FILECC, FILEGC, FNINL, FNINR,     !Input
      &    FNINS, KCAN, NAVL, NDMNEW, NDMOLD,              !Input
      &    NFIXN, NMINEA, NR1, PAR, PCH2O, PG, PGAVL,      !Input
-     &    PStres2, ROWSPC, RVSTGE, STMWT, TGRO,           !Input
+     &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
@@ -1216,12 +1216,12 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 C     Call routine to compute actual vegetative growth, C to mine or add
 C-----------------------------------------------------------------------
-      CALL VEGGR(INTEGR, 
+      CALL VEGGR(INTEGR,
      &    AGRLF, AGRRT, AGRSTM, CMINEP, CSAVEV, DTX,      !Input
      &    DXR57, ECONO, FILECC, FILEGC, FNINL, FNINR,     !Input
      &    FNINS, KCAN, NAVL, NDMNEW, NDMOLD,              !Input
      &    NFIXN, NMINEA, NR1, PAR, PCH2O, PG, PGAVL,      !Input
-     &    PStres2, ROWSPC, RVSTGE, STMWT, TGRO,           !Input
+     &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
@@ -1230,8 +1230,7 @@ C-----------------------------------------------------------------------
      &    NADST, NGRLF, NGRRT, NGRST, NSTRES,             !Output
      &    TNLEAK, WLDOTN, WRDOTN, WSDOTN, KSTRES)         !Output
 
-C     KSTRES is now calculated in VEGGR based on K supply vs demand
-C     (KSTRES was previously hardcoded to 1.0 in CROPGRO)
+C     KSTRES comes from K_Plant via KStres2 (consistent with P stress)
 
 C-----------------------------------------------------------------------
 C     Compute C required for LF, ST, and RT growth, and remaining C and N

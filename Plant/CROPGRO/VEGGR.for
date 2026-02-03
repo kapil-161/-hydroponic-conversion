@@ -26,12 +26,12 @@ C  Calls:     CANOPY
 C             ERROR, FIND, IGNORE
 C========================================================================
 
-      SUBROUTINE VEGGR (DYNAMIC, 
+      SUBROUTINE VEGGR (DYNAMIC,
      &    AGRLF, AGRRT, AGRSTM, CMINEP, CSAVEV, DTX,      !Input
      &    DXR57, ECONO, FILECC, FILEGC, FNINL, FNINR,     !Input
      &    FNINS, KCAN, NAVL, NDMNEW, NDMOLD,              !Input
      &    NFIXN, NMINEA, NR1, PAR, PCH2O, PG, PGAVL,      !Input
-     &    PStres2, ROWSPC, RVSTGE, STMWT, TGRO,           !Input
+     &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
@@ -79,11 +79,6 @@ C========================================================================
       REAL VGRDEM, SUPPN, PGLEFT, LSTR, CSAVEV
       REAL NLEAK
       REAL NMINEA, NFIXN, TRNU
-!     K stress variables  
-      REAL KSUPP, KDEMAND_G, UK_HYDRO, XKSTRES, PKSTRES
-      REAL N_TO_K_RATIO, KSTFAC
-      PARAMETER (N_TO_K_RATIO = 1.2)  ! K demand = N demand * 1.2 (typical for lettuce)
-      PARAMETER (KSTFAC = 0.70)       ! K stress threshold factor (similar to NSTFAC)
 !     EC stress variable
       REAL ECSTRESS_LEAF  ! EC stress factor for leaf expansion (0-1)
 
@@ -92,8 +87,8 @@ C========================================================================
 !     FO - Cotton-Nitrogen
       REAL NSTFAC, PNSTRES, XNSTRES
 
-!     P module
-      REAL PStres2
+!     P and K stress inputs (from P_Plant and K_Plant modules)
+      REAL PStres2, KStres2
 
       TYPE (ControlType) CONTROL
       CALL GET(CONTROL)
@@ -207,14 +202,10 @@ C========================================================================
       WLDOTN = 0.0  
       WRDOTN = 0.0  
       WSDOTN = 0.0  
-!     FO/KJB - Running average      
+!     FO/KJB - Running average
       PNSTRES= 1.0
       XNSTRES= 1.0
-!     K stress initialization
-      PKSTRES = 1.0
-      XKSTRES = 1.0
-      KSUPP = 0.0
-      
+
       CALL CANOPY(SEASINIT,
      &    ECONO, FILECC, FILEGC, KCAN, PAR, ROWSPC,       !Input
      &    RVSTGE, TGRO, TURFAC, VSTAGE, XLAI, NSTRES,     !Input
@@ -275,10 +266,10 @@ C-----------------------------------------------------------------------
           ENDIF
 !         CRITICAL FIX: When supply is near zero but demand adjusted down,
 !         ensure stress reflects actual nutrient availability
-!         If supply is extremely low (< 0.01 g/m2/d), apply minimum stress
+!         If supply is extremely low (< 0.01 g/m2/d), apply severe stress
           IF (SUPPN .LT. 0.01 .AND. NDMNEW .GT. 0.01) THEN
 !           Supply near zero - apply severe stress regardless of demand
-            XNSTRES = MAX(XNSTRES, 0.1)
+            XNSTRES = MIN(XNSTRES, 0.1)
           ENDIF
         ELSE
           XNSTRES = 1.0
@@ -289,66 +280,20 @@ C-----------------------------------------------------------------------
       
 !     FO/KJB - Running average
       NSTRES = XNSTRES * 0.5 + PNSTRES * 0.5
-      
-!-----------------------------------------------------------------------
-!     K stress calculation (similar to N stress)
-!-----------------------------------------------------------------------
-!     Get K uptake from hydroponic module (if available) or set to zero for soil mode
-!     CRITICAL: Initialize to 0.0 in case GET fails or value not set
-      UK_HYDRO = 0.0
-      CALL GET('HYDRO','UK',UK_HYDRO)
-!     Ensure UK_HYDRO is non-negative (safety check)
-      IF (UK_HYDRO .LT. 0.0) UK_HYDRO = 0.0
-!     Convert K uptake from kg/ha/d to g/m2/d (divide by 10)
-      KSUPP = UK_HYDRO / 10.0
-!     Calculate K demand from N demand (K demand = N demand * 1.2 for lettuce)
-      KDEMAND_G = NDMNEW * N_TO_K_RATIO
-!     Running average for K stress (similar to N stress)
-      PKSTRES = XKSTRES
 
 !-----------------------------------------------------------------------
-!     Calculate K stress from supply vs demand
-!     Low concentration → low uptake (via Michaelis-Menten) → low supply
-!     Supply/demand ratio naturally captures nutrient availability
-!     FIX: When supply is very low relative to potential demand, 
-!          apply minimum stress to prevent circular dependency
+!     K stress now comes from K_Plant module (KStres2) - consistent with P stress
+!     Set KSTRES output for backward compatibility
 !-----------------------------------------------------------------------
-!     CRITICAL: Ensure no division by zero - check all denominators
-      IF (KDEMAND_G .GT. 1.E-6 .AND. KSTFAC .GT. 1.E-6 .AND. 
-     &    YRDOY .NE. YREMRG) THEN
-        IF (KSUPP .LT. KSTFAC * KDEMAND_G) THEN
-!         Calculate supply/demand stress with protection against division by zero
-          IF (KDEMAND_G * KSTFAC .GT. 1.E-9) THEN
-            XKSTRES = MIN(1.0, KSUPP / (KDEMAND_G * KSTFAC))
-          ELSE
-            XKSTRES = 0.1  ! Very low demand - default to stress
-          ENDIF
-!         CRITICAL FIX: When supply is near zero but demand adjusted down,
-!         ensure stress reflects actual nutrient availability
-!         If supply is extremely low (< 0.01 g/m2/d), apply minimum stress
-          IF (KSUPP .LT. 0.01 .AND. KDEMAND_G .GT. 0.01) THEN
-!           Supply near zero - apply severe stress regardless of demand
-            XKSTRES = MAX(XKSTRES, 0.1)
-          ENDIF
-        ELSE
-          XKSTRES = 1.0
-        ENDIF
-      ELSE
-        XKSTRES = 1.0
-      ENDIF
-      
-!     Running average for K stress
-      KSTRES = XKSTRES * 0.5 + PKSTRES * 0.5
-      
+      KSTRES = KStres2
+
 !     Debug output for stress factors (print daily)
-      WRITE(*,300) NSTRES, PStres2, KSTRES, SUPPN, KSUPP, 
-     &             NDMNEW, KDEMAND_G
+      WRITE(*,300) NSTRES, PStres2, KStres2, SUPPN, NDMNEW
 300   FORMAT(' STRESS: N=',F4.2,' P2=',F4.2,' K=',F4.2,
-     &       ' N_sup=',F5.2,' K_sup=',F5.2,
-     &       ' N_dem=',F5.2,' K_dem=',F5.2)
-      
-!      FRRT  = ATOP * (1.0 - (MIN(TURFAC,NSTRES)))*(1.0-FRRT) + FRRT
-      FRRT  = ATOP * (1.0 - (MIN(TURFAC, NSTRES, PStres2, KSTRES))) *
+     &       ' N_sup=',F5.2,' N_dem=',F5.2)
+
+!     Partitioning to roots increases under water, N, P, or K stress
+      FRRT  = ATOP * (1.0 - (MIN(TURFAC, NSTRES, PStres2, KStres2))) *
      &                    (1.0 - FRRT) + FRRT
 C-----------------------------------------------------------------------
 C     Cumulative turgor factor that remembers veg drought stress
