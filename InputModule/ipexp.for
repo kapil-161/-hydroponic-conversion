@@ -109,6 +109,8 @@ C=======================================================================
       REAL    PMWD
 !     HYDROPONIC SOLUTION VARIABLES
       CHARACTER*1 ISWHYDRO
+      CHARACTER*1 AUTO_PH, AUTO_VOL  ! Hydroponic control flags (AUTO_EC removed)
+      REAL    AUTO_PH_R, AUTO_VOL_R  ! Control flags as REAL for PUT
       REAL    SOLVOL,SOLVOL_L,EC_SOL,PH_SOL,DO2,TEMP_SOL
       REAL    NO3_CONC,NH4_CONC,P_CONC,K_CONC
 
@@ -865,10 +867,12 @@ C-----------------------------------------------------------------------
       WRITE(*,*) ' '
       WRITE(*,*) 'Checking for HYDROPONIC SOLUTION section...'
       CALL IPSOL (LUNEXP,FILEX,LNFLD,SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL,
-     &    NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO)
+     &    NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO,
+     &    AUTO_PH,AUTO_VOL)
 
 C     Store hydroponic switch in ISWITCH structure for global access
       ISWITCH % ISWHYDRO = ISWHYDRO
+      ISWITCH % AUTO_PH = AUTO_PH  ! Store pH control flag
 
 C     Store hydroponic parameters in CONTROL structure (via ModuleData)
       IF (ISWHYDRO .EQ. 'Y') THEN
@@ -888,7 +892,24 @@ C       Store SOLVOL directly in mm (no conversion needed)
         CALL PUT('HYDRO','P_CONC',P_CONC)
         CALL PUT('HYDRO','K_CONC',K_CONC)
         CALL PUT('HYDRO','AREA',AREA)
+C       Store hydroponic control flags as REAL values
+C       AUTO_PH/VOL: 1.0 = maintain constant ('Y'), 0.0 = allow drift ('N')
+C       Note: AUTO_EC removed - EC always drifts naturally with nutrient uptake
+C       ModuleData PUT/GET only works reliably with REAL variables
+        AUTO_PH_R = 0.0
+        AUTO_VOL_R = 0.0
+        IF (AUTO_PH .EQ. 'Y') AUTO_PH_R = 1.0
+        IF (AUTO_VOL .EQ. 'Y') AUTO_VOL_R = 1.0
+        CALL PUT('HYDRO','AUTO_PH',AUTO_PH_R)
+        CALL PUT('HYDRO','AUTOPH',AUTO_PH_R)
+        CALL PUT('HYDRO','AUTO_VOL',AUTO_VOL_R)
+        WRITE(*,*) '  AUTO_PH_R=',AUTO_PH_R,' AUTO_VOL_R=',AUTO_VOL_R
+C       Also store target values for when AUTO mode is enabled
+        CALL PUT('HYDRO','PH_TARGET',PH_SOL)
+        CALL PUT('HYDRO','EC_TARGET',EC_SOL)
+        CALL PUT('HYDRO','SOLVOL_TARGET',SOLVOL)
         WRITE(*,*) 'IPEXP: Values stored in ModuleData'
+        WRITE(*,*) '  AUTO_PH=',AUTO_PH,' AUTO_VOL=',AUTO_VOL
       ELSE
         WRITE(*,*) 'Soil-based experiment (no hydroponic section found)'
       ENDIF

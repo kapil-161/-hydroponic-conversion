@@ -64,8 +64,8 @@
       USE ModuleDefs
       USE Interface_SenLig_Ceres
       IMPLICIT  NONE
-      EXTERNAL GETLUN, FIND, ERROR, IGNORE, MZ_NFACTO, TABEX, 
-     &  MZ_NUPTAK, MZ_KUPTAK, P_Ceres, YR_DOY, WARNING, CURV
+      EXTERNAL GETLUN, FIND, ERROR, IGNORE, MZ_NFACTO, TABEX,
+     &  MZ_NUPTAK, MZ_KUPTAK, P_Ceres, K_Ceres, YR_DOY, WARNING, CURV
       SAVE
 !----------------------------------------------------------------------
 !                         Variable Declaration
@@ -359,7 +359,8 @@
 
 !     K model
       REAL, DIMENSION(NL) :: KUptake, SKi_Avail
-      REAL KSTRES
+      REAL KSTRES, KStres1, KStres2
+      REAL KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed
        
       TYPE (ResidueType) SENESCE 
       TYPE (SwitchType)  ISWITCH
@@ -842,7 +843,17 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
      &      PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &      PStres1, PStres2, PUptake, FracRts)             !Output
 
-!-----------------------------------------------------------------------  
+          CALL K_Ceres (DYNAMIC, ISWPOT,                    !Input
+     &      CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
+     &      PCNVEG, PConc_Shut, PLTPOP, PODWT, RLV, RTDEP,  !Input
+     &      RTWTO, SDWT, SWIDOT, SeedFrac, SKi_AVAIL,       !Input
+     &      Stem2Ear, STMWTO, VegFrac, WLIDOT, WRIDOT,      !Input
+     &      WSIDOT, WTLF, YRPLT,                            !Input
+     &      SENESCE,                                        !I/O
+     &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &      KStres1, KStres2, KUptake, FracRts)             !Output
+
+!-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
 !                     DYNAMIC = RATE
@@ -1008,6 +1019,16 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
      &          SENESCE,                                        !I/O
      &          PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &          PStres1, PStres2, PUptake, FracRts)             !Output
+
+              CALL K_Ceres (EMERG, ISWPOT,                      !Input
+     &          CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
+     &          PCNVEG, PConc_Shut, PLTPOP, PODWT, RLV, RTDEP,  !Input
+     &          RTWTO, SDWT, SWIDOT, SeedFrac, SKi_AVAIL,       !Input
+     &          Stem2Ear, STMWTO, VegFrac, WLIDOT, WRIDOT,      !Input
+     &          WSIDOT, WTLF, YRPLT,                            !Input
+     &          SENESCE,                                        !I/O
+     &          KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &          KStres1, KStres2, KUptake, FracRts)             !Output
           ENDIF
 
 !         CHP 7/29/2008
@@ -1950,7 +1971,7 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
               PCNRT = 0.0
           ENDIF
 
-          IF (ISWPHO .NE. 'N') THEN 
+          IF (ISWPHO .NE. 'N') THEN
             CALL P_Ceres (DYNAMIC, ISWPHO,                    !Input
      &        CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
      &        PCNVEG, PLTPOP, PODWT, RLV, RTDEP, RTWTO,       !Input
@@ -1960,6 +1981,18 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
      &        SENESCE,                                        !I/O
      &        PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &        PStres1, PStres2, PUptake, FracRts)             !Output
+          ENDIF
+
+          IF (ISWPOT .NE. 'N') THEN
+            CALL K_Ceres (DYNAMIC, ISWPOT,                    !Input
+     &        CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
+     &        PCNVEG, PConc_Shut, PLTPOP, PODWT, RLV, RTDEP,  !Input
+     &        RTWTO, SDWT, SWIDOT, SeedFrac, SKi_AVAIL,       !Input
+     &        Stem2Ear, STMWTO, VegFrac, WLIDOT, WRIDOT,      !Input
+     &        WSIDOT, WTLF, YRPLT,                            !Input
+     &        SENESCE,                                        !I/O
+     &        KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &        KStres1, KStres2, KUptake, FracRts)             !Output
           ENDIF
 
           !------------------------------------------------------------
@@ -2041,6 +2074,16 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
      &      PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &      PStres1, PStres2, PUptake, FracRts)             !Output
 
+          CALL K_Ceres (DYNAMIC, ISWPOT,                    !Input
+     &      CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
+     &      PCNVEG, PConc_Shut, PLTPOP, PODWT, RLV, RTDEP,  !Input
+     &      RTWTO, SDWT, SWIDOT, SeedFrac, SKi_AVAIL,       !Input
+     &      Stem2Ear, STMWTO, VegFrac, WLIDOT, WRIDOT,      !Input
+     &      WSIDOT, WTLF, YRPLT,                            !Input
+     &      SENESCE,                                        !I/O
+     &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &      KStres1, KStres2, KUptake, FracRts)             !Output
+
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
@@ -2081,6 +2124,16 @@ C-GH 60     FORMAT(25X,F5.2,13X,F5.2,7X,F5.2)
      &      SENESCE,                                        !I/O
      &      PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &      PStres1, PStres2, PUptake, FracRts)             !Output
+
+        CALL K_Ceres (DYNAMIC, ISWPOT,                    !Input
+     &      CumLeafSenes, DLAYR, DS, FILECC, MDATE, NLAYR,  !Input
+     &      PCNVEG, PConc_Shut, PLTPOP, PODWT, RLV, RTDEP,  !Input
+     &      RTWTO, SDWT, SWIDOT, SeedFrac, SKi_AVAIL,       !Input
+     &      Stem2Ear, STMWTO, VegFrac, WLIDOT, WRIDOT,      !Input
+     &      WSIDOT, WTLF, YRPLT,                            !Input
+     &      SENESCE,                                        !I/O
+     &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &      KStres1, KStres2, KUptake, FracRts)             !Output
 
 !       Senesced leaves do not fall to the ground and so are added to
 !         surface litter only at harvest.

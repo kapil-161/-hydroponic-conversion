@@ -943,30 +943,15 @@ C  FO - 05/07/2020 Add new Y4K subroutine call to convert YRDOY
       IF (ISWPOT /= 'N') THEN
 !       Check for validity of K model for this crop
         SELECT CASE(MODEL(1:5))
-        CASE('MZCER','RICER')
-!          SELECT CASE(CONTROL % CROP)
-!          CASE('MZ','RI') 
-!!           Potassium model has been enabled and tested for these crops, do nothing
-!
-!          CASE DEFAULT
-!           K model has NOT been tested for the remainder of the CROPGRO crops
-!           Print a warning message, but allow the user to continue.
-            CALL GET_CROPD(CROP, CROPD)
-            CROPD = ADJUSTL(CROPD)
+        CASE('CRGRO')
+!         K model enabled for CROPGRO crops (includes lettuce, tomato, etc.)
+!         K_CGRO module provides potassium simulation for these crops
+          CONTINUE
 
-            WRITE(MSG(1),
-     &         '("Potassium model has not been tested for "
-     &         ,A5,1X,A,".")') MODEL(1:5), TRIM(CROPD)
-!            MSG(2)="Model will run if soils and species K data" //
-!     &         " are supplied."
-!            MSG(3)="User must verify validity of crop response."
-            MSG(2)="Please contact the CSM development team if " // 
-     &         "you wish to "
-            WRITE(MSG(3),'("contribute to development of a K model for "
-     &          ,A5,1X,A,".")') MODEL(1:5), TRIM(CROPD)
-            CALL WARNING(3,ERRKEY,MSG)
-            CALL ERROR('IPSIM', 7, "", 0)
-!          END SELECT
+        CASE('MZCER','RICER')
+!         K model enabled for CERES crops
+!         K_Ceres module provides potassium simulation for these crops
+          CONTINUE
 
         CASE DEFAULT
 !         Crop model has not been linked to K model.

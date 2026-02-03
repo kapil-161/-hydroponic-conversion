@@ -13,13 +13,15 @@ C  Calls: ERROR, FIND, IGNORE
 C-----------------------------------------------------------------------
 
       SUBROUTINE IPSOL (LUNEXP,FILEX,LNSOL,SOLVOL,EC,PH,DO2,TEMP,
-     &                  NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO)
+     &                  NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO,
+     &                  AUTO_PH,AUTO_VOL)
 
       IMPLICIT NONE
-      EXTERNAL ERROR, FIND, IGNORE
+      EXTERNAL ERROR, FIND, FIND2, IGNORE
 
       CHARACTER*1  ISWHYDRO
-      CHARACTER*6  ERRKEY,FINDCH
+      CHARACTER*1  AUTO_PH, AUTO_VOL  ! Hydroponic control flags (AUTO_EC removed)
+      CHARACTER*6  ERRKEY,FINDCH,FINDCTL
       CHARACTER*12 FILEX
       CHARACTER*120 CHARTEST
 
@@ -29,6 +31,7 @@ C-----------------------------------------------------------------------
 
       PARAMETER (ERRKEY='IPSOL ')
                  FINDCH='*HYDRO'
+                 FINDCTL='*HYDRO'
 
       LINEXP = 0
 
@@ -45,6 +48,13 @@ C     Initialize values to -99 (missing data indicator)
 
 C     Default: Hydroponic mode is OFF
       ISWHYDRO = 'N'
+
+C     Default: Auto-control flags are OFF (allow natural drift)
+C     'N' = allow natural drift based on chemistry
+C     'Y' = maintain constant value from experiment file
+C     Note: AUTO_EC removed - EC always drifts naturally with nutrient uptake
+      AUTO_PH = 'N'
+      AUTO_VOL = 'N'
 
       REWIND(LUNEXP)
 
@@ -91,6 +101,52 @@ C       Keep ISWHYDRO = 'N' and return silently
         WRITE(*,*) ' Soil-based experiment (no hydroponic section found)'
       ENDIF
 
+C-----------------------------------------------------------------------
+C     Read *HYDROPONIC CONTROL section (optional)
+C     Format: @  L  AUTO_PH  AUTO_VOL
+C             1     Y        N
+C     Note: AUTO_EC removed - EC always drifts with nutrient uptake
+C     If section not found, use defaults (all 'N' = allow drift)
+C-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+        REWIND(LUNEXP)
+        LINEXP = 0
+
+C       Look for *HYDROPONIC CONTROL section (uses same prefix *HYDRO)
+C       Need to find the specific CONTROL section after SOLUTION
+        CALL FIND2(LUNEXP,'*HYDROPONIC CONTROL',LINEXP,IFIND)
+
+        IF (IFIND .GT. 0) THEN
+C         Section found - read the control flags
+ 70       CALL IGNORE (LUNEXP,LINEXP,ISECT,CHARTEST)
+
+          IF (ISECT .EQ. 1) THEN
+            READ (CHARTEST,*,IOSTAT=ERRNUM) LN,AUTO_PH,AUTO_VOL
+
+            IF (ERRNUM .NE. 0) THEN
+C             Error reading - use defaults
+              AUTO_PH = 'N'
+              AUTO_VOL = 'N'
+              WRITE(*,*) 'IPSOL: Error reading HYDROPONIC CONTROL,',
+     &                   ' using defaults (N)'
+            ELSE
+C             Validate flags (must be Y or N)
+              IF (AUTO_PH .NE. 'Y' .AND. AUTO_PH .NE. 'N') AUTO_PH = 'N'
+              IF (AUTO_VOL.NE. 'Y' .AND. AUTO_VOL.NE. 'N') AUTO_VOL= 'N'
+            ENDIF
+          ENDIF
+
+          IF (LN .NE. LNSOL) GO TO 70
+
+C         Print control settings
+          WRITE(*,110) AUTO_PH, AUTO_VOL
+        ELSE
+C         Section not found - use defaults
+          WRITE(*,*) ' HYDROPONIC CONTROL section not found,',
+     &               ' using defaults (drift mode)'
+        ENDIF
+      ENDIF
+
       REWIND (LUNEXP)
 
       RETURN
@@ -111,5 +167,10 @@ C-----------------------------------------------------------------------
      &        /,'   NH4-N            : ',F10.2,' mg/L',
      &        /,'   P                : ',F10.2,' mg/L',
      &        /,'   K                : ',F10.2,' mg/L',/)
+
+ 110  FORMAT (' HYDROPONIC CONTROL SETTINGS:',
+     &        /,'   AUTO_PH  : ',A1,' (Y=constant, N=drift)',
+     &        /,'   AUTO_VOL : ',A1,' (Y=constant, N=drift)',
+     &        /,'   (EC always drifts naturally with nutrient uptake)',/)
 
       END SUBROUTINE IPSOL

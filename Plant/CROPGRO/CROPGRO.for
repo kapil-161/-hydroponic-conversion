@@ -43,11 +43,12 @@ C  07/08/2003 CHP Added KSEVAP for export to soil evaporation routines.
 !  27/06/2024  FO Added Percent Lint to OPHARV. 
 C=======================================================================
 
-      SUBROUTINE CROPGRO(CONTROL, ISWITCH, 
-     &    EOP, HARVFRAC, NH4, NO3, SOILPROP, SPi_AVAIL,   !Input
+      SUBROUTINE CROPGRO(CONTROL, ISWITCH,
+     &    EOP, HARVFRAC, NH4, NO3, SOILPROP,              !Input
+     &    SKi_AVAIL, SPi_AVAIL,                           !Input
      &    ST, SW, TRWUP, WEATHER, YREND, YRPLT,           !Input
      &    CANHT, CropStatus, EORATIO, HARVRES, KSEVAP,    !Output
-     &    KTRANS, MDATE, NSTRES, PSTRES1,                 !Output
+     &    KTRANS, KUptake, MDATE, NSTRES, PSTRES1,        !Output
      &    PUptake, PORMIN, RLV, RWUMX, SENESCE,           !Output
      &    STGDOY, FracRts, UNH4, UNO3, XHLAI, XLAI)       !Output
 
@@ -56,14 +57,14 @@ C=======================================================================
       USE ModuleData
 
       IMPLICIT NONE
-      EXTERNAL DEMAND, FREEZE, GROW, HRES_CGRO, INCOMP, IPPLNT, MOBIL,
-     &  NFIX, NUPTAK, OPGROW, OPHARV, P_CGRO, PEST, PHENOL,
-     &  PHOTO, PLANTNBAL, PODDET, PODS, RESPIR, ROOTS, SENES,
+      EXTERNAL DEMAND, FREEZE, GROW, HRES_CGRO, INCOMP, IPPLNT,
+     &  K_CGRO, MOBIL, NFIX, NUPTAK, OPGROW, OPHARV, P_CGRO, PEST,
+     &  PHENOL, PHOTO, PLANTNBAL, PODDET, PODS, RESPIR, ROOTS, SENES,
      &  VEGGR
       SAVE
 !-----------------------------------------------------------------------
       CHARACTER*1 DETACH, IDETO, ISWNIT, ISWSYM,
-     &    ISWWAT, ISWDIS, ISWPHO, ISWHYDRO, MEPHO, RNMODE
+     &    ISWWAT, ISWDIS, ISWPHO, ISWPOT, ISWHYDRO, MEPHO, RNMODE
       CHARACTER*2 CROP
       CHARACTER*6 ECONO
       CHARACTER*30 FILEIO
@@ -177,8 +178,10 @@ C=======================================================================
       REAL PCNVEG
       REAL ShutMob, RootMob, ShelMob
 
-!     K model (not yet implemented)
-      REAL KSTRES
+!     K model
+      REAL KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed
+      REAL KStres1, KStres2, KSTRES
+      REAL, DIMENSION(NL) :: KUptake, SKi_AVAIL
 
 !-----------------------------------------------------------------------
 !     Define constructed variable types based on definitions in
@@ -214,6 +217,7 @@ C=======================================================================
       ISWNIT = ISWITCH % ISWNIT
       ISWSYM = ISWITCH % ISWSYM
       ISWPHO = ISWITCH % ISWPHO
+      ISWPOT = ISWITCH % ISWPOT
       ISWWAT = ISWITCH % ISWWAT
       ISWHYDRO = ISWITCH % ISWHYDRO
       MEPHO  = ISWITCH % MEPHO
@@ -577,7 +581,7 @@ C     Initialize pest coupling point and damage variables
      &    TRNH4U, TRNO3U, TRNU, UNH4, UNO3)               !Output
 
 !     Plant phosphorus module initialization
-      CALL P_CGRO (DYNAMIC, ISWITCH, 
+      CALL P_CGRO (DYNAMIC, ISWITCH,
      &    CROP, FILECC, MDATE, PCNVEG, PLTPOP, RLV,       !Input
      &    RootMob, RTDEP, RTWT, SDWT, SeedFrac,           !Input
      &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
@@ -586,6 +590,17 @@ C     Initialize pest coupling point and damage variables
      &    SENESCE,                                        !I/O
      &    PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &    PStres1, PStres2, PUptake, FracRts)             !Output
+
+!     Plant potassium module initialization
+      CALL K_CGRO (DYNAMIC, ISWITCH,
+     &    CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
+     &    RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
+     &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
+     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
+     &    WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &    SENESCE,                                        !I/O
+     &    KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &    KStres1, KStres2, KUptake, FracRts)             !Output
 
 !-----------------------------------------------------------------------
       CALL MOBIL(SEASINIT,
@@ -867,7 +882,7 @@ C-----------------------------------------------------------------------
 
         IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
 !       Plant phosphorus module initialization at plant emergence
-          CALL P_CGRO (EMERG, ISWITCH, 
+          CALL P_CGRO (EMERG, ISWITCH,
      &      CROP, FILECC, MDATE, PCNVEG, PLTPOP, RLV,       !Input
      &      RootMob, RTDEP, RTWT, SDWT, SeedFrac,           !Input
      &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
@@ -876,6 +891,19 @@ C-----------------------------------------------------------------------
      &      SENESCE,                                        !I/O
      &      PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &      PStres1, PStres2, PUptake, FracRts)             !Output
+        ENDIF
+
+        IF (ISWPOT .EQ. 'Y' .OR. ISWPOT .EQ. 'H') THEN
+!       Plant potassium module initialization at plant emergence
+          CALL K_CGRO (EMERG, ISWITCH,
+     &      CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
+     &      RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
+     &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
+     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
+     &      WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &      SENESCE,                                        !I/O
+     &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &      KStres1, KStres2, KUptake, FracRts)             !Output
         ENDIF
 
 !-----------------------------------------------------------------------
@@ -1027,7 +1055,7 @@ C-----------------------------------------------------------------------
 !       Plant phosphorus module
 C-----------------------------------------------------------------------
       IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
-        CALL P_CGRO (DYNAMIC, ISWITCH, 
+        CALL P_CGRO (DYNAMIC, ISWITCH,
      &    CROP, FILECC, MDATE, PCNVEG, PLTPOP, RLV,       !Input
      &    RootMob, RTDEP, RTWT, SDWT, SeedFrac,           !Input
      &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
@@ -1036,6 +1064,21 @@ C-----------------------------------------------------------------------
      &    SENESCE,                                        !I/O
      &    PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &    PStres1, PStres2, PUptake, FracRts)             !Output
+      ENDIF
+
+C-----------------------------------------------------------------------
+!       Plant potassium module
+C-----------------------------------------------------------------------
+      IF (ISWPOT .EQ. 'Y' .OR. ISWPOT .EQ. 'H') THEN
+        CALL K_CGRO (DYNAMIC, ISWITCH,
+     &    CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
+     &    RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
+     &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
+     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
+     &    WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &    SENESCE,                                        !I/O
+     &    KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &    KStres1, KStres2, KUptake, FracRts)             !Output
       ENDIF
 
 C-----------------------------------------------------------------------
@@ -1344,7 +1387,7 @@ C-----------------------------------------------------------------------
      &    WTNRT, WTNSH)
 
         IF (ISWPHO .EQ. 'Y' .OR. ISWPHO .EQ. 'H') THEN
-          CALL P_CGRO (DYNAMIC, ISWITCH, 
+          CALL P_CGRO (DYNAMIC, ISWITCH,
      &      CROP, FILECC, MDATE, PCNVEG, PLTPOP, RLV,       !Input
      &      RootMob, RTDEP, RTWT, SDWT, SeedFrac,           !Input
      &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
@@ -1353,6 +1396,18 @@ C-----------------------------------------------------------------------
      &      SENESCE,                                        !I/O
      &      PConc_Shut, PConc_Root, PConc_Shel, PConc_Seed, !Output
      &      PStres1, PStres2, PUptake, FracRts)             !Output
+        ENDIF
+
+        IF (ISWPOT .EQ. 'Y' .OR. ISWPOT .EQ. 'H') THEN
+          CALL K_CGRO (DYNAMIC, ISWITCH,
+     &      CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
+     &      RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
+     &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
+     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
+     &      WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &      SENESCE,                                        !I/O
+     &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
+     &      KStres1, KStres2, KUptake, FracRts)             !Output
         ENDIF
       ENDIF
 

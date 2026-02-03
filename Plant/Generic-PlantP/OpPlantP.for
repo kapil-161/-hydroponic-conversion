@@ -68,13 +68,13 @@ C  Calls:     None
            
       FMOPT = ISWITCH % FMOPT   ! VSH
 
-!     No output for fallow crop
+!     No output for fallow crop or if P simulation disabled
       CROP    = CONTROL % CROP
       IDETL   = ISWITCH % IDETL
-      IDETP   = ISWITCH % IDETP
+      IDETP   = ISWITCH % IDETP  ! Not used, kept for compatibility
       ISWPHO  = ISWITCH % ISWPHO
-      IF (CROP   .EQ. 'FA' .OR. 
-     &    IDETP  .EQ. 'N'  .OR.  
+!     P output controlled by ISWPHO (not IDETP which may not be set)
+      IF (CROP   .EQ. 'FA' .OR.
      &    IDETL  .EQ. 'N'  .OR.
      &    IDETL  .EQ. '0'  .OR.
      &    ISWPHO .EQ. 'N') RETURN

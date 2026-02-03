@@ -372,6 +372,10 @@
      &    PRootDem, PSeedDem, PShelDem, PShutDem,         !Output
      &    PTotDem)                                        !Output
 
+!     Store PTotDem in ModuleData for hydroponic SOLPi module
+!     SOLPi uses this to limit M-M supply by plant demand
+      CALL PUT('HYDRO','PTOTDEM',PTotDem)
+
 !-----------------------------------------------------------------------
 !     P uptake
 !     Check if in hydroponic mode - try to get P uptake from ModuleData
