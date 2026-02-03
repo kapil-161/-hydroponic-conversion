@@ -10,10 +10,7 @@ C-----------------------------------------------------------------------
 C  Called by: SPAM
 C  Calls:     GETLUN, HEADER, YR_DOY
 C=======================================================================
-      SUBROUTINE OPSOL(CONTROL, ISWITCH,
-     &  NO3_CONC, NH4_CONC, P_CONC, K_CONC,          !Input
-     &  EC_CALC, EC_TARGET, PH_CALC, PH_TARGET,       !Input
-     &  DO2_CALC, DO2_SAT, UNO3, UNH4, UPO4, UK)      !Input
+      SUBROUTINE OPSOL(CONTROL, ISWITCH)
 
 C-----------------------------------------------------------------------
       USE ModuleDefs
@@ -28,13 +25,13 @@ C-----------------------------------------------------------------------
       INTEGER DAS, DAP, DOY, DYNAMIC, ERRNUM, FROP, NOUTSL
       INTEGER RUN, YEAR, YRDOY, YRPLT
 
+C     Solution state variables - retrieved from ModuleData
       REAL NO3_CONC, NH4_CONC, P_CONC, K_CONC     ! mg/L
-      REAL EC_CALC, EC_TARGET                     ! dS/m
-      REAL PH_CALC, PH_TARGET                     ! pH units
+      REAL EC_CALC                                ! dS/m
+      REAL PH_CALC                                ! pH units
       REAL DO2_CALC, DO2_SAT                      ! mg/L
       REAL UNO3, UNH4, UPO4, UK                   ! kg/ha/d
-
-      REAL SOLVOL_MM, SOLTEMP                      ! mm (solution depth), C
+      REAL SOLVOL_MM, SOLTEMP                     ! mm (solution depth), C
 
       LOGICAL FEXIST
 
@@ -134,16 +131,30 @@ C     This matches soil-based simulations where output starts from planting
 C     Write on output frequency or on planting day
       IF (MOD(DAS,FROP) .EQ. 0 .OR. YRDOY .EQ. YRPLT) THEN
 
-C       Get solution volume (already in mm) and temperature from ModuleData
+C       Retrieve all solution state from ModuleData (authoritative source)
+C       Nutrient concentrations (mg/L)
+        CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+        CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+        CALL GET('HYDRO','P_CONC',P_CONC)
+        CALL GET('HYDRO','K_CONC',K_CONC)
+
+C       Nutrient uptake rates (kg/ha/d)
+        CALL GET('HYDRO','UNO3',UNO3)
+        CALL GET('HYDRO','UNH4',UNH4)
+        CALL GET('HYDRO','UPO4',UPO4)
+        CALL GET('HYDRO','UK',UK)
+
+C       Solution properties
+        CALL GET('HYDRO','EC',EC_CALC)
+        CALL GET('HYDRO','PH',PH_CALC)
+        CALL GET('HYDRO','DO2',DO2_CALC)
+        CALL GET('HYDRO','DO2_SAT',DO2_SAT)
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
         CALL GET('HYDRO','TEMP',SOLTEMP)
 
 C       Default values if not set
         IF (SOLVOL_MM .LT. 0.1) SOLVOL_MM = 100.0  ! Default 100 mm
         IF (SOLTEMP .LT. -50.0) SOLTEMP = 20.0
-
-C       SOLVOL is already stored in mm in ModuleData (from HYDRO_WATER)
-C       No conversion needed - use directly
 
 C       Get date
         CALL YR_DOY(YRDOY, YEAR, DOY)
@@ -184,16 +195,30 @@ C       Get planting date from ModuleData
 
 C       Only output after planting (check if planting date is valid)
         IF (YRPLT .GT. 0 .AND. YRDOY .GE. YRPLT) THEN
-C         Get solution volume (already in mm) and temperature from ModuleData
+C         Retrieve all solution state from ModuleData (authoritative source)
+C         Nutrient concentrations (mg/L)
+          CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+          CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+          CALL GET('HYDRO','P_CONC',P_CONC)
+          CALL GET('HYDRO','K_CONC',K_CONC)
+
+C         Nutrient uptake rates (kg/ha/d)
+          CALL GET('HYDRO','UNO3',UNO3)
+          CALL GET('HYDRO','UNH4',UNH4)
+          CALL GET('HYDRO','UPO4',UPO4)
+          CALL GET('HYDRO','UK',UK)
+
+C         Solution properties
+          CALL GET('HYDRO','EC',EC_CALC)
+          CALL GET('HYDRO','PH',PH_CALC)
+          CALL GET('HYDRO','DO2',DO2_CALC)
+          CALL GET('HYDRO','DO2_SAT',DO2_SAT)
           CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
           CALL GET('HYDRO','TEMP',SOLTEMP)
 
 C         Default values if not set
           IF (SOLVOL_MM .LT. 0.1) SOLVOL_MM = 100.0  ! Default 100 mm
           IF (SOLTEMP .LT. -50.0) SOLTEMP = 20.0
-
-C         SOLVOL is already stored in mm in ModuleData (from HYDRO_WATER)
-C         No conversion needed - use directly
 
 C         Get date
           CALL YR_DOY(YRDOY, YEAR, DOY)

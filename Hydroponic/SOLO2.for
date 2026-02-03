@@ -103,8 +103,9 @@ C       Convert temperature to Kelvin
         DO2_SAT = EXP(LN_DO2)
         IF (DO2_SAT .LT. 5.0) DO2_SAT = 5.0  ! Minimum bound
 
-C       Store initial DO2 value in ModuleData
+C       Store initial DO2 and saturation values in ModuleData
         CALL PUT('HYDRO','DO2',DO2_CALC)
+        CALL PUT('HYDRO','DO2_SAT',DO2_SAT)
 
         WRITE(*,100) DO2_INIT, DO2_SAT, SOLTEMP
  100    FORMAT(/,' Hydroponic Dissolved Oxygen Module Initialized',
@@ -164,8 +165,9 @@ C       Keep DO2 within bounds
         IF (DO2_CALC .GT. DO2_SAT * 1.2) DO2_CALC = DO2_SAT * 1.2
 C       Allow slight supersaturation (up to 120%)
 
-C       Store updated DO2
+C       Store updated DO2 and saturation value
         CALL PUT('HYDRO','DO2',DO2_CALC)
+        CALL PUT('HYDRO','DO2_SAT',DO2_SAT)
 
         WRITE(*,300) DO2_CALC
  300    FORMAT(' SOLO2: Updated DO2=',F6.2,' mg/L')

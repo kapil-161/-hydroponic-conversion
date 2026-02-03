@@ -240,10 +240,12 @@ C-----------------------------------------------------------------------
         ELSEIF (TEMP_SOL .LT. TEMP_OPT) THEN
 C         Increasing phase: Q10 model
           TEMP_FACTOR = Q10_K ** ((TEMP_SOL - TEMP_REF) / 10.0)
-          TEMP_FACTOR = MIN(1.0, TEMP_FACTOR)
         ELSEIF (TEMP_SOL .LT. TEMP_MAX) THEN
-C         Decreasing phase: linear decline
-          TEMP_FACTOR = 1.0 - (TEMP_SOL - TEMP_OPT) / (TEMP_MAX-TEMP_OPT)
+C         Decreasing phase: linear decline from peak at TEMP_OPT
+C         Peak value from Q10 model at TEMP_OPT for continuity
+          TEMP_FACTOR = Q10_K ** ((TEMP_OPT - TEMP_REF) / 10.0)
+          TEMP_FACTOR = TEMP_FACTOR * (1.0 - (TEMP_SOL - TEMP_OPT) /
+     &                  (TEMP_MAX - TEMP_OPT))
           TEMP_FACTOR = MAX(0.0, TEMP_FACTOR)
         ELSE
           TEMP_FACTOR = 0.0

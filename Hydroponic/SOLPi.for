@@ -72,6 +72,12 @@ C     Environmental factors (like HYDRO_NUTRIENT)
       REAL MIN_SOLVOL    ! Minimum solution volume for uptake (mm)
       REAL CRITICAL_SOLVOL ! Critical solution volume threshold (mm)
 
+C     Mass flow variables
+      REAL TRANSP_MM     ! Transpiration rate (mm/day)
+      REAL MASS_FLOW_P   ! Passive P uptake via mass flow (kg/ha/day)
+      REAL MASS_FLOW_COEF_P ! Mass flow coefficient for P (lower than NO3/K)
+      DATA MASS_FLOW_COEF_P /0.08/  ! P is less mobile than NO3/NH4/K
+
 C     Species file reading variables
       INTEGER LUNCRP, ERR, LINC, ISECT, FOUND
       CHARACTER*6 SECTION
@@ -168,6 +174,8 @@ C       Use demand-based approach when concentrations are adequate
 C       P_SOL is passed as argument from calling routine (not retrieved here)
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','SOLVOL',SOLVOL)
+        CALL GET('HYDRO','EP',TRANSP_MM)
+        IF (TRANSP_MM .LT. 0.0) TRANSP_MM = 0.0
 
 C-----------------------------------------------------------------------
 C       WATER-NUTRIENT COUPLING (same as HYDRO_NUTRIENT)
@@ -271,12 +279,29 @@ C             Debug: Check if calculation is working
           UPO4 = 0.0
         ENDIF
 
+C-----------------------------------------------------------------------
+C       MASS FLOW COMPONENT (Passive uptake via transpiration)
+C       P is less mobile than NO3/NH4/K, so use lower coefficient (0.08)
+C-----------------------------------------------------------------------
+        IF (TRANSP_MM .GT. 0.0 .AND. P_SOL .GT. 0.0) THEN
+          CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
+          IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
+          MASS_FLOW_P = TRANSP_MM * 10000.0 * P_SOL * 1.0E-6 *
+     &                  MASS_FLOW_COEF_P * ECSTRESS_JMAX_P
+        ELSE
+          MASS_FLOW_P = 0.0
+        ENDIF
+
+C       Total uptake = Active (M-M or demand-based) + Passive (Mass flow)
+        UPO4 = UPO4 + MASS_FLOW_P
+
 C       Prevent negative uptake
         UPO4 = MAX(0.0, UPO4)
 
-        WRITE(*,200) P_SOL, UPO4, PDEMAND_USE
+        WRITE(*,200) P_SOL, UPO4, PDEMAND_USE, MASS_FLOW_P
  200    FORMAT(' SOLPi: [P]=',F6.1,' mg/L',
-     &         ' Uptake=',F6.3,' PTotDem=',F6.3,' kg/ha/d')
+     &         ' Uptake=',F6.3,' PTotDem=',F6.3,' kg/ha/d',
+     &         ' MassFlow=',F6.4,' kg/ha/d')
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------

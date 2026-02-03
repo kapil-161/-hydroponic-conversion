@@ -522,6 +522,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL EC          ! Electrical conductivity (dS/m)
         REAL PH          ! pH
         REAL DO2         ! Dissolved oxygen (mg/L)
+        REAL DO2_SAT     ! Dissolved oxygen at saturation (mg/L)
         REAL TEMP        ! Solution temperature (C)
         REAL NO3_CONC    ! NO3-N concentration (mg/L)
         REAL NH4_CONC    ! NH4-N concentration (mg/L)
@@ -834,6 +835,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('EC');      Value = SAVE_data % HYDRO % EC
         Case ('PH');      Value = SAVE_data % HYDRO % PH
         Case ('DO2');     Value = SAVE_data % HYDRO % DO2
+        Case ('DO2_SAT'); Value = SAVE_data % HYDRO % DO2_SAT
         Case ('TEMP');    Value = SAVE_data % HYDRO % TEMP
         Case ('NO3_CONC');Value = SAVE_data % HYDRO % NO3_CONC
         Case ('AREA');    Value = SAVE_data % HYDRO % AREA
@@ -1002,6 +1004,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('EC');      SAVE_data % HYDRO % EC      = Value
         Case ('PH');      SAVE_data % HYDRO % PH      = Value
         Case ('DO2');     SAVE_data % HYDRO % DO2     = Value
+        Case ('DO2_SAT'); SAVE_data % HYDRO % DO2_SAT = Value
         Case ('TEMP');    SAVE_data % HYDRO % TEMP    = Value
         Case ('NO3_CONC');SAVE_data % HYDRO % NO3_CONC = Value
         Case ('AREA');    SAVE_data % HYDRO % AREA    = Value

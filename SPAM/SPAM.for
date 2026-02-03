@@ -166,10 +166,7 @@ C=======================================================================
 !     Initialize hydroponic solution output file (delete old file)
 !-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
-        CALL OPSOL(CONTROL, ISWITCH,
-     &    0.0, 0.0, 0.0, 0.0,                      !Concentrations
-     &    0.0, 0.0, 0.0, 0.0,                      !EC, pH
-     &    0.0, 0.0, 0.0, 0.0, 0.0, 0.0)            !DO2, Uptakes
+        CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
 !***********************************************************************
@@ -324,11 +321,7 @@ C=======================================================================
         UK_HYDRO = 0.0
 
 !       Call OPSOL to initialize output file (SEASINIT phase)
-        CALL OPSOL(CONTROL, ISWITCH,
-     &    NO3_CONC, NH4_CONC, P_CONC, K_CONC,         !Input
-     &    EC_CALC, EC_TARGET, PH_CALC, PH_TARGET,     !Input
-     &    DO2_CALC, DO2_SAT, UNO3_HYDRO, UNH4_HYDRO,  !Input
-     &    UPO4_HYDRO, UK_HYDRO)                        !UPO4, UK
+        CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
 !     Transfer data to storage routine
@@ -791,29 +784,8 @@ C-----------------------------------------------------------------------
 !     HYDROPONIC SOLUTION OUTPUT
 !-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
-!       Get current solution concentrations
-        CALL GET('HYDRO','NO3_CONC',NO3_CONC)
-        CALL GET('HYDRO','NH4_CONC',NH4_CONC)
-        CALL GET('HYDRO','P_CONC',P_CONC)
-        CALL GET('HYDRO','K_CONC',K_CONC)
-
-!       Get N uptake values for output (should be in ModuleData from NUPTAK)
-        UNO3_HYDRO = 0.0
-        UNH4_HYDRO = 0.0
-        UPO4_HYDRO = 0.0
-        UK_HYDRO = 0.0
-!       Get from HYDRO module (stored by NUPTAK)
-        CALL GET('HYDRO','UNO3',UNO3_HYDRO)
-        CALL GET('HYDRO','UNH4',UNH4_HYDRO)
-        CALL GET('HYDRO','UPO4',UPO4_HYDRO)
-        CALL GET('HYDRO','UK',UK_HYDRO)
-
-!       Call solution output module
-        CALL OPSOL(CONTROL, ISWITCH,
-     &    NO3_CONC, NH4_CONC, P_CONC, K_CONC,         !Input
-     &    EC_CALC, EC_TARGET, PH_CALC, PH_TARGET,     !Input
-     &    DO2_CALC, DO2_SAT, UNO3_HYDRO, UNH4_HYDRO,  !Input
-     &    UPO4_HYDRO, UK_HYDRO)                       !UPO4, UK
+!       Call solution output module (retrieves all data from ModuleData)
+        CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
       IF (CROP .NE. 'FA' .AND. MEPHO .EQ. 'L') THEN
@@ -866,6 +838,11 @@ C-----------------------------------------------------------------------
      &    PORMIN, PSTRES1, RLV, RWUMX, SOILPROP, ST, SW,  !Input
      &    WEATHER, XLAI,                                  !Input
      &    EOP, EP, ES, RWU, TRWUP)                        !Output
+      ENDIF
+
+!     Close hydroponic solution output file
+      IF (ISWHYDRO .EQ. 'Y') THEN
+        CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
 !     Transfer data to storage routine

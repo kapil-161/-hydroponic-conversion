@@ -60,6 +60,7 @@ C     Water-nutrient coupling variables
       REAL WATER_FACTOR  ! Water availability factor (0-1)
       REAL FLOW_FACTOR   ! Solution circulation/flow factor (0-1)
       REAL MASS_FLOW_NO3 ! Passive NO3 uptake via mass flow (kg/ha/day)
+      REAL MASS_FLOW_NH4 ! Passive NH4 uptake via mass flow (kg/ha/day)
       REAL MASS_FLOW_K   ! Passive K uptake via mass flow (kg/ha/day)
       REAL TRANSP_MM     ! Transpiration rate (mm/day)
       REAL MIN_SOLVOL    ! Minimum solution volume for uptake (mm)
@@ -367,12 +368,16 @@ C       Mass flow component (passive uptake via transpiration)
         IF (TRANSP_MM .GT. 0.0) THEN
           MASS_FLOW_NO3 = TRANSP_MM * 10000.0 * NO3_SOL * 1.0E-6 * 0.15
      &                    * ECSTRESS_JMAX_NO3
+          MASS_FLOW_NH4 = TRANSP_MM * 10000.0 * NH4_SOL * 1.0E-6 * 0.15
+     &                    * ECSTRESS_JMAX_NH4
         ELSE
           MASS_FLOW_NO3 = 0.0
+          MASS_FLOW_NH4 = 0.0
         ENDIF
 
 C       Total uptake = Active (Michaelis-Menten) + Passive (Mass flow)
         UNO3 = UNO3 + MASS_FLOW_NO3
+        UNH4 = UNH4 + MASS_FLOW_NH4
 
         UNO3 = MAX(0.0, UNO3)
         UNH4 = MAX(0.0, UNH4)
@@ -380,12 +385,12 @@ C       Total uptake = Active (Michaelis-Menten) + Passive (Mass flow)
         WRITE(*,300) NO3_SOL, NH4_SOL,
      &               UNO3, UNH4,
      &               SOLVOL, WATER_FACTOR, FLOW_FACTOR,
-     &               MASS_FLOW_NO3
+     &               MASS_FLOW_NO3, MASS_FLOW_NH4
  300    FORMAT(' HYDRO_NUTRIENT (LETTUCE):',
      &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' mg/L',/,
      &         '   Uptake: NO3=',F6.3,' NH4=',F6.3,' kg/ha/d',/,
      &         '   SolVol=',F6.1,' mm Wfac=',F4.2,' Ffac=',F4.2,/,
-     &         '   MassFlow: NO3=',F6.3,' kg/ha/d')
+     &         '   MassFlow: NO3=',F6.3,' NH4=',F6.3,' kg/ha/d')
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------

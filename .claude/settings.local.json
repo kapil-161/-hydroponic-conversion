@@ -5,7 +5,8 @@
       "Bash(\"C:\\\\Program Files\\\\CMake\\\\bin\\\\cmake.exe\" --build . --config Release)",
       "Bash(\"c:\\\\dssat-csm-os\\\\build\\\\bin\\\\dscsm048.exe\" A UHIH1202.CBX)",
       "Bash(python auto_calibrate_lettuce.py:*)",
-      "Bash(\"/c/dssat-csm-os/build/bin/dscsm048.exe\" A UFGA2401.LUX)"
+      "Bash(\"/c/dssat-csm-os/build/bin/dscsm048.exe\" A UFGA2401.LUX)",
+      "Bash(cmake --build:*)"
     ]
   }
 }

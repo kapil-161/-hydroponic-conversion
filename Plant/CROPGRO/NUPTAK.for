@@ -341,7 +341,16 @@ C         Calculate P and K uptake using dedicated modules
      &        UK_HYDRO,
      &        K_SOL)
 
-C         Update solution concentrations for P and K
+C         Update solution concentrations for N, P and K
+C         Update N concentrations using HYDRO_NUTRIENT (even with zero uptake)
+          CONTROL_DUMMY % DYNAMIC = INTEGR
+          CALL HYDRO_NUTRIENT(
+     &        CONTROL_DUMMY, ISWITCH,
+     &        FILECC, PLTPOP, RTDEP, 999.0, TRLV, VSTAGE,
+     &        UNO3_TOT, UNH4_TOT,
+     &        NO3_SOL, NH4_SOL)
+
+C         Update P concentration using SOLPi
           CONTROL_DUMMY % DYNAMIC = INTEGR
           CALL SOLPi(
      &        CONTROL_DUMMY, ISWITCH,
