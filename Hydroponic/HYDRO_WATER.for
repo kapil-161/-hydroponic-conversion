@@ -9,6 +9,7 @@ C
 C  12/22/2025 Created for hydroponic water supply
 C  12/22/2025 Updated to track dynamic solution volume
 C  12/22/2025 Updated to use mm everywhere (removed liters)
+C  02/03/2026 Added AUTO_VOL refill logic to maintain constant volume
 C-----------------------------------------------------------------------
 C  Called from: SPAM
 C
@@ -38,7 +39,9 @@ C     Output variables
 C     Local variables - all in mm
       REAL SOLVOL_MM      ! Solution depth (mm)
       REAL SOLVOL_PREV_MM ! Previous day's solution depth (mm)
+      REAL SOLVOL_INIT_MM ! Initial solution depth (mm) - for AUTO_VOL
       REAL WATER_ADD_MM   ! Water addition from irrigation (mm/d)
+      REAL AUTO_VOL_R     ! Auto volume control flag (1.0=Y, 0.0=N)
       REAL PLANT_UPTAKE_MM ! Plant water uptake (mm/d) - actual
       REAL PLANT_DEMAND_MM ! Plant water demand (mm/d) - from EP
       REAL MAX_WITHDRAWAL_MM ! Maximum withdrawal from depth (mm)
@@ -77,13 +80,19 @@ C-----------------------------------------------------------------------
 
 C       Get initial solution depth in mm from ModuleData
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
+        SOLVOL_INIT_MM = SOLVOL_MM  ! Save for AUTO_VOL refill
 
 C       Get growing area from experimental file (*FIELDS section)
         CALL GET('HYDRO','AREA',GROWING_AREA)
 
-        WRITE(*,100) SOLVOL_MM
+C       Get AUTO_VOL flag (1.0 = Y = constant volume, 0.0 = N = drift)
+        CALL GET('HYDRO','AUTO_VOL',AUTO_VOL_R)
+        IF (AUTO_VOL_R .LT. 0.0) AUTO_VOL_R = 0.0  ! Default to drift
+
+        WRITE(*,100) SOLVOL_MM, AUTO_VOL_R
  100    FORMAT(/,' Hydroponic water module initialized',
      &         /,' Initial solution depth: ',F8.1,' mm',
+     &         /,' AUTO_VOL: ',F3.1,' (1.0=constant, 0.0=drift)',
      &         /,' Water supply: UNLIMITED from nutrient solution',/)
 
       CASE (RATE)
@@ -130,21 +139,12 @@ C       DEMAND-BASED: Plant water demand from transpiration (EP)
 C       EP is already in mm/d (rate per unit area)
         PLANT_DEMAND_MM = EP  ! mm/d
 
-C       Get EC stress factor for root function (affects water uptake capacity)
-C       EC stress reduces root hydraulic conductivity and water uptake
-        ECSTRESS_ROOT = -999.0  ! Sentinel to detect if GET works
+C       Get EC stress factor for root function
+        ECSTRESS_ROOT = -999.0
         CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
-        
-C       Debug: Always show what was retrieved
-        WRITE(*,*) 'HYDRO_WATER: After GET, ECSTRESS_ROOT=',ECSTRESS_ROOT
-        
+
 C       Validate and limit range
         IF (ECSTRESS_ROOT .LT. 0.1 .OR. ECSTRESS_ROOT .GT. 1.0) THEN
-          IF (ECSTRESS_ROOT .LT. -500.0) THEN
-            WRITE(*,*) 'HYDRO_WATER ERROR: GET failed, ECSTRESS_ROOT not found!'
-          ELSE
-            WRITE(*,*) 'HYDRO_WATER: ECSTRESS_ROOT out of range (',ECSTRESS_ROOT,')'
-          ENDIF
           ECSTRESS_ROOT = 1.0
         ENDIF
 
@@ -171,11 +171,17 @@ C       Estimate as 1% of transpiration (typical for NFT systems)
         SOL_EVAP_MM = PLANT_UPTAKE_MM * 0.01  ! mm/d
         ES = 0.0  ! No soil evaporation in hydroponics (output variable)
 
-C       Get water addition from irrigation (if any)
-C       IRRAMT is already in mm from irrigation module
-        WATER_ADD_MM = 0.0
-C       TODO: Get IRRAMT from irrigation module when available
-C       WATER_ADD_MM = IRRAMT  ! Already in mm/d
+C       AUTO_VOL: Automatic volume control (1.0=refill, 0.0=drift)
+        CALL GET('HYDRO','AUTO_VOL',AUTO_VOL_R)
+        IF (AUTO_VOL_R .LT. 0.0) AUTO_VOL_R = 0.0  ! Default to drift
+
+        IF (AUTO_VOL_R .GT. 0.5) THEN
+C         Maintain constant volume by refilling
+          WATER_ADD_MM = PLANT_UPTAKE_MM + SOL_EVAP_MM
+        ELSE
+C         Volume drifts naturally
+          WATER_ADD_MM = 0.0
+        ENDIF
 
 C       Update solution depth
         SOLVOL_MM = SOLVOL_PREV_MM

@@ -23,16 +23,14 @@ C-----------------------------------------------------------------------
       USE ModuleDefs
       USE ModuleData
       IMPLICIT NONE
-      EXTERNAL GETLUN, ERROR, IGNORE, CURV, TABEX
+      EXTERNAL TABEX
       SAVE
 
       CHARACTER*92 FILECC
-      CHARACTER*80 CHAR
-      CHARACTER*3  TYPNUT
       CHARACTER*6  ERRKEY
       PARAMETER (ERRKEY = 'HYDNUT')
 
-      INTEGER LUNCRP, ERR, LNUM, ISECT, II
+      INTEGER II
 
       TYPE (ControlType) CONTROL
       TYPE (SwitchType)  ISWITCH
@@ -55,7 +53,6 @@ C     Solution concentrations (mg/L) - updated by depletion
 C     Local variables
       REAL SOLVOL        ! Solution volume (mm) - saved between calls
       REAL SOLVOL_INIT   ! Initial solution volume (mm)
-      REAL SOLTEMP       ! Solution temperature (C)
       REAL NO3_CONC_INIT ! Initial NO3 concentration (mg/L)
       REAL NH4_CONC_INIT ! Initial NH4 concentration (mg/L)
 
@@ -75,6 +72,12 @@ C     Values from general multi-ion model (lettuce/sorghum calibration)
 
       REAL Km_NO3        ! Half-saturation constant NO3 (mol/m3)
       REAL Km_NH4        ! Half-saturation constant NH4 (mol/m3)
+
+C     C_min: Minimum concentration for net uptake (mol/m3)
+C     Below C_min, efflux = influx, so net uptake = 0
+C     Values from literature (Barber 1984, Claassen & Barber 1974)
+      REAL Cmin_NO3      ! Min concentration NO3 (mol/m3) ~5 μM
+      REAL Cmin_NH4      ! Min concentration NH4 (mol/m3) ~5 μM
 
 C     Conversion factors and intermediate variables
       REAL ROOT_AREA     ! Root surface area per plant (m2/plant)
@@ -105,7 +108,6 @@ C     EC and pH stress-modified parameters
       REAL NH4_CONC_EFFECTIVE ! Effective NH4 concentration (× pH availability)
 
       REAL UPTAKE_FACTOR ! Scaling factor for crop growth stage
-      REAL TEMP_FACTOR   ! Temperature correction factor (0-1)
       REAL DEPL_NO3, DEPL_NH4  ! Depletion rates
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
       REAL GROWING_AREA  ! Growing area (m2) - for area conversions
@@ -118,14 +120,12 @@ C     Concentration conversion (mg/L to mol/m3)
 C     Molecular weights (g/mol)
       REAL MW_N          ! Nitrogen molecular weight
       
-C     Temperature parameters for nutrient uptake (from species file)
-      REAL FNNUT(4)      ! Temperature effect function values (Tmin, Topt1, Topt2, Tmax)
-      REAL CURV, TABEX   ! Functions for curve interpolation and table lookup
+      REAL TABEX         ! Function for table lookup
 
 C     Growth stage effect on nutrient uptake (from species file)
       REAL XNUSTG(10)    ! VSTAGE values for nutrient uptake scaling
       REAL YNUSTG(10)    ! Relative nutrient uptake at each VSTAGE
-      SAVE XNUSTG, YNUSTG, FNNUT, TYPNUT  ! Preserve between calls
+      SAVE XNUSTG, YNUSTG  ! Preserve between calls
 
       INTEGER DYNAMIC
       SAVE SOLVOL_INIT
@@ -138,82 +138,31 @@ C-----------------------------------------------------------------------
 
       CASE (RUNINIT)
 C-----------------------------------------------------------------------
-C       Read hydroponic nutrient uptake parameters from species file
+C       Initialize growth stage effect on nutrient uptake
 C-----------------------------------------------------------------------
-        LNUM = 0
-        CALL GETLUN('FILEC', LUNCRP)
-        OPEN (LUNCRP,FILE = FILECC, STATUS = 'OLD',IOSTAT=ERR)
-        IF (ERR .NE. 0) CALL ERROR(ERRKEY,ERR,FILECC,0)
+        XNUSTG(1) = 0.0
+        XNUSTG(2) = 1.0
+        XNUSTG(3) = 2.0
+        XNUSTG(4) = 3.0
+        XNUSTG(5) = 4.0
+        XNUSTG(6) = 5.0
+        XNUSTG(7) = 6.0
+        XNUSTG(8) = 10.0
+        XNUSTG(9) = 20.0
+        XNUSTG(10) = 30.0
 
-C       Skip to HYDROPONIC NUTRIENT section
-   10   CONTINUE
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        IF (ISECT .EQ. 0) THEN
-C         Section not found - use default values
-          FNNUT(1) = 5.0   ! Minimum temperature (C)
-          FNNUT(2) = 18.0  ! Lower optimal temperature (C)
-          FNNUT(3) = 22.0  ! Upper optimal temperature (C)
-          FNNUT(4) = 35.0  ! Maximum temperature (C)
-          TYPNUT = 'LIN'   ! Linear interpolation
-          WRITE(*,*) 'HYDRO_NUTRIENT: Using default temperature params'
-          GOTO 20
-        ENDIF
-        IF (INDEX(CHAR,'!*HYDROPONIC NUTRIENT') .EQ. 0) GO TO 10
+        YNUSTG(1) = 0.3
+        YNUSTG(2) = 0.5
+        YNUSTG(3) = 0.7
+        YNUSTG(4) = 0.9
+        YNUSTG(5) = 1.0
+        YNUSTG(6) = 1.0
+        YNUSTG(7) = 1.0
+        YNUSTG(8) = 0.8
+        YNUSTG(9) = 0.6
+        YNUSTG(10) = 0.4
 
-C       Read temperature effect on nutrient uptake
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        READ(CHAR,'(4F6.0,3X,A3)',IOSTAT=ERR)
-     &    (FNNUT(II),II=1,4), TYPNUT
-        IF (ERR .NE. 0) THEN
-C         Error reading - use defaults
-          FNNUT(1) = 5.0
-          FNNUT(2) = 18.0
-          FNNUT(3) = 22.0
-          FNNUT(4) = 35.0
-          TYPNUT = 'LIN'
-          WRITE(*,*) 'HYDRO_NUTRIENT: Error reading temp params, ',
-     &               'using defaults'
-        ENDIF
-
-C       Read growth stage effect on nutrient uptake
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        READ(CHAR,'(10F6.0)',IOSTAT=ERR) (XNUSTG(II),II=1,10)
-        IF (ERR .NE. 0) THEN
-C         Use defaults - seedling to mature
-          XNUSTG(1) = 0.0
-          XNUSTG(2) = 1.0
-          XNUSTG(3) = 2.0
-          XNUSTG(4) = 3.0
-          XNUSTG(5) = 4.0
-          XNUSTG(6) = 5.0
-          XNUSTG(7) = 6.0
-          XNUSTG(8) = 10.0
-          XNUSTG(9) = 20.0
-          XNUSTG(10) = 30.0
-        ENDIF
-
-        CALL IGNORE(LUNCRP,LNUM,ISECT,CHAR)
-        READ(CHAR,'(10F6.0)',IOSTAT=ERR) (YNUSTG(II),II=1,10)
-        IF (ERR .NE. 0) THEN
-C         Use defaults - gradual increase to peak
-          YNUSTG(1) = 0.3
-          YNUSTG(2) = 0.5
-          YNUSTG(3) = 0.7
-          YNUSTG(4) = 0.9
-          YNUSTG(5) = 1.0
-          YNUSTG(6) = 1.0
-          YNUSTG(7) = 1.0
-          YNUSTG(8) = 0.8
-          YNUSTG(9) = 0.6
-          YNUSTG(10) = 0.4
-        ENDIF
-
-   20   CONTINUE
-        CLOSE (LUNCRP)
-
-        WRITE(*,*) 'HYDRO_NUTRIENT: Temperature parameters:'
-        WRITE(*,*) '  FNNUT=',FNNUT(1),FNNUT(2),FNNUT(3),FNNUT(4)
-        WRITE(*,*) '  TYPNUT=',TYPNUT
+        WRITE(*,*) 'HYDRO_NUTRIENT: Initialized (no temp factor)'
 
 C-----------------------------------------------------------------------
 C       Initialize solution concentrations from ModuleData
@@ -242,6 +191,13 @@ C       Km values (mol/m3) - from literature
         Km_NO3   = 0.015     ! mol/m3 (= 0.015 mM = 0.21 mg N/L)
         Km_NH4   = 0.0539    ! mol/m3 (= 0.0539 mM = 0.75 mg N/L)
 
+C       C_min values (mol/m3) - minimum concentration for net uptake
+C       Below C_min, passive efflux balances active influx (net uptake = 0)
+C       Literature: Barber (1984), Claassen & Barber (1974)
+C       Values: ~5 μM for NO3, ~5 μM for NH4 (onion, general crops)
+        Cmin_NO3 = 0.005     ! mol/m3 (= 5 μM = 0.07 mg N/L)
+        Cmin_NH4 = 0.005     ! mol/m3 (= 5 μM = 0.07 mg N/L)
+
 C       Root morphological parameters
 C       ROOT_RADIUS is a species-specific parameter (lettuce)
 C       Root length (TRLV) comes dynamically from CROPGRO ROOTS module
@@ -253,13 +209,10 @@ C       Molecular weights (g/mol)
         UNO3 = 0.0
         UNH4 = 0.0
 
-        WRITE(*,200) NO3_SOL, NH4_SOL,
-     &               FNNUT(1), FNNUT(2), FNNUT(3), FNNUT(4), TYPNUT
+        WRITE(*,200) NO3_SOL, NH4_SOL
  200    FORMAT(/,' Hydroponic Nitrogen Module',
      &         /,'   Initial NO3-N : ',F8.2,' mg/L',
-     &         /,'   Initial NH4-N : ',F8.2,' mg/L',
-     &         /,'   Temp range    : ',F4.0,' to ',F4.0,' C',
-     &         ' (opt: ',F4.0,'-',F4.0,' C) Type: ',A3,/)
+     &         /,'   Initial NH4-N : ',F8.2,' mg/L',/)
 
       CASE (RATE)
 C-----------------------------------------------------------------------
@@ -268,8 +221,6 @@ C       with water-nutrient coupling for realistic hydroponic behavior
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
-
-        CALL GET('HYDRO','TEMP',SOLTEMP)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
 C-----------------------------------------------------------------------
@@ -319,11 +270,6 @@ C       EP is stored in ModuleData by HYDRO_WATER module (mm/day)
         CALL GET('HYDRO','EP',TRANSP_MM)
         IF (TRANSP_MM .LT. 0.0) TRANSP_MM = 0.0
 
-C       Calculate temperature correction factor using species file parameters
-C       Same approach as photosynthesis (PHOTO.for)
-        TEMP_FACTOR = CURV(TYPNUT,FNNUT(1),FNNUT(2),FNNUT(3),
-     &                     FNNUT(4),SOLTEMP)
-
 C       Growth stage factor based on VSTAGE (from species file)
 C       Same approach as canopy height (CANOPY.for)
 C       Safeguard: If VSTAGE is outside table range, use boundary values
@@ -335,41 +281,20 @@ C       Safeguard: If VSTAGE is outside table range, use boundary values
           UPTAKE_FACTOR = TABEX(YNUSTG,XNUSTG,VSTAGE,10)
         ENDIF
 
-C-----------------------------------------------------------------------
-C       Get dynamic root length from CROPGRO ROOTS module
-C       TRLV = Total root length per unit ground area (cm/cm2)
-C       Calculate root surface area per plant from TRLV
-C       Root area = 2 * pi * radius * length
-C       CRITICAL: NO ROOTS = NO UPTAKE (scientifically correct)
-C-----------------------------------------------------------------------
-C       TRLV is passed from ROOTS module (cm root / cm2 ground)
+C       Calculate root surface area from TRLV (cm root/cm2 ground)
         IF (TRLV .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C         Convert TRLV to root length per plant
-C         TRLV is in cm/cm2, convert to m/plant
-C         ROOT_LENGTH (m/plant) = TRLV (cm/cm2) * (10000 cm2/m2) /
-C                                 (PLTPOP plants/m2) * (1 m / 100 cm)
           ROOT_LENGTH = TRLV * 100.0 / PLTPOP  ! m/plant
           ROOT_AREA = 2.0 * 3.14159 * ROOT_RADIUS * ROOT_LENGTH  ! m2/plant
         ELSE
-C         NO ROOTS = NO UPTAKE (scientifically correct behavior)
-          ROOT_AREA = 0.0  ! Zero root area when no roots present
-          WRITE(*,*) 'HYDRO_NUTRIENT WARNING: No roots (TRLV=0) - ',
-     &               'nutrient uptake set to ZERO'
+          ROOT_AREA = 0.0
+          WRITE(*,*) 'HYDRO_NUTRIENT WARNING: No roots (TRLV=0)'
         ENDIF
 
-C-----------------------------------------------------------------------
 C       Convert concentrations from mg/L to mol/m3
-C       1 mg/L = 1 g/m3
-C       mol/m3 = (g/m3) / (MW g/mol) = mg/L / MW
-C-----------------------------------------------------------------------
-        NO3_CONC_MOL = NO3_SOL / MW_N  ! mol/m3
-        NH4_CONC_MOL = NH4_SOL / MW_N  ! mol/m3
+        NO3_CONC_MOL = NO3_SOL / MW_N
+        NH4_CONC_MOL = NH4_SOL / MW_N
 
-C-----------------------------------------------------------------------
-C       Get EC stress factors from SOLEC module
-C       Get pH-dependent availability and Km factors from SOLPH module
-C       New approach: pH affects both nutrient availability and transporter affinity
-C-----------------------------------------------------------------------
+C       Get EC and pH stress factors
         CALL GET('HYDRO','ECSTRESS_JMAX_NO3',ECSTRESS_JMAX_NO3)
         CALL GET('HYDRO','ECSTRESS_JMAX_NH4',ECSTRESS_JMAX_NH4)
         CALL GET('HYDRO','ECSTRESS_KM_NO3',ECSTRESS_KM_NO3)
@@ -406,52 +331,42 @@ C       Effective [S] = Actual [S] × f(pH)
         NH4_CONC_EFFECTIVE = NH4_CONC_MOL * PH_AVAIL_NH4
 
 C-----------------------------------------------------------------------
-C       Modified Michaelis-Menten equation with pH-dependent availability:
-C       J = Jmax × [S]_effective / (Km_stressed + [S]_effective)
-C       where [S]_effective = [S] × f(pH)
-C       J is in mol/m2/s (influx per unit root surface area)
-C       Apply ALL environmental factors: temperature, growth stage, water, flow, EC stress
+C       Modified M-M with C_min: J = Jmax×([S]-Cmin)/(Km+[S]-Cmin)
 C-----------------------------------------------------------------------
-        J_NO3 = (Jmax_NO3_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
-     &           WATER_FACTOR * FLOW_FACTOR * NO3_CONC_EFFECTIVE)/
-     &          (Km_NO3_stressed + NO3_CONC_EFFECTIVE)  ! mol/m2/s
+C       NO3 uptake
+        IF (NO3_CONC_EFFECTIVE .GT. Cmin_NO3) THEN
+          J_NO3 = (Jmax_NO3_stressed * UPTAKE_FACTOR *
+     &             WATER_FACTOR * FLOW_FACTOR *
+     &             (NO3_CONC_EFFECTIVE - Cmin_NO3)) /
+     &            (Km_NO3_stressed + NO3_CONC_EFFECTIVE - Cmin_NO3)
+        ELSE
+C         Below C_min: no net uptake (efflux = influx)
+          J_NO3 = 0.0
+        ENDIF
 
-        J_NH4 = (Jmax_NH4_stressed * UPTAKE_FACTOR * TEMP_FACTOR *
-     &           WATER_FACTOR * FLOW_FACTOR * NH4_CONC_EFFECTIVE)/
-     &          (Km_NH4_stressed + NH4_CONC_EFFECTIVE)  ! mol/m2/s
+C       NH4 uptake
+        IF (NH4_CONC_EFFECTIVE .GT. Cmin_NH4) THEN
+          J_NH4 = (Jmax_NH4_stressed * UPTAKE_FACTOR *
+     &             WATER_FACTOR * FLOW_FACTOR *
+     &             (NH4_CONC_EFFECTIVE - Cmin_NH4)) /
+     &            (Km_NH4_stressed + NH4_CONC_EFFECTIVE - Cmin_NH4)
+        ELSE
+C         Below C_min: no net uptake (efflux = influx)
+          J_NH4 = 0.0
+        ENDIF
 
-C-----------------------------------------------------------------------
-C       Convert from influx (mol/m2/s) to uptake per plant (mg/plant/day)
-C       Uptake = J (mol/m2/s) * ROOT_AREA (m2/plant) *
-C                86400 (s/day) * MW (g/mol) * 1000 (mg/g)
-C-----------------------------------------------------------------------
-        UNO3_plant = J_NO3 * ROOT_AREA * 86400.0 * MW_N * 1000.0  ! mg N/plant/day
-        UNH4_plant = J_NH4 * ROOT_AREA * 86400.0 * MW_N * 1000.0  ! mg N/plant/day
+C       Convert from mol/m2/s to mg/plant/day
+        UNO3_plant = J_NO3 * ROOT_AREA * 86400.0 * MW_N * 1000.0
+        UNH4_plant = J_NH4 * ROOT_AREA * 86400.0 * MW_N * 1000.0
 
-C-----------------------------------------------------------------------
-C       Convert from mg/plant/day to kg/ha/day
-C       kg/ha/day = mg/plant/day * plants/m2 * 10000 m2/ha * 1e-6 kg/mg
-C                 = mg/plant/day * plants/m2 * 0.01
-C-----------------------------------------------------------------------
-        UNO3 = UNO3_plant * PLTPOP * 0.01  ! kg N/ha/day (active)
-        UNH4 = UNH4_plant * PLTPOP * 0.01  ! kg N/ha/day (active)
+C       Convert to kg/ha/day
+        UNO3 = UNO3_plant * PLTPOP * 0.01
+        UNH4 = UNH4_plant * PLTPOP * 0.01
 
-C-----------------------------------------------------------------------
-C       Add MASS FLOW component for passive uptake via transpiration
-C       Mass flow uptake = Transpiration (mm/d) × Concentration (mg/L)
-C       Applies mainly to NO3- (highly mobile in xylem)
-C       Coefficient b represents fraction of water influx carrying nutrient
-C       EC stress also affects mass flow (reduces transpiration stream efficiency)
-C-----------------------------------------------------------------------
+C       Mass flow component (passive uptake via transpiration)
         IF (TRANSP_MM .GT. 0.0) THEN
-C         Convert transpiration to L/ha: mm × 10000 m²/ha = L/ha
-C         Mass flow (kg/ha/d) = Transp (mm/d) × 10000 × Conc (mg/L) × 1e-6
-C         Apply EC stress to mass flow (reduces efficiency of transpiration stream)
-          MASS_FLOW_NO3 = TRANSP_MM * 10000.0 * NO3_SOL * 1.0E-6 * 0.15 
+          MASS_FLOW_NO3 = TRANSP_MM * 10000.0 * NO3_SOL * 1.0E-6 * 0.15
      &                    * ECSTRESS_JMAX_NO3
-C         Coefficient: NO3 (b=0.15) from literature
-C         This represents fraction of transpiration stream carrying nutrient
-C         EC stress reduces this efficiency
         ELSE
           MASS_FLOW_NO3 = 0.0
         ENDIF
@@ -463,14 +378,13 @@ C       Total uptake = Active (Michaelis-Menten) + Passive (Mass flow)
         UNH4 = MAX(0.0, UNH4)
 
         WRITE(*,300) NO3_SOL, NH4_SOL,
-     &               UNO3, UNH4, SOLTEMP, TEMP_FACTOR,
+     &               UNO3, UNH4,
      &               SOLVOL, WATER_FACTOR, FLOW_FACTOR,
      &               MASS_FLOW_NO3
  300    FORMAT(' HYDRO_NUTRIENT (LETTUCE):',
      &         ' [NO3]=',F6.1,' [NH4]=',F6.1,' mg/L',/,
      &         '   Uptake: NO3=',F6.3,' NH4=',F6.3,' kg/ha/d',/,
-     &         '   Temp=',F5.1,'C Tfac=',F4.2,
-     &         ' SolVol=',F6.1,' mm Wfac=',F4.2,' Ffac=',F4.2,/,
+     &         '   SolVol=',F6.1,' mm Wfac=',F4.2,' Ffac=',F4.2,/,
      &         '   MassFlow: NO3=',F6.3,' kg/ha/d')
 
       CASE (INTEGR)

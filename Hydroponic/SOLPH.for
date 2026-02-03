@@ -36,6 +36,9 @@ C     Output variables
       REAL PH_CALC       ! Calculated pH
       REAL PH_TARGET     ! Target pH from initialization
 
+C     Hydroponic control flag
+      REAL AUTO_PH_R       ! 1.0 = maintain constant pH, 0.0 = allow drift
+
 C     pH-dependent availability and Km variables
       REAL PH_OPT        ! Optimal pH (center of range)
       REAL PH_STRESS_TOTAL ! Combined pH stress (0-1) for backward compatibility
@@ -62,9 +65,7 @@ C     NO3- uptake: NO3- + H+ → N (in plant) - consumes 1 mol H+ per mol NO3-N
       REAL H_CONSUMPTION ! H+ consumption from NO3 uptake (mol/ha/day)
       REAL NET_H_PRODUCTION ! Net H+ production (mol/ha/day)
       REAL NET_H_MOL_DAY    ! Net H+ production (mol/day) for solution area
-      REAL H_CONC_CHANGE ! H+ concentration change (mol/L)
-      REAL H_CONC        ! Current H+ concentration (mol/L)
-      REAL H_CONC_NEW    ! New H+ concentration (mol/L)
+      REAL H_CONC        ! Current H+ concentration (mol/L) - for diagnostics
       
 C     Buffering capacity
 C     Based on solution volume and bicarbonate (if available)
@@ -118,7 +119,7 @@ C     Optimal pH for lettuce
       PARAMETER (PH_OPT = 5.75)  ! Center of 5.5-6.0 range
 
       INTEGER DYNAMIC
-      SAVE PH_INIT, SOLVOL_INIT, AREA
+      SAVE PH_INIT, SOLVOL_INIT, AREA, AUTO_PH_R
 
 C-----------------------------------------------------------------------
 
@@ -146,6 +147,15 @@ C-----------------------------------------------------------------------
 
         IF (AREA .LT. 0.1) THEN
           AREA = 1.0  ! Default area (m2)
+        ENDIF
+
+C       Get AUTO_PH control flag from ISWITCH structure
+C       'Y' = maintain constant pH (grower adds acid/base as needed)
+C       'N' = allow natural drift based on nutrient uptake chemistry
+        IF (ISWITCH % AUTO_PH .EQ. 'Y') THEN
+          AUTO_PH_R = 1.0
+        ELSE
+          AUTO_PH_R = 0.0
         ENDIF
 
 C       Get initial nutrient concentrations for charge balance
@@ -200,15 +210,6 @@ C       If calculated HCO3- is very small, use minimum (typical in hydroponics)
         PH_CALC = PH_INIT
         PH_CHANGE = 0.0  ! Initialize pH change
 
-C-----------------------------------------------------------------------
-C       INITIALIZE pH STRESS PARAMETERS
-C-----------------------------------------------------------------------
-C       Optimal pH range for lettuce: 5.5-6.0
-C       Below 5.5: nutrient availability problems (Fe, Mn deficiency)
-C       Above 6.0: reduced nutrient availability (Ca, Mg, micronutrients)
-        PH_OPT_LOW  = 5.5   ! Below this, low pH stress
-        PH_OPT_HIGH = 6.0   ! Above this, high pH stress
-
 C       Calculate buffering capacity from calculated HCO3-
 C       Buffer capacity ≈ (HCO3- concentration × volume) / pH range
 C       CRITICAL: Use maximum to prevent very small volumes
@@ -236,19 +237,25 @@ C       Store initial pH values in ModuleData
 
       CASE (RATE)
 C-----------------------------------------------------------------------
-C       Calculate pH change due to nutrient uptake
-C       Uses stoichiometric H+ production/consumption
-C       Recalculates HCO3- from charge balance
-C-----------------------------------------------------------------------
+C       Calculate pH change due to nutrient uptake using buffer capacity
+C       Then update pH BEFORE calculating availability factors
+C       This ensures availability factors reflect current pH state
+C       Get AUTO_PH control flag from ISWITCH structure
+        IF (ISWITCH % AUTO_PH .EQ. 'Y') THEN
+          AUTO_PH_R = 1.0
+        ELSE
+          AUTO_PH_R = 0.0
+        ENDIF
+
 C       Get current solution volume for transpiration concentration effect
         CALL GET('HYDRO','SOLVOL',SOLVOL_CURRENT)
-        
+
 C       Get current nutrient concentrations for charge balance
         CALL GET('HYDRO','NO3_CONC',NO3_CONC)
         CALL GET('HYDRO','NH4_CONC',NH4_CONC)
         CALL GET('HYDRO','P_CONC',P_CONC)
         CALL GET('HYDRO','K_CONC',K_CONC)
-        
+
 C       Recalculate other ions (may change with nutrient depletion)
 C       In a full model, these would be tracked separately
 C       Set minimum values to prevent charge balance issues when K depletes
@@ -257,22 +264,22 @@ C       Set minimum values to prevent charge balance issues when K depletes
         SO4_CONC = MAX(20.0, K_CONC * 0.5)
         Na_CONC = MAX(5.0, K_CONC * 0.1)
         Cl_CONC = MAX(5.0, K_CONC * 0.1)
-        
+
 C       Recalculate phosphate speciation based on current pH
         P_RATIO = 10.0 ** (PH_CALC - PKA_PHOSPHATE)
         P_CHARGE = (-1.0 - 2.0*P_RATIO) / (1.0 + P_RATIO)
-        
+
 C       Recalculate HCO3- from charge balance
         TotalCations = (K_CONC/MW_K) + 2.0*(Ca_CONC/MW_Ca) +
      &                 2.0*(Mg_CONC/MW_Mg) + (Na_CONC/MW_Na) +
      &                 (NH4_CONC/MW_NH4)
-        
+
         TotalAnions = (NO3_CONC/MW_NO3) + 2.0*(SO4_CONC/MW_SO4) +
      &                (Cl_CONC/MW_Cl) + (P_CONC/MW_P) * ABS(P_CHARGE)
-        
+
         HCO3_CONC = (TotalCations - TotalAnions) * MW_HCO3
         HCO3_CONC = MAX(20.0, HCO3_CONC)  ! Minimum 20 mg/L
-        
+
 C       Calculate concentration factor due to water loss
 C       As plants transpire water, H+ concentration increases
         IF (SOLVOL_CURRENT .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
@@ -287,45 +294,68 @@ C       Stoichiometry: 1 mol H+ per mol NH4-N, -1 mol H+ per mol NO3-N
 C       Convert kg/ha/day to mol/ha/day: kg / (MW g/mol / 1000 g/kg) = mol
         H_PRODUCTION = (NH4_UPTAKE * 1000.0) / MW_N   ! mol H+/ha/day
         H_CONSUMPTION = (NO3_UPTAKE * 1000.0) / MW_N ! mol H+/ha/day (negative effect)
-        
+
         NET_H_PRODUCTION = H_PRODUCTION - H_CONSUMPTION  ! mol H+/ha/day
 
-C       Convert to H+ concentration change (mol/L)
-C       Solution volume in L = SOLVOL_CURRENT (mm) * AREA (m2) / 1000.0
-C       CRITICAL: Use maximum to prevent division by zero with very small volumes
+C-----------------------------------------------------------------------
+C       Calculate pH change using buffer capacity method
+C       This is chemically accurate for buffered hydroponic solutions
+C-----------------------------------------------------------------------
+C       Calculate solution volume in liters
         SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
-        IF (SOLVOL_L .GT. 0.01) THEN
-C         Convert mol/ha to mol/L: mol/ha / (ha in m2 / m2 per L)
-C         ha = 10000 m2, so: mol/ha / (10000 * AREA / SOLVOL_L)
-          H_CONC_CHANGE = NET_H_PRODUCTION / (10000.0 * AREA / SOLVOL_L)
-        ELSE
-          H_CONC_CHANGE = 0.0
+
+C       Calculate buffering capacity from HCO3-
+        BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
+        IF (BUFFER_CAP .LT. 0.01) THEN
+          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
         ENDIF
 
-C       Get current H+ concentration from pH
-        H_CONC = 10.0 ** (-PH_CALC)  ! mol/L
+C       Calculate pH change using buffering capacity
+C       NET_H_PRODUCTION is in mol/ha/day
+C       BUFFER_CAP is in mol H+/pH unit for the entire solution
+C       pH_change = -(NET_H_PRODUCTION * AREA / 10000.0) / BUFFER_CAP
+C       Negative because: H+ production (positive) lowers pH (negative change)
+        IF (BUFFER_CAP .GT. 0.001 .AND. AREA .GT. 0.1) THEN
+C         Convert mol/ha/day to mol/day for the solution area
+          NET_H_MOL_DAY = NET_H_PRODUCTION * AREA / 10000.0  ! mol/day
+          PH_CHANGE = -NET_H_MOL_DAY / BUFFER_CAP  ! pH units
+        ELSE
+          PH_CHANGE = 0.0
+        ENDIF
 
-C       Calculate new H+ concentration (accounting for transpiration)
-C       Transpiration concentrates H+ ions along with other ions
-        H_CONC_NEW = (H_CONC * CONCENTRATION_FACTOR) + H_CONC_CHANGE
-        
-C       Ensure H+ concentration is within reasonable bounds
-        H_CONC_NEW = MAX(1.0E-9, MIN(H_CONC_NEW, 1.0))  ! pH range: 0-9
+C       Apply transpiration concentration effect on pH
+C       As solution volume decreases, H+ concentrates, lowering pH
+        IF (CONCENTRATION_FACTOR .GT. 1.01) THEN
+          PH_CHANGE = PH_CHANGE - 0.1 * LOG10(CONCENTRATION_FACTOR)
+        ENDIF
 
-C       Calculate pH change from H+ concentration change
-        PH_CHANGE = -LOG10(H_CONC_NEW) - PH_CALC
+C       Limit daily pH change to realistic range (±0.5 pH units/day max)
+C       Buffering prevents rapid pH swings
+        PH_CHANGE = MAX(-0.5, MIN(0.5, PH_CHANGE))
 
-C       Limit daily pH change to realistic range (±1.0 pH units/day max)
-        PH_CHANGE = MAX(-1.0, MIN(1.0, PH_CHANGE))
+C-----------------------------------------------------------------------
+C       UPDATE pH (AUTO_PH_R: 1.0=constant pH, 0.0=natural drift)
+C-----------------------------------------------------------------------
+        IF (AUTO_PH_R .GT. 0.5) THEN
+C         Maintain pH at target (simulates grower adding acid/base)
+          PH_CALC = PH_TARGET
+        ELSE
+C         Natural drift mode: Apply calculated pH change
+          PH_CALC = PH_CALC + PH_CHANGE
+
+C         Keep pH within reasonable bounds
+          IF (PH_CALC .LT. 3.0) PH_CALC = 3.0
+          IF (PH_CALC .GT. 9.0) PH_CALC = 9.0
+        ENDIF
+
+C       Store updated pH immediately
+        CALL PUT('HYDRO','PH',PH_CALC)
 
 C-----------------------------------------------------------------------
 C       CALCULATE pH-DEPENDENT NUTRIENT AVAILABILITY FACTORS
-C       Using sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
-C       This models nutrient availability as a function of pH
+C       Sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
 C       Also calculate pH-dependent Km (transporter affinity)
 C-----------------------------------------------------------------------
-C       pH-dependent availability factors (0-1, where 1 = full availability)
-C       Sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
         
         PH_EXP_NO3 = (PH_CALC - PH_OPT) / PH_SCALE_NO3
         PH_EXP_NH4 = (PH_CALC - PH_OPT) / PH_SCALE_NH4
@@ -390,7 +420,7 @@ C       Use minimum availability as general stress indicator
      &               PH_AVAIL_NO3, PH_AVAIL_NH4, PH_AVAIL_P, PH_AVAIL_K,
      &               PH_KM_FACTOR_NO3, PH_KM_FACTOR_NH4
  200    FORMAT(' SOLPH: NH4=',F6.3,' NO3=',F6.3,' kg/ha/d',
-     &         ' => Net H+=',F8.4,' mol/ha/d',/,
+     &         ' => Net H+=',F10.2,' mol/ha/d',/,
      &         '   ConcFactor=',F5.2,' (Vol=',F6.1,' mm)',
      &         ' HCO3=',F5.1,' mg/L => pH change=',F6.3,/,
      &         '   pH=',F5.2,' (Opt=',F4.2,')',
@@ -399,149 +429,25 @@ C       Use minimum availability as general stress indicator
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
-C       Update pH based on calculated change
-C       Recalculate from H+ concentration for accuracy
-C       Update HCO3- from charge balance after pH change
+C       INTEGR phase - pH was already calculated and stored in RATE phase
+C       This block only outputs diagnostic information
+C       NOTE: AUTO_PH_R is updated in RATE block which runs before INTEGR,
+C             so the SAVEd value is current for this timestep
 C-----------------------------------------------------------------------
-C       Get current solution volume
-        CALL GET('HYDRO','SOLVOL',SOLVOL_CURRENT)
-        
-C       Get current nutrient concentrations
-        CALL GET('HYDRO','NO3_CONC',NO3_CONC)
-        CALL GET('HYDRO','NH4_CONC',NH4_CONC)
-        CALL GET('HYDRO','P_CONC',P_CONC)
-        CALL GET('HYDRO','K_CONC',K_CONC)
-        
-C       Recalculate H+ concentration with updated values
-        IF (SOLVOL_CURRENT .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
-          CONCENTRATION_FACTOR = SOLVOL_INIT / SOLVOL_CURRENT
-          CONCENTRATION_FACTOR = MAX(1.0, MIN(CONCENTRATION_FACTOR, 5.0))
-        ELSE
-          CONCENTRATION_FACTOR = 1.0
-        ENDIF
+C       Calculate H+ concentration for diagnostic output
+        H_CONC = 10.0 ** (-PH_CALC)
 
-C       Recalculate H+ production for this integration step
-C       (Recalculate from uptake values - should match RATE phase)
-        H_PRODUCTION = (NH4_UPTAKE * 1000.0) / MW_N   ! mol H+/ha/day
-        H_CONSUMPTION = (NO3_UPTAKE * 1000.0) / MW_N ! mol H+/ha/day
-        NET_H_PRODUCTION = H_PRODUCTION - H_CONSUMPTION  ! mol H+/ha/day
-        
-C       Get current buffering capacity (recalculate with current HCO3-)
-C       First recalculate HCO3- from charge balance to get current buffer capacity
-        P_RATIO = 10.0 ** (PH_CALC - PKA_PHOSPHATE)
-        P_CHARGE = (-1.0 - 2.0*P_RATIO) / (1.0 + P_RATIO)
-
-C       Set minimum values to prevent charge balance issues when K depletes
-        Ca_CONC = MAX(10.0, K_CONC * 0.6)
-        Mg_CONC = MAX(5.0, K_CONC * 0.2)
-        SO4_CONC = MAX(20.0, K_CONC * 0.5)
-        Na_CONC = MAX(5.0, K_CONC * 0.1)
-        Cl_CONC = MAX(5.0, K_CONC * 0.1)
-
-        TotalCations = (K_CONC/MW_K) + 2.0*(Ca_CONC/MW_Ca) +
-     &                 2.0*(Mg_CONC/MW_Mg) + (Na_CONC/MW_Na) +
-     &                 (NH4_CONC/MW_NH4)
-
-        TotalAnions = (NO3_CONC/MW_NO3) + 2.0*(SO4_CONC/MW_SO4) +
-     &                (Cl_CONC/MW_Cl) + (P_CONC/MW_P) * ABS(P_CHARGE)
-
-        HCO3_CONC = (TotalCations - TotalAnions) * MW_HCO3
-        HCO3_CONC = MAX(20.0, HCO3_CONC)
-
-C       Calculate current buffering capacity
-C       CRITICAL: Use maximum to prevent division by zero with very small volumes
-        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
-        BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
-        IF (BUFFER_CAP .LT. 0.01) THEN
-          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
-        ENDIF
-
-C       Calculate pH change using buffering capacity
-C       NET_H_PRODUCTION is in mol/ha/day
-C       BUFFER_CAP is in mol H+/pH unit for the entire solution
-C       Need to convert NET_H_PRODUCTION to mol/day for the solution area
-C       pH_change = -(NET_H_PRODUCTION * AREA / 10000.0) / BUFFER_CAP
-C       Negative because: H+ production (positive) lowers pH (negative change)
-C                         H+ consumption (negative) raises pH (positive change)
-        IF (BUFFER_CAP .GT. 0.001 .AND. AREA .GT. 0.1) THEN
-C         Convert mol/ha/day to mol/day for the solution area
-          NET_H_MOL_DAY = NET_H_PRODUCTION * AREA / 10000.0  ! mol/day
-          PH_CHANGE = -NET_H_MOL_DAY / BUFFER_CAP  ! pH units
-        ELSE
-          PH_CHANGE = 0.0
-        ENDIF
-
-C       Apply transpiration concentration effect on pH
-C       As solution volume decreases, H+ concentrates, lowering pH
-C       This is a small effect compared to nutrient uptake
-        IF (CONCENTRATION_FACTOR .GT. 1.01) THEN
-C         Transpiration concentrates H+, causing slight pH decrease
-C         Approximate: pH_change ≈ -0.1 * log10(concentration_factor)
-          PH_CHANGE = PH_CHANGE - 0.1 * LOG10(CONCENTRATION_FACTOR)
-        ENDIF
-
-C       Limit daily pH change to realistic range (±0.5 pH units/day max)
-C       Buffering prevents rapid pH swings
-        PH_CHANGE = MAX(-0.5, MIN(0.5, PH_CHANGE))
-
-C       Update pH
-        PH_CALC = PH_CALC + PH_CHANGE
-
-C       Keep pH within reasonable bounds
-        IF (PH_CALC .LT. 3.0) PH_CALC = 3.0
-        IF (PH_CALC .GT. 9.0) PH_CALC = 9.0
-
-C       Recalculate HCO3- from charge balance with new pH
-C       (Phosphate speciation changes with pH)
-        P_RATIO = 10.0 ** (PH_CALC - PKA_PHOSPHATE)
-        P_CHARGE = (-1.0 - 2.0*P_RATIO) / (1.0 + P_RATIO)
-        
-        Ca_CONC = K_CONC * 0.6
-        Mg_CONC = K_CONC * 0.2
-        SO4_CONC = K_CONC * 0.5
-        Na_CONC = K_CONC * 0.1
-        Cl_CONC = K_CONC * 0.1
-        
-        TotalCations = (K_CONC/MW_K) + 2.0*(Ca_CONC/MW_Ca) +
-     &                 2.0*(Mg_CONC/MW_Mg) + (Na_CONC/MW_Na) +
-     &                 (NH4_CONC/MW_NH4)
-        
-        TotalAnions = (NO3_CONC/MW_NO3) + 2.0*(SO4_CONC/MW_SO4) +
-     &                (Cl_CONC/MW_Cl) + (P_CONC/MW_P) * ABS(P_CHARGE)
-        
-        HCO3_CONC = (TotalCations - TotalAnions) * MW_HCO3
-        HCO3_CONC = MAX(20.0, HCO3_CONC)
-
-C       Update buffering capacity with new HCO3-
-C       CRITICAL: Use maximum to prevent division by zero with very small volumes
-        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
-        BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0
-        IF (BUFFER_CAP .LT. 0.01) THEN
-          BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
-        ENDIF
-
-C       Store updated pH
-        CALL PUT('HYDRO','PH',PH_CALC)
-
-        H_CONC = 10.0 ** (-PH_CALC)  ! Calculate H+ from final pH
-        WRITE(*,300) PH_CALC, PH_TARGET, PH_CHANGE, H_CONC * 1.0E6, 
+        WRITE(*,300) PH_CALC, PH_TARGET, PH_CHANGE, H_CONC * 1.0E6,
      &               HCO3_CONC, BUFFER_CAP
- 300    FORMAT(' SOLPH: Updated pH=',F5.2,' (Target=',F5.2,')',
+ 300    FORMAT(' SOLPH: pH=',F5.2,' (Target=',F5.2,')',
      &         ' Change=',F6.3,/,
      &         '   [H+]=',F8.2,' µmol/L HCO3=',F5.1,' mg/L',
      &         ' Buffer=',F6.3,' mol H+/pH')
 
-C-----------------------------------------------------------------------
-C       Optional: Implement pH adjustment/control
-C       In real hydroponic systems, pH is actively controlled
-C       This could be implemented as automatic adjustment when pH
-C       deviates too far from target
-C-----------------------------------------------------------------------
+C       Warn if pH deviates significantly from target
         IF (ABS(PH_CALC - PH_TARGET) .GT. 1.0) THEN
           WRITE(*,*) 'SOLPH WARNING: pH deviation >1.0 unit from target'
           WRITE(*,*) '  Consider implementing automatic pH correction'
-C         Could implement automatic pH correction here
-C         For now, just issue warning
         ENDIF
 
       CASE (OUTPUT)

@@ -116,6 +116,8 @@ C       If not set in experiment file, will default to 0.0
         CALL GET('HYDRO','NA_CONC',NA_CONC)
         CALL GET('HYDRO','CL_CONC',CL_CONC)
 
+C       Note: AUTO_EC removed - EC always drifts naturally
+
 C-----------------------------------------------------------------------
 C       DETERMINE WHAT IS PROVIDED AND CALCULATE MISSING VALUES
 C       -99 indicates missing data in experiment file
@@ -448,42 +450,15 @@ C       Debug: Verify ECSTRESS_ROOT is being stored
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
-C       EC TRACKING WITHOUT AUTOMATIC REPLENISHMENT
-C       EC will drift naturally based on nutrient uptake and evaporation
-C       This simulates a research hydroponic system without active EC control
-C-----------------------------------------------------------------------
 C       Calculate EC deviation from target for monitoring
         EC_DEVIATION = EC_TARGET - EC_CALC
 
-C       AUTOMATIC REPLENISHMENT DISABLED
-C       In commercial systems, nutrients would be replenished when EC drops
-C       For this simulation, we let EC drift to observe natural dynamics
-C       To re-enable automatic management, uncomment the code below:
-C
-C        IF (EC_CALC .LT. EC_TARGET * 0.90) THEN
-C          EC_RATIO = EC_CALC / EC_TARGET
-C          NO3_CONC = NO3_INIT
-C          NH4_CONC = NH4_INIT
-C          P_CONC   = P_INIT
-C          K_CONC   = K_INIT
-C          TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
-C          EC_CALC = TotalIons / EC_FACTOR
-C          IF (EC_CALC .LT. 0.1) EC_CALC = 0.1
-C          CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
-C          CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
-C          CALL PUT('HYDRO','P_CONC',P_CONC)
-C          CALL PUT('HYDRO','K_CONC',K_CONC)
-C          WRITE(*,310) EC_RATIO, EC_CALC
-C 310      FORMAT(' SOLEC: EC replenishment - Ratio=',F6.3,
-C     &           ' New EC=',F6.2,' dS/m')
-C        ENDIF
-
-C       Update EC in ModuleData
+C       Update EC in ModuleData (already calculated in RATE section)
         CALL PUT('HYDRO','EC',EC_CALC)
 
         WRITE(*,300) EC_CALC, EC_DEVIATION
- 300    FORMAT(' SOLEC: Updated EC=',F6.2,' dS/m (Deviation from target=',
-     &         F6.3,' dS/m)')
+ 300    FORMAT(' SOLEC: Updated EC=',F6.2,' dS/m (Deviation=',
+     &         F6.3,' from target)')
 
       CASE (OUTPUT)
         CONTINUE

@@ -41,12 +41,20 @@ C     Local variables
       REAL O2_CONSUME    ! O2 consumption (mg/L/day)
       REAL O2_AERATION   ! O2 addition from aeration (mg/L/day)
       REAL AERATION_RATE ! Aeration efficiency (0-1)
+      REAL TA            ! Absolute temperature (K)
+      REAL LN_DO2        ! Natural log of DO2 saturation
 
-C     Constants for DO2 saturation calculation
-C     DO2_sat = 14.6 - 0.41*T + 0.008*T^2 - 0.000077*T^3 (mg/L)
-C     Valid for 0-40°C
-      REAL A0, A1, A2, A3
-      PARAMETER (A0 = 14.6, A1 = -0.41, A2 = 0.008, A3 = -0.000077)
+C     Benson-Krause (1984) coefficients for DO2 saturation calculation
+C     ln(DO2_sat) = A0 + A1/Ta + A2/Ta^2 + A3/Ta^3 + A4/Ta^4
+C     where Ta = temperature in Kelvin (T_celsius + 273.15)
+C     Reference: Benson & Krause, Limnology & Oceanography 29:620-632
+C     Valid for 0-40°C freshwater at 1 atm
+      REAL A0, A1, A2, A3, A4
+      PARAMETER (A0 = -139.34411)
+      PARAMETER (A1 = 1.575701E5)
+      PARAMETER (A2 = -6.642308E7)
+      PARAMETER (A3 = 1.243800E10)
+      PARAMETER (A4 = -8.621949E11)
 
       INTEGER DYNAMIC
       SAVE DO2_INIT, SOLVOL, AERATION_RATE, O2_CONSUME, O2_AERATION
@@ -88,8 +96,11 @@ C       Static: low (0.2-0.4)
 C       Aeroponics: very high (0.95)
         AERATION_RATE = 0.8  ! Assume NFT-type system
 
-C       Calculate saturation DO2 at current temperature
-        DO2_SAT = A0 + A1*SOLTEMP + A2*SOLTEMP**2 + A3*SOLTEMP**3
+C       Calculate saturation DO2 using Benson-Krause (1984) equation
+C       Convert temperature to Kelvin
+        TA = SOLTEMP + 273.15
+        LN_DO2 = A0 + A1/TA + A2/(TA**2) + A3/(TA**3) + A4/(TA**4)
+        DO2_SAT = EXP(LN_DO2)
         IF (DO2_SAT .LT. 5.0) DO2_SAT = 5.0  ! Minimum bound
 
 C       Store initial DO2 value in ModuleData
@@ -110,27 +121,19 @@ C       Get current solution temperature (use air temp as proxy if needed)
           SOLTEMP = WEATHER % TAVG  ! Use air temperature
         ENDIF
 
-C       Update saturation DO2 for current temperature
-        DO2_SAT = A0 + A1*SOLTEMP + A2*SOLTEMP**2 + A3*SOLTEMP**3
+C       Update saturation DO2 using Benson-Krause (1984) equation
+        TA = SOLTEMP + 273.15
+        LN_DO2 = A0 + A1/TA + A2/(TA**2) + A3/(TA**3) + A4/(TA**4)
+        DO2_SAT = EXP(LN_DO2)
         IF (DO2_SAT .LT. 5.0) DO2_SAT = 5.0
 
-C-----------------------------------------------------------------------
-C       O2 consumption by roots
-C       Root respiration rate in g CO2/m2/day
-C       O2:CO2 ratio ~ 1:1 (molar basis)
-C       Convert: g CO2 -> mol CO2 -> mol O2 -> g O2 -> mg O2
-C       Distribute over solution volume
-C-----------------------------------------------------------------------
+C       O2 consumption by roots (convert g CO2/m2/day to mg O2/L/day)
         IF (ROOT_RESP .GT. 0.0 .AND. SOLVOL .GT. 0.0) THEN
-C         g CO2/m2/day * (1 mol/44g) * (1 mol O2/mol CO2) * (32g/mol)
-C         = g O2/m2/day * 1000 mg/g = mg O2/m2/day
           O2_CONSUME = ROOT_RESP * (32.0/44.0) * 1000.0
-C         Convert to mg/L/day using solution volume per m2
-C         CRITICAL: Prevent division by zero with very small volumes
           IF (SOLVOL .GT. 0.1) THEN
             O2_CONSUME = O2_CONSUME / SOLVOL
           ELSE
-            O2_CONSUME = O2_CONSUME / 0.1  ! Use minimum volume
+            O2_CONSUME = O2_CONSUME / 0.1
           ENDIF
         ELSE
 C         No root respiration data - use simple estimate
@@ -142,10 +145,7 @@ C         Typical: 0.5-2.0 mg/L/day depending on plant size
           ENDIF
         ENDIF
 
-C-----------------------------------------------------------------------
 C       O2 addition through aeration
-C       Rate depends on deficit from saturation and aeration efficiency
-C-----------------------------------------------------------------------
         O2_AERATION = AERATION_RATE * (DO2_SAT - DO2_CALC)
         O2_AERATION = MAX(0.0, O2_AERATION)  ! No negative aeration
 

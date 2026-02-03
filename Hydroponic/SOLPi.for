@@ -43,12 +43,12 @@ C     Solution concentrations (mg/L)
 C     Local variables
       REAL SOLVOL        ! Solution volume (mm) = (L/m2) - saved between calls
       REAL SOLVOL_INIT   ! Initial solution volume (mm)
-      REAL SOLTEMP       ! Solution temperature (C)
       SAVE SOLVOL, SOLVOL_INIT, Vmax_P, Km_P
 
 C     Michaelis-Menten parameters for P
       REAL Vmax_P        ! Max uptake rate P (mg/plant/day)
       REAL Km_P          ! Half-saturation constant P (mg/L)
+      REAL Cmin_P        ! Min concentration for net uptake (mg/L)
       REAL Vmax_P_stressed ! Vmax_P after EC stress
       REAL Km_P_stressed   ! Km_P after pH stress
       REAL ECSTRESS_JMAX_P ! EC stress factor for P Jmax
@@ -63,10 +63,12 @@ C     Uptake calculations
       REAL DEPL_P        ! Depletion rate (mg/L)
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
 
+C     Plant demand from P_PLANT module (tissue-based, like N demand)
+      REAL PDEMAND_USE   ! P demand from P_PLANT PTotDem (kg/ha/day)
+
 C     Environmental factors (like HYDRO_NUTRIENT)
       REAL WATER_FACTOR  ! Water availability factor (0-1)
       REAL FLOW_FACTOR   ! Solution circulation/flow factor (0-1)
-      REAL TEMP_FACTOR   ! Temperature correction factor (0-1)
       REAL MIN_SOLVOL    ! Minimum solution volume for uptake (mm)
       REAL CRITICAL_SOLVOL ! Critical solution volume threshold (mm)
 
@@ -112,12 +114,19 @@ C         Read P uptake parameters: Vmax_P, Km_P
 
         CLOSE (LUNCRP)
 
+C       C_min for P: minimum concentration for net uptake (mg/L)
+C       Below C_min, efflux = influx, so net uptake = 0
+C       Literature: ~1 μM for most crops (Barber 1984)
+C       1 μM P = 0.031 mg/L (MW P = 31 g/mol)
+        Cmin_P = 0.03     ! mg/L (= 1 μM)
+
         UPO4 = 0.0
 
-        WRITE(*,100) Vmax_P, Km_P
+        WRITE(*,100) Vmax_P, Km_P, Cmin_P
  100    FORMAT(/,' Hydroponic Phosphorus Module',
      &         /,'   Vmax_P: ',F6.2,' mg P/plant/day',
-     &         /,'   Km_P  : ',F6.2,' mg/L',/)
+     &         /,'   Km_P  : ',F6.2,' mg/L',
+     &         /,'   Cmin_P: ',F6.3,' mg/L',/)
 
       CASE (SEASINIT)
 C-----------------------------------------------------------------------
@@ -156,9 +165,8 @@ C       Ensure Vmax_P and Km_P are initialized (defaults if not set in RUNINIT)
 C-----------------------------------------------------------------------
 C       Calculate daily P uptake with environmental factors
 C       Use demand-based approach when concentrations are adequate
+C       P_SOL is passed as argument from calling routine (not retrieved here)
 C-----------------------------------------------------------------------
-        CALL GET('HYDRO','P_CONC',P_SOL)  ! Retrieve current P concentration
-        CALL GET('HYDRO','TEMP',SOLTEMP)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
 C-----------------------------------------------------------------------
@@ -189,19 +197,6 @@ C       CRITICAL: Prevent division by zero with very small volumes
         ENDIF
         FLOW_FACTOR = MIN(1.0, MAX(0.2, FLOW_FACTOR))
 
-C       Temperature correction (simplified - similar to HYDRO_NUTRIENT)
-        IF (SOLTEMP .LT. 5.0) THEN
-          TEMP_FACTOR = 0.0
-        ELSE IF (SOLTEMP .GT. 35.0) THEN
-          TEMP_FACTOR = 0.0
-        ELSE IF (SOLTEMP .GE. 18.0 .AND. SOLTEMP .LE. 22.0) THEN
-          TEMP_FACTOR = 1.0
-        ELSE IF (SOLTEMP .LT. 18.0) THEN
-          TEMP_FACTOR = (SOLTEMP - 5.0) / (18.0 - 5.0)
-        ELSE
-          TEMP_FACTOR = (35.0 - SOLTEMP) / (35.0 - 22.0)
-        ENDIF
-
 C       Growth stage factor (simplified)
         IF (RTDEP .LT. 20.0) THEN
           UPTAKE_FACTOR = 0.3    ! Seedling stage
@@ -211,12 +206,14 @@ C       Growth stage factor (simplified)
           UPTAKE_FACTOR = 1.0    ! Peak growth
         ENDIF
 
-C-----------------------------------------------------------------------
-C       Demand-based uptake strategy with environmental factors
-C       In hydroponic systems with adequate concentrations, uptake meets demand
-C       Only temperature limits uptake (water/flow factors don't apply in recirculating systems)
-C-----------------------------------------------------------------------
-        IF (PDEMAND .GT. 1.E-9) THEN
+C       Get plant P demand from ModuleData (fallback to PDEMAND if not set)
+        CALL GET('HYDRO','PTOTDEM',PDEMAND_USE)
+        IF (PDEMAND_USE .LT. 1.E-9 .AND. PDEMAND .GT. 1.E-9) THEN
+          PDEMAND_USE = PDEMAND
+        ENDIF
+
+C       Supply-based uptake with demand limit (M-M kinetics)
+        IF (PDEMAND_USE .GT. 1.E-9) THEN
 C         Get pH-dependent availability and Km factors
           CALL GET('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
           CALL GET('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
@@ -228,36 +225,41 @@ C         Calculate effective P concentration using pH availability
           
           IF (P_SOL_EFFECTIVE .GT. 5.0) THEN
 C           Adequate effective P concentration - uptake meets demand
-C           Apply temperature factor and EC stress
             CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
             IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
-            UPO4 = PDEMAND * TEMP_FACTOR * ECSTRESS_JMAX_P
+            UPO4 = PDEMAND_USE * ECSTRESS_JMAX_P
           ELSE
 C           Low effective P concentration - use Michaelis-Menten kinetics
-C           Apply temperature factor and EC stress
             IF (Vmax_P .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C             Get EC stress factor for P uptake (reduces Vmax_P)
               CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
               IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
-              
+
 C             Apply pH-dependent Km (transporter affinity)
               Km_P_stressed = Km_P * PH_KM_FACTOR_P
-              
+
               Vmax_P_stressed = Vmax_P * ECSTRESS_JMAX_P
-              UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR * TEMP_FACTOR * P_SOL_EFFECTIVE) /
-     &                   (Km_P_stressed + P_SOL_EFFECTIVE)
+
+C             Modified M-M with C_min threshold (Barber 1984)
+C             Below C_min, no net uptake (efflux = influx)
+              IF (P_SOL_EFFECTIVE .GT. Cmin_P) THEN
+                UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR *
+     &                     (P_SOL_EFFECTIVE - Cmin_P)) /
+     &                     (Km_P_stressed + P_SOL_EFFECTIVE - Cmin_P)
+              ELSE
+                UP_plant = 0.0  ! Below C_min: no net uptake
+              ENDIF
 
 C             Convert from mg/plant/day to kg/ha/day
               UP_potential = UP_plant * PLTPOP * 0.01
 
 C             Limit by demand (but ensure minimum uptake if demand exists)
-              UPO4 = MIN(UP_potential, PDEMAND)
-              
+              UPO4 = MIN(UP_potential, PDEMAND_USE)
+
 C             Debug: Check if calculation is working
-              IF (UPO4 .LT. 1.E-6 .AND. PDEMAND .GT. 0.01) THEN
+              IF (UPO4 .LT. 1.E-6 .AND. PDEMAND_USE .GT. 0.01) THEN
                 WRITE(*,*) ' SOLPi WARNING: Low uptake calculated:',
      &                     ' Vmax=',Vmax_P,' Km=',Km_P,
-     &                     ' Ufac=',UPTAKE_FACTOR,' Tfac=',TEMP_FACTOR,
+     &                     ' Ufac=',UPTAKE_FACTOR,
      &                     ' PLTPOP=',PLTPOP,' P_SOL=',P_SOL,
      &                     ' UP_potential=',UP_potential
               ENDIF
@@ -272,10 +274,9 @@ C             Debug: Check if calculation is working
 C       Prevent negative uptake
         UPO4 = MAX(0.0, UPO4)
 
-        WRITE(*,200) P_SOL, UPO4, PDEMAND, SOLTEMP, TEMP_FACTOR
+        WRITE(*,200) P_SOL, UPO4, PDEMAND_USE
  200    FORMAT(' SOLPi: [P]=',F6.1,' mg/L',
-     &         ' Uptake=',F6.3,' Demand=',F6.3,' kg/ha/d',/,
-     &         '   Temp=',F5.1,'C Tfac=',F4.2)
+     &         ' Uptake=',F6.3,' PTotDem=',F6.3,' kg/ha/d')
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
