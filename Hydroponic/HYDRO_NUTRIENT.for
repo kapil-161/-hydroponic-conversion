@@ -88,6 +88,13 @@ C     Conversion factors and intermediate variables
 C     Uptake calculations
       REAL UNO3_plant    ! NO3 uptake per plant (mg/plant/day)
       REAL UNH4_plant    ! NH4 uptake per plant (mg/plant/day)
+      REAL UNO3_potential ! Potential NO3 uptake (kg/ha/day)
+      REAL UNH4_potential ! Potential NH4 uptake (kg/ha/day)
+      REAL UN_potential   ! Total potential N uptake (kg/ha/day)
+
+C     N demand from plant module (for demand-based limiting)
+      REAL NDMNEW        ! N demand for new growth (g/m2/day) from DEMAND.for
+      REAL NDEMAND_KG    ! N demand converted to kg/ha/day
 
 C     Uptake in mol/m2/s (from M-M equation)
       REAL J_NO3         ! NO3 influx (mol/m2/s)
@@ -360,9 +367,9 @@ C       Convert from mol/m2/s to mg/plant/day
         UNO3_plant = J_NO3 * ROOT_AREA * 86400.0 * MW_N * 1000.0
         UNH4_plant = J_NH4 * ROOT_AREA * 86400.0 * MW_N * 1000.0
 
-C       Convert to kg/ha/day
-        UNO3 = UNO3_plant * PLTPOP * 0.01
-        UNH4 = UNH4_plant * PLTPOP * 0.01
+C       Convert to kg/ha/day (active uptake)
+        UNO3_potential = UNO3_plant * PLTPOP * 0.01
+        UNH4_potential = UNH4_plant * PLTPOP * 0.01
 
 C       Mass flow component (passive uptake via transpiration)
         IF (TRANSP_MM .GT. 0.0) THEN
@@ -375,9 +382,36 @@ C       Mass flow component (passive uptake via transpiration)
           MASS_FLOW_NH4 = 0.0
         ENDIF
 
-C       Total uptake = Active (Michaelis-Menten) + Passive (Mass flow)
-        UNO3 = UNO3 + MASS_FLOW_NO3
-        UNH4 = UNH4 + MASS_FLOW_NH4
+C       Total potential uptake = Active (M-M) + Passive (Mass flow)
+        UNO3_potential = UNO3_potential + MASS_FLOW_NO3
+        UNH4_potential = UNH4_potential + MASS_FLOW_NH4
+        UN_potential = UNO3_potential + UNH4_potential
+
+C-----------------------------------------------------------------------
+C       DEMAND-BASED LIMITATION (consistent with SOLKi/SOLPi approach)
+C       Get N demand from plant module and limit uptake
+C-----------------------------------------------------------------------
+        CALL GET('HYDRO','NDMNEW',NDMNEW)
+        IF (NDMNEW .LT. 1.E-9) NDMNEW = 0.0
+
+C       Convert N demand from g/m2/day to kg/ha/day
+        NDEMAND_KG = NDMNEW * 10.0
+
+C       Apply demand-based limitation (allow 20% luxury uptake for N)
+        IF (NDEMAND_KG .GT. 1.E-9) THEN
+          IF (UN_potential .GT. NDEMAND_KG * 1.2) THEN
+C           Scale down both NO3 and NH4 proportionally
+            UNO3 = UNO3_potential * (NDEMAND_KG * 1.2) / UN_potential
+            UNH4 = UNH4_potential * (NDEMAND_KG * 1.2) / UN_potential
+          ELSE
+            UNO3 = UNO3_potential
+            UNH4 = UNH4_potential
+          ENDIF
+        ELSE
+C         Low demand: allow passive uptake only
+          UNO3 = MASS_FLOW_NO3
+          UNH4 = MASS_FLOW_NH4
+        ENDIF
 
         UNO3 = MAX(0.0, UNO3)
         UNH4 = MAX(0.0, UNH4)

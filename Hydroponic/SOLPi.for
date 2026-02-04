@@ -220,63 +220,46 @@ C       Get plant P demand from ModuleData (fallback to PDEMAND if not set)
           PDEMAND_USE = PDEMAND
         ENDIF
 
-C       Supply-based uptake with demand limit (M-M kinetics)
-        IF (PDEMAND_USE .GT. 1.E-9) THEN
-C         Get pH-dependent availability and Km factors
-          CALL GET('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
-          CALL GET('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
-          IF (PH_AVAIL_P .LT. 0.01) PH_AVAIL_P = 1.0
-          IF (PH_KM_FACTOR_P .LT. 0.1) PH_KM_FACTOR_P = 1.0
-          
-C         Calculate effective P concentration using pH availability
-          P_SOL_EFFECTIVE = P_SOL * PH_AVAIL_P
-          
-          IF (P_SOL_EFFECTIVE .GT. 5.0) THEN
-C           Adequate effective P concentration - uptake meets demand
-            CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
-            IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
-            UPO4 = PDEMAND_USE * ECSTRESS_JMAX_P
+C-----------------------------------------------------------------------
+C       MICHAELIS-MENTEN KINETICS (consistent with SOLKi approach)
+C       Always use M-M, then limit by demand - no hard threshold switch
+C-----------------------------------------------------------------------
+C       Get pH-dependent availability and Km factors
+        CALL GET('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
+        CALL GET('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
+        IF (PH_AVAIL_P .LT. 0.01) PH_AVAIL_P = 1.0
+        IF (PH_KM_FACTOR_P .LT. 0.1) PH_KM_FACTOR_P = 1.0
+
+C       Get EC stress factor
+        CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
+        IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
+
+C       Calculate effective P concentration using pH availability
+        P_SOL_EFFECTIVE = P_SOL * PH_AVAIL_P
+
+C       Apply pH-dependent Km (transporter affinity)
+        Km_P_stressed = Km_P * PH_KM_FACTOR_P
+
+C       Apply EC stress to Vmax
+        Vmax_P_stressed = Vmax_P * ECSTRESS_JMAX_P
+
+C       Calculate M-M uptake (always, regardless of concentration)
+        IF (Vmax_P .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
+C         Modified M-M with C_min threshold (Barber 1984)
+C         Below C_min, no net uptake (efflux = influx)
+          IF (P_SOL_EFFECTIVE .GT. Cmin_P) THEN
+            UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR *
+     &                 WATER_FACTOR * FLOW_FACTOR *
+     &                 (P_SOL_EFFECTIVE - Cmin_P)) /
+     &                 (Km_P_stressed + P_SOL_EFFECTIVE - Cmin_P)
           ELSE
-C           Low effective P concentration - use Michaelis-Menten kinetics
-            IF (Vmax_P .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-              CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
-              IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
-
-C             Apply pH-dependent Km (transporter affinity)
-              Km_P_stressed = Km_P * PH_KM_FACTOR_P
-
-              Vmax_P_stressed = Vmax_P * ECSTRESS_JMAX_P
-
-C             Modified M-M with C_min threshold (Barber 1984)
-C             Below C_min, no net uptake (efflux = influx)
-              IF (P_SOL_EFFECTIVE .GT. Cmin_P) THEN
-                UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR *
-     &                     (P_SOL_EFFECTIVE - Cmin_P)) /
-     &                     (Km_P_stressed + P_SOL_EFFECTIVE - Cmin_P)
-              ELSE
-                UP_plant = 0.0  ! Below C_min: no net uptake
-              ENDIF
-
-C             Convert from mg/plant/day to kg/ha/day
-              UP_potential = UP_plant * PLTPOP * 0.01
-
-C             Limit by demand (but ensure minimum uptake if demand exists)
-              UPO4 = MIN(UP_potential, PDEMAND_USE)
-
-C             Debug: Check if calculation is working
-              IF (UPO4 .LT. 1.E-6 .AND. PDEMAND_USE .GT. 0.01) THEN
-                WRITE(*,*) ' SOLPi WARNING: Low uptake calculated:',
-     &                     ' Vmax=',Vmax_P,' Km=',Km_P,
-     &                     ' Ufac=',UPTAKE_FACTOR,
-     &                     ' PLTPOP=',PLTPOP,' P_SOL=',P_SOL,
-     &                     ' UP_potential=',UP_potential
-              ENDIF
-            ELSE
-              UPO4 = 0.0
-            ENDIF
+            UP_plant = 0.0  ! Below C_min: no net uptake
           ENDIF
+
+C         Convert from mg/plant/day to kg/ha/day
+          UP_potential = UP_plant * PLTPOP * 0.01
         ELSE
-          UPO4 = 0.0
+          UP_potential = 0.0
         ENDIF
 
 C-----------------------------------------------------------------------
@@ -284,24 +267,35 @@ C       MASS FLOW COMPONENT (Passive uptake via transpiration)
 C       P is less mobile than NO3/NH4/K, so use lower coefficient (0.08)
 C-----------------------------------------------------------------------
         IF (TRANSP_MM .GT. 0.0 .AND. P_SOL .GT. 0.0) THEN
-          CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
-          IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
           MASS_FLOW_P = TRANSP_MM * 10000.0 * P_SOL * 1.0E-6 *
      &                  MASS_FLOW_COEF_P * ECSTRESS_JMAX_P
         ELSE
           MASS_FLOW_P = 0.0
         ENDIF
 
-C       Total uptake = Active (M-M or demand-based) + Passive (Mass flow)
-        UPO4 = UPO4 + MASS_FLOW_P
+C-----------------------------------------------------------------------
+C       TOTAL UPTAKE = Active (M-M) + Passive (Mass flow)
+C       Limited by plant demand (consistent with SOLKi approach)
+C-----------------------------------------------------------------------
+        UP_potential = UP_potential + MASS_FLOW_P
 
-C       Prevent negative uptake
+C       Demand-based limitation (allow 10% luxury uptake for P)
+        IF (PDEMAND_USE .GT. 1.E-9) THEN
+          UPO4 = MIN(UP_potential, PDEMAND_USE * 1.1)
+        ELSE
+C         Low demand: allow passive uptake only
+          UPO4 = MASS_FLOW_P
+        ENDIF
+
+C       Ensure non-negative uptake
         UPO4 = MAX(0.0, UPO4)
 
-        WRITE(*,200) P_SOL, UPO4, PDEMAND_USE, MASS_FLOW_P
- 200    FORMAT(' SOLPi: [P]=',F6.1,' mg/L',
-     &         ' Uptake=',F6.3,' PTotDem=',F6.3,' kg/ha/d',
-     &         ' MassFlow=',F6.4,' kg/ha/d')
+        WRITE(*,200) P_SOL, P_SOL_EFFECTIVE, UP_potential,
+     &               MASS_FLOW_P, UPO4, PDEMAND_USE
+ 200    FORMAT(' SOLPi M-M Kinetics:',
+     &         /,'   [P]=',F6.1,' mg/L, [P]eff=',F6.1,' mg/L',
+     &         /,'   Potential=',F8.3,' MassFlow=',F8.4,' kg/ha/d',
+     &         /,'   Uptake=',F8.3,' Demand=',F8.3,' kg/ha/d')
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------

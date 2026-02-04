@@ -627,6 +627,10 @@ C 24 changed to TS by Bruce Kimball on 3Jul17
       NDMVEG = (CDMVEG/AGRVG2) * (FRLF*FNINL+FRSTM*FNINS+
      &   FRRT*FNINR)
       NDMNEW = NDMREP + NDMVEG
+
+!     Store N demand to ModuleData for hydroponic uptake module
+      CALL PUT('HYDRO','NDMNEW',NDMNEW)
+
 !-----------------------------------------------------------------------
 !    Check to See if Any C is Left After Reproductive Growth for
 !    Reducing N to Re-Fill Old Tissue, if N Can Be Taken up by Roots
