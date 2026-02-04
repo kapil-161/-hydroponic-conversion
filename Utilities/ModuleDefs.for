@@ -551,6 +551,12 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL PHSTRESS_ROOT      ! pH stress factor for root growth
         REAL PHSTRESS_LEAF      ! pH stress factor for leaf expansion
         REAL PHSTRESS_UPTAKE    ! pH stress factor for nutrient uptake
+        ! Control flags (1.0 = Y = constant, 0.0 = N = drift)
+        REAL AUTO_VOL           ! Automatic volume control flag
+        REAL AUTO_PH            ! Automatic pH control flag (note: also in ISWITCH)
+        REAL SOLVOL_TARGET      ! Target solution volume for AUTO_VOL (mm)
+        REAL PH_TARGET          ! Target pH for AUTO_PH
+        REAL EC_TARGET          ! Target EC (for reference only, EC always drifts)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -861,6 +867,12 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('PHSTRESS_ROOT');     Value = SAVE_data % HYDRO % PHSTRESS_ROOT
         Case ('PHSTRESS_LEAF');     Value = SAVE_data % HYDRO % PHSTRESS_LEAF
         Case ('PHSTRESS_UPTAKE');   Value = SAVE_data % HYDRO % PHSTRESS_UPTAKE
+        Case ('AUTO_VOL');      Value = SAVE_data % HYDRO % AUTO_VOL
+        Case ('AUTO_PH');       Value = SAVE_data % HYDRO % AUTO_PH
+        Case ('AUTOPH');        Value = SAVE_data % HYDRO % AUTO_PH
+        Case ('SOLVOL_TARGET'); Value = SAVE_data % HYDRO % SOLVOL_TARGET
+        Case ('PH_TARGET');     Value = SAVE_data % HYDRO % PH_TARGET
+        Case ('EC_TARGET');     Value = SAVE_data % HYDRO % EC_TARGET
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1030,6 +1042,12 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('PHSTRESS_ROOT');     SAVE_data % HYDRO % PHSTRESS_ROOT = Value
         Case ('PHSTRESS_LEAF');     SAVE_data % HYDRO % PHSTRESS_LEAF = Value
         Case ('PHSTRESS_UPTAKE');   SAVE_data % HYDRO % PHSTRESS_UPTAKE = Value
+        Case ('AUTO_VOL');      SAVE_data % HYDRO % AUTO_VOL = Value
+        Case ('AUTO_PH');       SAVE_data % HYDRO % AUTO_PH = Value
+        Case ('AUTOPH');        SAVE_data % HYDRO % AUTO_PH = Value
+        Case ('SOLVOL_TARGET'); SAVE_data % HYDRO % SOLVOL_TARGET = Value
+        Case ('PH_TARGET');     SAVE_data % HYDRO % PH_TARGET = Value
+        Case ('EC_TARGET');     SAVE_data % HYDRO % EC_TARGET = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
