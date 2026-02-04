@@ -554,6 +554,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         ! Control flags (1.0 = Y = constant, 0.0 = N = drift)
         REAL AUTO_VOL           ! Automatic volume control flag
         REAL AUTO_PH            ! Automatic pH control flag (note: also in ISWITCH)
+        REAL AUTO_CONC          ! Automatic concentration control (1.0=maintain, 0.0=deplete)
         REAL SOLVOL_TARGET      ! Target solution volume for AUTO_VOL (mm)
         REAL PH_TARGET          ! Target pH for AUTO_PH
         REAL EC_TARGET          ! Target EC (for reference only, EC always drifts)
@@ -870,6 +871,8 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('AUTO_VOL');      Value = SAVE_data % HYDRO % AUTO_VOL
         Case ('AUTO_PH');       Value = SAVE_data % HYDRO % AUTO_PH
         Case ('AUTOPH');        Value = SAVE_data % HYDRO % AUTO_PH
+        Case ('AUTO_CONC');     Value = SAVE_data % HYDRO % AUTO_CONC
+        Case ('AUTOCONC');      Value = SAVE_data % HYDRO % AUTO_CONC
         Case ('SOLVOL_TARGET'); Value = SAVE_data % HYDRO % SOLVOL_TARGET
         Case ('PH_TARGET');     Value = SAVE_data % HYDRO % PH_TARGET
         Case ('EC_TARGET');     Value = SAVE_data % HYDRO % EC_TARGET
@@ -1045,6 +1048,8 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('AUTO_VOL');      SAVE_data % HYDRO % AUTO_VOL = Value
         Case ('AUTO_PH');       SAVE_data % HYDRO % AUTO_PH = Value
         Case ('AUTOPH');        SAVE_data % HYDRO % AUTO_PH = Value
+        Case ('AUTO_CONC');     SAVE_data % HYDRO % AUTO_CONC = Value
+        Case ('AUTOCONC');      SAVE_data % HYDRO % AUTO_CONC = Value
         Case ('SOLVOL_TARGET'); SAVE_data % HYDRO % SOLVOL_TARGET = Value
         Case ('PH_TARGET');     SAVE_data % HYDRO % PH_TARGET = Value
         Case ('EC_TARGET');     SAVE_data % HYDRO % EC_TARGET = Value

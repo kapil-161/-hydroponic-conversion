@@ -120,6 +120,7 @@ C     EC and pH stress-modified parameters
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
       REAL GROWING_AREA  ! Growing area (m2) - for area conversions
       REAL VOL_AREA_RATIO ! Solution volume per unit area (L/m2)
+      REAL AUTO_CONC_R   ! AUTO_CONC flag (1.0=maintain conc, 0.0=deplete)
 
 C     Concentration conversion (mg/L to mol/m3)
       REAL NO3_CONC_MOL  ! NO3 concentration (mol/m3)
@@ -429,7 +430,11 @@ C         Low demand: allow passive uptake only
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       Update N solution concentrations after uptake
+C       If AUTO_CONC = Y (1.0), skip depletion (maintain constant conc)
 C-----------------------------------------------------------------------
+        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
+        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0  ! Default: deplete
+
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
 
@@ -440,18 +445,24 @@ C       SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
 C       CRITICAL: Ensure minimum volume to prevent division overflow
         VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)  ! L/ha (min 10 L/ha = 0.001 mm)
 
-        DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted
-        DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
+C       Only deplete concentration if AUTO_CONC = N (0.0)
+C       If AUTO_CONC = Y (1.0), nutrients are replenished to maintain conc
+        IF (AUTO_CONC_R .LT. 0.5) THEN
+          DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA  ! mg/L depleted
+          DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
 
-        NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
-        NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
+          NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
+          NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
 
-        CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
-        CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
+          CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
+          CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
 
-        WRITE(*,400) DEPL_NO3, DEPL_NH4
- 400    FORMAT(' N solution depletion (LETTUCE):',
-     &         ' dNO3=',F6.3,' dNH4=',F6.3,' mg/L')
+          WRITE(*,400) DEPL_NO3, DEPL_NH4
+ 400      FORMAT(' N solution depletion (LETTUCE):',
+     &           ' dNO3=',F6.3,' dNH4=',F6.3,' mg/L')
+        ELSE
+          WRITE(*,*) ' AUTO_CONC=Y: N concentration maintained constant'
+        ENDIF
 
       CASE (OUTPUT)
         CONTINUE

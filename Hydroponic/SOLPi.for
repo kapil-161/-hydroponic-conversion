@@ -62,6 +62,7 @@ C     Uptake calculations
       REAL UPTAKE_FACTOR ! Scaling factor for growth stage
       REAL DEPL_P        ! Depletion rate (mg/L)
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
+      REAL AUTO_CONC_R   ! AUTO_CONC flag (1.0=maintain conc, 0.0=deplete)
 
 C     Plant demand from P_PLANT module (tissue-based, like N demand)
       REAL PDEMAND_USE   ! P demand from P_PLANT PTotDem (kg/ha/day)
@@ -300,28 +301,36 @@ C       Ensure non-negative uptake
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       Update solution P concentration after uptake
+C       If AUTO_CONC = Y (1.0), skip depletion (maintain constant conc)
 C-----------------------------------------------------------------------
+        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
+        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0  ! Default: deplete
+
         CALL GET('HYDRO','P_CONC',P_SOL)  ! Retrieve current P concentration
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
-        IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C         SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
-C         CRITICAL: Ensure minimum volume to prevent division overflow
-          VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)  ! L/ha (min 10 L/ha = 0.001 mm)
+C       Only deplete concentration if AUTO_CONC = N (0.0)
+        IF (AUTO_CONC_R .LT. 0.5) THEN
+          IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
+C           SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
+C           CRITICAL: Ensure minimum volume to prevent division overflow
+            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)  ! L/ha (min 10 L/ha = 0.001 mm)
 
-C         Calculate depletion (mg/L)
-          DEPL_P = (UPO4 * 1.0E6) / VOL_PER_HA
+C           Calculate depletion (mg/L)
+            DEPL_P = (UPO4 * 1.0E6) / VOL_PER_HA
 
-C         Update solution concentration
-          P_SOL = MAX(0.0, P_SOL - DEPL_P)
+C           Update solution concentration
+            P_SOL = MAX(0.0, P_SOL - DEPL_P)
 
-          WRITE(*,300) DEPL_P, P_SOL
- 300      FORMAT(' SOLPi depletion: dP=',F6.3,' mg/L',
-     &           ' New [P]=',F6.1,' mg/L')
+            WRITE(*,300) DEPL_P, P_SOL
+ 300        FORMAT(' SOLPi depletion: dP=',F6.3,' mg/L',
+     &             ' New [P]=',F6.1,' mg/L')
+          ENDIF
+C         Store updated concentration back to ModuleData
+          CALL PUT('HYDRO','P_CONC',P_SOL)
+        ELSE
+          WRITE(*,*) ' AUTO_CONC=Y: P concentration maintained constant'
         ENDIF
-
-C       Store updated concentration back to ModuleData
-        CALL PUT('HYDRO','P_CONC',P_SOL)
 
       CASE (OUTPUT)
         CONTINUE

@@ -8,6 +8,7 @@ C  Revision history
 C
 C  12/22/2025 Created for hydroponic K management
 C  01/30/2026 Enhanced with full M-M kinetics (HATS + LATS)
+C  02/04/2026 Added WATER_FACTOR and FLOW_FACTOR for consistency
 C-----------------------------------------------------------------------
 C  Called from: CROPGRO nutrient uptake modules
 C
@@ -107,6 +108,7 @@ C     Uptake calculations
       REAL UPTAKE_FACTOR ! Scaling factor for growth stage
       REAL DEPL_K        ! Depletion rate (mg/L)
       REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
+      REAL AUTO_CONC_R   ! AUTO_CONC flag (1.0=maintain conc, 0.0=deplete)
 
 C     Plant demand from K_PLANT module (tissue-based, like N demand)
       REAL KDEMAND_USE   ! K demand from KTotDem or KDEMAND fallback
@@ -232,6 +234,16 @@ C-----------------------------------------------------------------------
      &                   (SOLVOL_INIT - MIN_SOLVOL)
         ENDIF
 
+C       Flow/circulation factor (consistent with HYDRO_NUTRIENT/SOLPi)
+C       Accounts for reduced mixing and nutrient delivery at low volume
+C       Based on turbulent flow principles: Flow ∝ Volume^0.67
+        IF (SOLVOL .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
+          FLOW_FACTOR = (SOLVOL / SOLVOL_INIT) ** 0.67
+        ELSE
+          FLOW_FACTOR = 0.2  ! Minimum flow factor for very low volumes
+        ENDIF
+        FLOW_FACTOR = MIN(1.0, MAX(0.2, FLOW_FACTOR))
+
 C-----------------------------------------------------------------------
 C       TEMPERATURE-DEPENDENT KINETICS (Cardinal temperature model)
 C-----------------------------------------------------------------------
@@ -294,8 +306,10 @@ C-----------------------------------------------------------------------
 C       HATS: High-Affinity Transport System
 C       Active mainly at low K concentrations (< 20 mg/L)
 C       Modified M-M with Cmin threshold
+C       Includes WATER_FACTOR and FLOW_FACTOR for consistency with N/P modules
         IF (K_SOL_EFF .GT. Cmin_HATS) THEN
           UK_HATS = (Vmax_HATS * TEMP_FACTOR * ECSTRESS_K *
+     &              WATER_FACTOR * FLOW_FACTOR *
      &              (K_SOL_EFF - Cmin_HATS)) /
      &              (Km_HATS * PH_KM_FACTOR + K_SOL_EFF - Cmin_HATS)
         ELSE
@@ -305,8 +319,10 @@ C       Modified M-M with Cmin threshold
 C       LATS: Low-Affinity Transport System
 C       Active at high K concentrations (> 20 mg/L)
 C       Standard M-M kinetics (no Cmin for LATS)
+C       Includes WATER_FACTOR and FLOW_FACTOR for consistency with N/P modules
         IF (K_SOL_EFF .GT. 0.0) THEN
-          UK_LATS = (Vmax_LATS * TEMP_FACTOR * ECSTRESS_K * K_SOL_EFF)/
+          UK_LATS = (Vmax_LATS * TEMP_FACTOR * ECSTRESS_K *
+     &              WATER_FACTOR * FLOW_FACTOR * K_SOL_EFF) /
      &              (Km_LATS * PH_KM_FACTOR + K_SOL_EFF)
         ELSE
           UK_LATS = 0.0
@@ -370,28 +386,36 @@ C       Store K uptake to ModuleData for output (Solution.OUT)
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       Update solution K concentration after uptake
+C       If AUTO_CONC = Y (1.0), skip depletion (maintain constant conc)
 C-----------------------------------------------------------------------
+        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
+        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0  ! Default: deplete
+
         CALL GET('HYDRO','K_CONC',K_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
-        IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C         SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
-          VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
+C       Only deplete concentration if AUTO_CONC = N (0.0)
+        IF (AUTO_CONC_R .LT. 0.5) THEN
+          IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
+C           SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
+            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
 
-C         Calculate depletion (mg/L)
-C         Depletion = Uptake (kg/ha) × 1e6 (mg/kg) / Volume (L/ha)
-          DEPL_K = (UK * 1.0E6) / VOL_PER_HA
+C           Calculate depletion (mg/L)
+C           Depletion = Uptake (kg/ha) × 1e6 (mg/kg) / Volume (L/ha)
+            DEPL_K = (UK * 1.0E6) / VOL_PER_HA
 
-C         Update solution concentration
-          K_SOL = MAX(0.0, K_SOL - DEPL_K)
+C           Update solution concentration
+            K_SOL = MAX(0.0, K_SOL - DEPL_K)
 
-          WRITE(*,300) DEPL_K, K_SOL
- 300      FORMAT(' SOLKi depletion: dK=',F6.3,' mg/L',
-     &           ' New [K]=',F6.1,' mg/L')
+            WRITE(*,300) DEPL_K, K_SOL
+ 300        FORMAT(' SOLKi depletion: dK=',F6.3,' mg/L',
+     &             ' New [K]=',F6.1,' mg/L')
+          ENDIF
+C         Store updated concentration back to ModuleData
+          CALL PUT('HYDRO','K_CONC',K_SOL)
+        ELSE
+          WRITE(*,*) ' AUTO_CONC=Y: K concentration maintained constant'
         ENDIF
-
-C       Store updated concentration back to ModuleData
-        CALL PUT('HYDRO','K_CONC',K_SOL)
 
       CASE (OUTPUT)
         CONTINUE
