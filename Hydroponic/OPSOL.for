@@ -152,10 +152,6 @@ C       Solution properties
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
         CALL GET('HYDRO','TEMP',SOLTEMP)
 
-C       Default values if not set
-        IF (SOLVOL_MM .LT. 0.1) SOLVOL_MM = 100.0  ! Default 100 mm
-        IF (SOLTEMP .LT. -50.0) SOLTEMP = 20.0
-
 C       Get date
         CALL YR_DOY(YRDOY, YEAR, DOY)
 
@@ -215,10 +211,6 @@ C         Solution properties
           CALL GET('HYDRO','DO2_SAT',DO2_SAT)
           CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
           CALL GET('HYDRO','TEMP',SOLTEMP)
-
-C         Default values if not set
-          IF (SOLVOL_MM .LT. 0.1) SOLVOL_MM = 100.0  ! Default 100 mm
-          IF (SOLTEMP .LT. -50.0) SOLTEMP = 20.0
 
 C         Get date
           CALL YR_DOY(YRDOY, YEAR, DOY)

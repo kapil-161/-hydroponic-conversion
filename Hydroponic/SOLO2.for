@@ -43,6 +43,7 @@ C     Local variables
       REAL AERATION_RATE ! Aeration efficiency (0-1)
       REAL TA            ! Absolute temperature (K)
       REAL LN_DO2        ! Natural log of DO2 saturation
+      REAL O2_STRESS     ! O2 stress on root function (0-1)
 
 C     Benson-Krause (1984) coefficients for DO2 saturation calculation
 C     ln(DO2_sat) = A0 + A1/Ta + A2/Ta^2 + A3/Ta^3 + A4/Ta^4
@@ -74,16 +75,15 @@ C-----------------------------------------------------------------------
         CALL GET('HYDRO','TEMP',SOLTEMP)
 
         IF (DO2_INIT .LT. 0.1) THEN
-          DO2_INIT = 8.0  ! Default DO2 for well-aerated solution
-          WRITE(*,*) 'SOLO2: Using default DO2=',DO2_INIT,' mg/L'
+          CALL ERROR('SOLO2 ',1,'DO2 missing',0)
         ENDIF
 
         IF (SOLVOL .LT. 1.0) THEN
-          SOLVOL = 1000.0
+          CALL ERROR('SOLO2 ',1,'SOLVOL missing',0)
         ENDIF
 
         IF (SOLTEMP .LT. -50.0) THEN
-          SOLTEMP = 20.0  ! Default temperature
+          CALL ERROR('SOLO2 ',1,'TEMP missing',0)
         ENDIF
 
         DO2_CALC = DO2_INIT
@@ -103,9 +103,12 @@ C       Convert temperature to Kelvin
         DO2_SAT = EXP(LN_DO2)
         IF (DO2_SAT .LT. 5.0) DO2_SAT = 5.0  ! Minimum bound
 
-C       Store initial DO2 and saturation values in ModuleData
+        O2_STRESS = DO2_CALC / (DO2_CALC + 2.0)
+        O2_STRESS = MAX(0.0, MIN(1.0, O2_STRESS))
+
         CALL PUT('HYDRO','DO2',DO2_CALC)
         CALL PUT('HYDRO','DO2_SAT',DO2_SAT)
+        CALL PUT('HYDRO','O2_STRESS',O2_STRESS)
 
         WRITE(*,100) DO2_INIT, DO2_SAT, SOLTEMP
  100    FORMAT(/,' Hydroponic Dissolved Oxygen Module Initialized',
@@ -149,6 +152,12 @@ C         Typical: 0.5-2.0 mg/L/day depending on plant size
 C       O2 addition through aeration
         O2_AERATION = AERATION_RATE * (DO2_SAT - DO2_CALC)
         O2_AERATION = MAX(0.0, O2_AERATION)  ! No negative aeration
+
+C       O2 stress on root function: Michaelis-Menten with Km=2 mg/L
+C       Full function at DO2>4, half at DO2=2, near-zero at DO2<0.5
+        O2_STRESS = DO2_CALC / (DO2_CALC + 2.0)
+        O2_STRESS = MAX(0.0, MIN(1.0, O2_STRESS))
+        CALL PUT('HYDRO','O2_STRESS',O2_STRESS)
 
         WRITE(*,200) O2_CONSUME, O2_AERATION, DO2_CALC, DO2_SAT
  200    FORMAT(' SOLO2: O2 consumption=',F6.3,' aeration=',F6.3,

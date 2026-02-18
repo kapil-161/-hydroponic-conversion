@@ -122,6 +122,8 @@ C             CHP Added TRTNUM to CONTROL variable.
         CHARACTER (len=1) ISWPHO, ISWPOT, ISWSYM, ISWTIL, ISWWAT
         CHARACTER (len=1) ISWHYDRO  !Hydroponic switch
         CHARACTER (len=1) AUTO_PH   !Hydroponic pH control: Y=constant, N=drift
+        REAL CHLEN                  !NFT channel length (cm)
+        REAL CHSPC                  !NFT channel spacing (cm)
         CHARACTER (len=1) MEEVP, MEGHG, MEHYD, MEINF, MELI, MEPHO
         CHARACTER (len=1) MESOM, MESOL, MESEV, MEWTH
         CHARACTER (len=1) METMP !Temperature, EPIC
@@ -558,6 +560,24 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL SOLVOL_TARGET      ! Target solution volume for AUTO_VOL (mm)
         REAL PH_TARGET          ! Target pH for AUTO_PH
         REAL EC_TARGET          ! Target EC (for reference only, EC always drifts)
+        ! Plant demand variables (from plant modules for nutrient uptake)
+        REAL NDMNEW             ! Plant N demand (kg/ha/d)
+        REAL PTOTDEM            ! Plant P demand (kg/ha/d)
+        REAL KTOTDEM            ! Plant K demand (kg/ha/d)
+        ! Nutrient availability factors (from SOLPH for uptake modules)
+        REAL PH_AVAIL_NO3       ! NO3 availability factor
+        REAL PH_AVAIL_NH4       ! NH4 availability factor
+        REAL PH_AVAIL_P         ! P availability factor
+        REAL PH_AVAIL_K         ! K availability factor
+        ! Michaelis-Menten Km adjustment factors
+        REAL PH_KM_FACTOR_NO3   ! NO3 Km adjustment factor
+        REAL PH_KM_FACTOR_NH4   ! NH4 Km adjustment factor
+        REAL PH_KM_FACTOR_P     ! P Km adjustment factor
+        REAL PH_KM_FACTOR_K     ! K Km adjustment factor
+        REAL CHLEN              ! NFT channel length (cm)
+        REAL CHSPC              ! NFT channel spacing (cm)
+        REAL SOLVOL_INIT        ! Initial solution volume (mm) for AUTO_VOL
+        REAL O2_STRESS          ! Dissolved O2 stress factor (0-1)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -876,6 +896,22 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('SOLVOL_TARGET'); Value = SAVE_data % HYDRO % SOLVOL_TARGET
         Case ('PH_TARGET');     Value = SAVE_data % HYDRO % PH_TARGET
         Case ('EC_TARGET');     Value = SAVE_data % HYDRO % EC_TARGET
+        Case ('TEMP_SOL');      Value = SAVE_data % HYDRO % TEMP
+        Case ('NDMNEW');        Value = SAVE_data % HYDRO % NDMNEW
+        Case ('PTOTDEM');       Value = SAVE_data % HYDRO % PTOTDEM
+        Case ('KTOTDEM');       Value = SAVE_data % HYDRO % KTOTDEM
+        Case ('PH_AVAIL_NO3');  Value = SAVE_data % HYDRO % PH_AVAIL_NO3
+        Case ('PH_AVAIL_NH4');  Value = SAVE_data % HYDRO % PH_AVAIL_NH4
+        Case ('PH_AVAIL_P');    Value = SAVE_data % HYDRO % PH_AVAIL_P
+        Case ('PH_AVAIL_K');    Value = SAVE_data % HYDRO % PH_AVAIL_K
+        Case ('PH_KM_FACTOR_NO3'); Value = SAVE_data % HYDRO % PH_KM_FACTOR_NO3
+        Case ('PH_KM_FACTOR_NH4'); Value = SAVE_data % HYDRO % PH_KM_FACTOR_NH4
+        Case ('PH_KM_FACTOR_P');   Value = SAVE_data % HYDRO % PH_KM_FACTOR_P
+        Case ('PH_KM_FACTOR_K');   Value = SAVE_data % HYDRO % PH_KM_FACTOR_K
+        Case ('CHLEN');       Value = SAVE_data % HYDRO % CHLEN
+        Case ('CHSPC');       Value = SAVE_data % HYDRO % CHSPC
+        Case ('SOLVOL_INIT'); Value = SAVE_data % HYDRO % SOLVOL_INIT
+        Case ('O2_STRESS');   Value = SAVE_data % HYDRO % O2_STRESS
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -883,7 +919,7 @@ C             CHP Added TRTNUM to CONTROL variable.
       END SELECT
 
       IF (ERR) THEN
-        WRITE(MSG(1),'("Error transferring variable: ",A, " in ",A)') 
+        WRITE(MSG(1),'("Error transferring variable: ",A, " in ",A)')
      &      Trim(VarName), Trim(ModuleName)
         MSG(2) = 'Value set to zero.'
         CALL WARNING(2,'GET_REAL',MSG)
@@ -1053,6 +1089,22 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('SOLVOL_TARGET'); SAVE_data % HYDRO % SOLVOL_TARGET = Value
         Case ('PH_TARGET');     SAVE_data % HYDRO % PH_TARGET = Value
         Case ('EC_TARGET');     SAVE_data % HYDRO % EC_TARGET = Value
+        Case ('TEMP_SOL');      SAVE_data % HYDRO % TEMP = Value
+        Case ('NDMNEW');        SAVE_data % HYDRO % NDMNEW = Value
+        Case ('PTOTDEM');       SAVE_data % HYDRO % PTOTDEM = Value
+        Case ('KTOTDEM');       SAVE_data % HYDRO % KTOTDEM = Value
+        Case ('PH_AVAIL_NO3');  SAVE_data % HYDRO % PH_AVAIL_NO3 = Value
+        Case ('PH_AVAIL_NH4');  SAVE_data % HYDRO % PH_AVAIL_NH4 = Value
+        Case ('PH_AVAIL_P');    SAVE_data % HYDRO % PH_AVAIL_P = Value
+        Case ('PH_AVAIL_K');    SAVE_data % HYDRO % PH_AVAIL_K = Value
+        Case ('PH_KM_FACTOR_NO3'); SAVE_data % HYDRO % PH_KM_FACTOR_NO3 = Value
+        Case ('PH_KM_FACTOR_NH4'); SAVE_data % HYDRO % PH_KM_FACTOR_NH4 = Value
+        Case ('PH_KM_FACTOR_P');   SAVE_data % HYDRO % PH_KM_FACTOR_P = Value
+        Case ('PH_KM_FACTOR_K');   SAVE_data % HYDRO % PH_KM_FACTOR_K = Value
+        Case ('CHLEN');       SAVE_data % HYDRO % CHLEN = Value
+        Case ('CHSPC');       SAVE_data % HYDRO % CHSPC = Value
+        Case ('SOLVOL_INIT'); SAVE_data % HYDRO % SOLVOL_INIT = Value
+        Case ('O2_STRESS');   SAVE_data % HYDRO % O2_STRESS = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1060,7 +1112,7 @@ C             CHP Added TRTNUM to CONTROL variable.
       END SELECT
 
       IF (ERR) THEN
-        WRITE(MSG(1),'("Error transferring variable: ",A, "in ",A)') 
+        WRITE(MSG(1),'("Error transferring variable: ",A, "in ",A)')
      &      Trim(VarName), Trim(ModuleName)
         MSG(2) = 'Value not saved! Errors may result.'
         CALL WARNING(2,'PUT_REAL',MSG)

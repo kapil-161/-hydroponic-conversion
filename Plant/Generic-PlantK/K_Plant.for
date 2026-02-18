@@ -405,8 +405,7 @@
 !     Check if in hydroponic mode - try to get K uptake from ModuleData
 !     SOLKi stores as 'UK', K_Uptake stores as 'UKi' - check both
       CALL GET('HYDRO','UK',UKi_HYDRO)
-      IF (ISWPOT .NE. 'N' .AND. ISWHYDRO .EQ. 'Y'
-     &    .AND. UKi_HYDRO .GT. 1.E-6) THEN
+      IF (ISWPOT .NE. 'N' .AND. ISWHYDRO .EQ. 'Y') THEN
 !       Hydroponic mode - use K uptake from NUPTAK/SOLKi
         KUptakeProf = UKi_HYDRO
         IF (DYNAMIC .EQ. INTEGR) THEN

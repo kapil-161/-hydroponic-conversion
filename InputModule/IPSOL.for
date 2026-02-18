@@ -12,9 +12,11 @@ C
 C  Calls: ERROR, FIND, IGNORE
 C-----------------------------------------------------------------------
 
-      SUBROUTINE IPSOL (LUNEXP,FILEX,LNSOL,SOLVOL,EC,PH,DO2,TEMP,
+      SUBROUTINE IPSOL (LUNEXP,FILEX,LNSOL,LNCTL,
+     &                  SOLVOL,EC,PH,DO2,TEMP,
      &                  NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO,
-     &                  AUTO_PH,AUTO_VOL,AUTO_CONC)
+     &                  AUTO_PH,AUTO_VOL,AUTO_CONC,
+     &                  CHLEN,CHSPC)
 
       IMPLICIT NONE
       EXTERNAL ERROR, FIND, FIND2, IGNORE
@@ -25,9 +27,10 @@ C-----------------------------------------------------------------------
       CHARACTER*12 FILEX
       CHARACTER*120 CHARTEST
 
-      INTEGER LUNEXP,LNSOL,LN,LINEXP,ISECT,IFIND,ERRNUM
+      INTEGER LUNEXP,LNSOL,LNCTL,LN,LINEXP,ISECT,IFIND,ERRNUM
       REAL    SOLVOL,EC,PH,DO2,TEMP
       REAL    NO3_CONC,NH4_CONC,P_CONC,K_CONC
+      REAL    CHLEN, CHSPC
 
       PARAMETER (ERRKEY='IPSOL ')
                  FINDCH='*HYDRO'
@@ -45,6 +48,8 @@ C     Initialize values to -99 (missing data indicator)
       NH4_CONC = -99.0
       P_CONC = -99.0
       K_CONC = -99.0
+      CHLEN = -99.0
+      CHSPC = -99.0
 
 C     Default: Hydroponic mode is OFF
       ISWHYDRO = 'N'
@@ -73,11 +78,13 @@ C     Read the data line
  50   CALL IGNORE (LUNEXP,LINEXP,ISECT,CHARTEST)
 
       IF (ISECT .EQ. 1) THEN
+C        Try reading with CHLEN and CHSPC first
          READ (CHARTEST,*,IOSTAT=ERRNUM) LN,SOLVOL,EC,PH,DO2,TEMP,
-     &        NO3_CONC,NH4_CONC,P_CONC,K_CONC
+     &        NO3_CONC,NH4_CONC,P_CONC,K_CONC,CHLEN,CHSPC
 
          IF (ERRNUM .NE. 0) THEN
-            CALL ERROR (ERRKEY,ERRNUM,FILEX,LINEXP)
+C          CHLEN and CHSPC are required for hydroponic experiments
+           CALL ERROR (ERRKEY,ERRNUM,FILEX,LINEXP)
          ENDIF
 
       ELSE
@@ -95,7 +102,7 @@ C       Valid hydroponic parameters - activate HYDROPONIC mode
 C       Print confirmation message to indicate section was read
 C       SOLVOL is in mm from experiment file
         WRITE(*,100) SOLVOL,EC,PH,DO2,TEMP,NO3_CONC,NH4_CONC,P_CONC,
-     &               K_CONC
+     &               K_CONC,CHLEN,CHSPC
       ELSE
 C       SOLVOL <= 0 or -99: This treatment is soil-based
 C       Keep ISWHYDRO = 'N' and return silently
@@ -141,7 +148,7 @@ C             Validate flags (must be Y or N)
             ENDIF
           ENDIF
 
-          IF (LN .NE. LNSOL) GO TO 70
+          IF (LN .NE. LNCTL) GO TO 70
 
 C         Print control settings
           WRITE(*,110) AUTO_PH, AUTO_VOL, AUTO_CONC
@@ -171,7 +178,9 @@ C-----------------------------------------------------------------------
      &        /,'   NO3-N            : ',F10.2,' mg/L',
      &        /,'   NH4-N            : ',F10.2,' mg/L',
      &        /,'   P                : ',F10.2,' mg/L',
-     &        /,'   K                : ',F10.2,' mg/L',/)
+     &        /,'   K                : ',F10.2,' mg/L',
+     &        /,'   Channel Length   : ',F10.1,' cm',
+     &        /,'   Channel Spacing  : ',F10.1,' cm',/)
 
  110  FORMAT (' HYDROPONIC CONTROL SETTINGS:',
      &        /,'   AUTO_PH  : ',A1,' (Y=constant, N=drift)',

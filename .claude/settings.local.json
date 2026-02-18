@@ -6,7 +6,9 @@
       "Bash(\"c:\\\\dssat-csm-os\\\\build\\\\bin\\\\dscsm048.exe\" A UHIH1202.CBX)",
       "Bash(python auto_calibrate_lettuce.py:*)",
       "Bash(\"/c/dssat-csm-os/build/bin/dscsm048.exe\" A UFGA2401.LUX)",
-      "Bash(cmake --build:*)"
+      "Bash(cmake --build:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)"
     ]
   }
 }

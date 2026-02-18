@@ -68,10 +68,12 @@ C     NO3- uptake: NO3- + H+ → N (in plant) - consumes 1 mol H+ per mol NO3-N
       REAL H_CONC        ! Current H+ concentration (mol/L) - for diagnostics
       
 C     Buffering capacity
-C     Based on solution volume and bicarbonate (if available)
-      REAL BUFFER_CAP    ! Buffering capacity (mol H+/pH unit)
+C     Based on solution volume, bicarbonate and phosphate
+      REAL BUFFER_CAP    ! Total buffering capacity (mol H+/pH unit)
       REAL HCO3_CONC     ! Bicarbonate concentration (mg/L) - calculated from charge balance
       REAL SOLVOL_L      ! Solution volume in liters
+      REAL P_FRAC        ! Fraction of P as HPO4^2- (for buffer calc)
+      REAL P_BUFFER_CAP  ! Phosphate buffering capacity (mol H+/pH unit)
       
 C     Ion concentrations for charge balance calculation
       REAL NO3_CONC, NH4_CONC, P_CONC, K_CONC  ! From ModuleData (mg/L)
@@ -136,17 +138,15 @@ C-----------------------------------------------------------------------
         CALL GET('HYDRO','AREA',AREA)
 
         IF (PH_INIT .LT. 1.0 .OR. PH_INIT .GT. 14.0) THEN
-          PH_INIT = 6.0  ! Default pH for hydroponic solution
-          WRITE(*,*) 'SOLPH: Using default PH=',PH_INIT
+          CALL ERROR('SOLPH ',1,'PH missing or invalid',0)
         ENDIF
 
         IF (SOLVOL_INIT .LT. 1.0) THEN
-          SOLVOL_INIT = 100.0  ! Default solution depth (mm)
-          WRITE(*,*) 'SOLPH: Using default SOLVOL=',SOLVOL_INIT,' mm'
+          CALL ERROR('SOLPH ',1,'SOLVOL missing',0)
         ENDIF
 
         IF (AREA .LT. 0.1) THEN
-          AREA = 1.0  ! Default area (m2)
+          CALL ERROR('SOLPH ',1,'AREA missing',0)
         ENDIF
 
 C       Get AUTO_PH control flag from ISWITCH structure
@@ -210,12 +210,21 @@ C       If calculated HCO3- is very small, use minimum (typical in hydroponics)
         PH_CALC = PH_INIT
         PH_CHANGE = 0.0  ! Initialize pH change
 
-C       Calculate buffering capacity from calculated HCO3-
-C       Buffer capacity ≈ (HCO3- concentration × volume) / pH range
+C       Calculate buffering capacity from HCO3- and phosphate
 C       CRITICAL: Use maximum to prevent very small volumes
         SOLVOL_L = MAX(5.0, SOLVOL_INIT * AREA) / 1000.0  ! L (min 5.0 L/m²)
+
+C       Bicarbonate buffering
         BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
-C       Factor /2.0 = approximate buffering range (pH 6-8)
+
+C       Phosphate buffering: beta = 2.303 * C_total * f * (1-f)
+C       where f = [HPO4^2-] / ([H2PO4^-] + [HPO4^2-])
+C       At pH 5.75: f=0.034, f*(1-f)=0.033 (modest but non-zero)
+C       At pH 7.0:  f=0.38,  f*(1-f)=0.24  (strong buffering)
+        P_FRAC = P_RATIO / (1.0 + P_RATIO)
+        P_BUFFER_CAP = 2.303 * (P_CONC/MW_P/1000.0)
+     &               * SOLVOL_L * P_FRAC * (1.0 - P_FRAC)
+        BUFFER_CAP = BUFFER_CAP + P_BUFFER_CAP
 
 C       If buffer capacity too small, use volume-based minimum
         IF (BUFFER_CAP .LT. 0.01) THEN
@@ -304,8 +313,15 @@ C-----------------------------------------------------------------------
 C       Calculate solution volume in liters
         SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
 
-C       Calculate buffering capacity from HCO3-
+C       Bicarbonate buffering
         BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
+
+C       Phosphate buffering (P_RATIO already recalculated above)
+        P_FRAC = P_RATIO / (1.0 + P_RATIO)
+        P_BUFFER_CAP = 2.303 * (P_CONC/MW_P/1000.0)
+     &               * SOLVOL_L * P_FRAC * (1.0 - P_FRAC)
+        BUFFER_CAP = BUFFER_CAP + P_BUFFER_CAP
+
         IF (BUFFER_CAP .LT. 0.01) THEN
           BUFFER_CAP = MAX(0.01, SOLVOL_L * 0.001)  ! Minimum: 0.01 mol H+/pH
         ENDIF
@@ -353,31 +369,28 @@ C       Store updated pH immediately
 
 C-----------------------------------------------------------------------
 C       CALCULATE pH-DEPENDENT NUTRIENT AVAILABILITY FACTORS
-C       Sigmoidal function: f(pH) = 1 / (1 + exp((pH - pH_opt)/s))
-C       Also calculate pH-dependent Km (transporter affinity)
+C       Gaussian: f(pH) = exp(-(pH - pH_opt)^2 / (2 * scale^2))
+C       Gives 1.0 at optimal pH, declines symmetrically away
 C-----------------------------------------------------------------------
-        
-        PH_EXP_NO3 = (PH_CALC - PH_OPT) / PH_SCALE_NO3
-        PH_EXP_NH4 = (PH_CALC - PH_OPT) / PH_SCALE_NH4
-        PH_EXP_P = (PH_CALC - PH_OPT) / PH_SCALE_P
-        PH_EXP_K = (PH_CALC - PH_OPT) / PH_SCALE_K
-        
-C       Prevent overflow in exp() function
-        PH_EXP_NO3 = MAX(-10.0, MIN(10.0, PH_EXP_NO3))
-        PH_EXP_NH4 = MAX(-10.0, MIN(10.0, PH_EXP_NH4))
-        PH_EXP_P = MAX(-10.0, MIN(10.0, PH_EXP_P))
-        PH_EXP_K = MAX(-10.0, MIN(10.0, PH_EXP_K))
-        
-        PH_AVAIL_NO3 = 1.0 / (1.0 + EXP(PH_EXP_NO3))
-        PH_AVAIL_NH4 = 1.0 / (1.0 + EXP(PH_EXP_NH4))
-        PH_AVAIL_P = 1.0 / (1.0 + EXP(PH_EXP_P))
-        PH_AVAIL_K = 1.0 / (1.0 + EXP(PH_EXP_K))
-        
-C       Ensure factors are in valid range (0-1)
+        PH_EXP_NO3 = -((PH_CALC-PH_OPT)**2)/(2.0*PH_SCALE_NO3**2)
+        PH_EXP_NH4 = -((PH_CALC-PH_OPT)**2)/(2.0*PH_SCALE_NH4**2)
+        PH_EXP_P   = -((PH_CALC-PH_OPT)**2)/(2.0*PH_SCALE_P**2)
+        PH_EXP_K   = -((PH_CALC-PH_OPT)**2)/(2.0*PH_SCALE_K**2)
+
+        PH_EXP_NO3 = MAX(-10.0, PH_EXP_NO3)
+        PH_EXP_NH4 = MAX(-10.0, PH_EXP_NH4)
+        PH_EXP_P   = MAX(-10.0, PH_EXP_P)
+        PH_EXP_K   = MAX(-10.0, PH_EXP_K)
+
+        PH_AVAIL_NO3 = EXP(PH_EXP_NO3)
+        PH_AVAIL_NH4 = EXP(PH_EXP_NH4)
+        PH_AVAIL_P   = EXP(PH_EXP_P)
+        PH_AVAIL_K   = EXP(PH_EXP_K)
+
         PH_AVAIL_NO3 = MAX(0.01, MIN(1.0, PH_AVAIL_NO3))
         PH_AVAIL_NH4 = MAX(0.01, MIN(1.0, PH_AVAIL_NH4))
-        PH_AVAIL_P = MAX(0.01, MIN(1.0, PH_AVAIL_P))
-        PH_AVAIL_K = MAX(0.01, MIN(1.0, PH_AVAIL_K))
+        PH_AVAIL_P   = MAX(0.01, MIN(1.0, PH_AVAIL_P))
+        PH_AVAIL_K   = MAX(0.01, MIN(1.0, PH_AVAIL_K))
 
 C-----------------------------------------------------------------------
 C       CALCULATE pH-DEPENDENT Km (transporter affinity)

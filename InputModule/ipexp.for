@@ -99,7 +99,7 @@ C=======================================================================
 
       INTEGER I,L,NLOOP,LINF,ISECT,LUNEXP,LUNLST
       INTEGER LNFLD,LNSA,LNIC,LNPLT,LNIR,LNFER,LNRES,LNCHE,LNCU
-      INTEGER LNHAR,LNENV,LNTIL,LNSIM,LINEXP
+      INTEGER LNHAR,LNENV,LNTIL,LNSIM,LNSOL,LNCTL,LNSOL_RAW,LINEXP
       INTEGER NYRS,FROP,EXPN,EXPP,TRTN,ERRNUM,IFIND,FTYPEN
       INTEGER PATHL,RUN,ISIM,TRTALL,IIRV(NAPPL)   !,CRID
       INTEGER NFORC,NDOF,PMTYPE,YR,ROTN
@@ -113,6 +113,7 @@ C=======================================================================
       REAL    AUTO_PH_R, AUTO_VOL_R, AUTO_CONC_R  ! Control flags as REAL for PUT
       REAL    SOLVOL,SOLVOL_L,EC_SOL,PH_SOL,DO2,TEMP_SOL
       REAL    NO3_CONC,NH4_CONC,P_CONC,K_CONC
+      REAL    CHLEN, CHSPC
 
       LOGICAL FEXIST, UseSimCtr, SimLevel
 
@@ -393,17 +394,41 @@ C-----------------------------------------------------------------------
       I = 0
  50   CONTINUE
       I = I + 1
+      LNSOL = 0
+      LNCTL = 0
       CALL IGNORE (LUNEXP,LINEXP,ISECT,CHARTEST)
       IF (RNMODE .EQ. 'Q') THEN
         READ (CHARTEST,56,IOSTAT=ERRNUM) TRTNO,ROTNO,ROTOPT,CRPNO,
      &     TITLET,LNCU,LNFLD,LNSA,LNIC,LNPLT,LNIR,LNFER,LNRES,
-     &     LNCHE,LNTIL,LNENV,LNHAR,LNSIM
+     &     LNCHE,LNTIL,LNENV,LNHAR,LNSIM,LNSOL,LNCTL
+        IF (ERRNUM .NE. 0) THEN
+C         Try old format without HS/HC columns (backward compatibility)
+          READ (CHARTEST,56,IOSTAT=ERRNUM) TRTNO,ROTNO,ROTOPT,CRPNO,
+     &       TITLET,LNCU,LNFLD,LNSA,LNIC,LNPLT,LNIR,LNFER,LNRES,
+     &       LNCHE,LNTIL,LNENV,LNHAR,LNSIM
+          LNSOL = 0
+          LNCTL = 0
+        ENDIF
       ELSE
         READ (CHARTEST,55,IOSTAT=ERRNUM) TRTNO,ROTNO,ROTOPT,CRPNO,
      &     TITLET,LNCU,LNFLD,LNSA,LNIC,LNPLT,LNIR,LNFER,LNRES,
-     &     LNCHE,LNTIL,LNENV,LNHAR,LNSIM
+     &     LNCHE,LNTIL,LNENV,LNHAR,LNSIM,LNSOL,LNCTL
+        IF (ERRNUM .NE. 0) THEN
+C         Try old format without HS/HC columns (backward compatibility)
+          READ (CHARTEST,55,IOSTAT=ERRNUM) TRTNO,ROTNO,ROTOPT,CRPNO,
+     &       TITLET,LNCU,LNFLD,LNSA,LNIC,LNPLT,LNIR,LNFER,LNRES,
+     &       LNCHE,LNTIL,LNENV,LNHAR,LNSIM
+          LNSOL = 0
+          LNCTL = 0
+        ENDIF
       ENDIF
       IF (ERRNUM .NE. 0) CALL ERROR (ERRKEY,ERRNUM,FILEX,LINEXP)
+C     Save raw HS value to check if explicitly provided
+      LNSOL_RAW = LNSOL
+C     For non-hydroponic experiments, default HS/HC to field level
+C     For hydroponic experiments, HS/HC are required (checked after IPSOL)
+      IF (LNSOL .EQ. 0) LNSOL = LNFLD
+      IF (LNCTL .EQ. 0) LNCTL = LNSOL
 
 C     IF (I .LT. TRTN) GO TO 50
       IF ((INDEX('BEDNSGFCTY',RNMODE) .GT. 0 .AND. TRTN .NE. TRTNO) .OR.
@@ -866,13 +891,27 @@ C     Call IPSOL - Hydroponic Solution (if present)
 C-----------------------------------------------------------------------
       WRITE(*,*) ' '
       WRITE(*,*) 'Checking for HYDROPONIC SOLUTION section...'
-      CALL IPSOL (LUNEXP,FILEX,LNFLD,SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL,
+      CALL IPSOL (LUNEXP,FILEX,LNSOL,LNCTL,
+     &    SOLVOL,EC_SOL,PH_SOL,DO2,TEMP_SOL,
      &    NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO,
-     &    AUTO_PH,AUTO_VOL,AUTO_CONC)
+     &    AUTO_PH,AUTO_VOL,AUTO_CONC,
+     &    CHLEN,CHSPC)
 
 C     Store hydroponic switch in ISWITCH structure for global access
       ISWITCH % ISWHYDRO = ISWHYDRO
       ISWITCH % AUTO_PH = AUTO_PH  ! Store pH control flag
+      ISWITCH % CHLEN = CHLEN      ! NFT channel length (cm)
+      ISWITCH % CHSPC = CHSPC      ! NFT channel spacing (cm)
+
+C     Hydroponic mode requires HS and HC columns in treatment line
+      IF (ISWHYDRO .EQ. 'Y' .AND. LNSOL_RAW .EQ. 0) THEN
+        MSG(1) = 'Hydroponic experiment requires HS and HC'
+        MSG(2) = 'columns in the *TREATMENTS section.'
+        MSG(3) = 'Add HS (solution level) and HC (control'
+        MSG(4) = 'level) after SM column. See DETAIL.CDE.'
+        CALL WARNING(4,ERRKEY,MSG)
+        CALL ERROR (ERRKEY,99,FILEX,LINEXP)
+      ENDIF
 
 C     Store hydroponic parameters in CONTROL structure (via ModuleData)
       IF (ISWHYDRO .EQ. 'Y') THEN
@@ -891,6 +930,8 @@ C       Store SOLVOL directly in mm (no conversion needed)
         CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
         CALL PUT('HYDRO','P_CONC',P_CONC)
         CALL PUT('HYDRO','K_CONC',K_CONC)
+        CALL PUT('HYDRO','CHLEN',CHLEN)
+        CALL PUT('HYDRO','CHSPC',CHSPC)
         CALL PUT('HYDRO','AREA',AREA)
 C       Store hydroponic control flags as REAL values
 C       AUTO_PH/VOL: 1.0 = maintain constant ('Y'), 0.0 = allow drift ('N')
@@ -927,8 +968,8 @@ C-----------------------------------------------------------------------
 C     FORMAT Strings
 C-----------------------------------------------------------------------
 
-   55 FORMAT (I3,I1,2(1X,I1),1X,A25,14I3)
-   56 FORMAT (2I2,2(1X,I1),1X,A25,14I3)
+   55 FORMAT (I3,I1,2(1X,I1),1X,A25,15I3)
+   56 FORMAT (2I2,2(1X,I1),1X,A25,15I3)
 
    75 FORMAT (A4,I2.2,A6)
    76 FORMAT (3A4)

@@ -1,335 +1,123 @@
 C=======================================================================
-C  SOLPi, Subroutine
-C
-C  Hydroponic phosphorus uptake and solution management
-C  Implements demand-based P uptake with Michaelis-Menten kinetics
+C  SOLPi - Hydroponic P uptake: mass flow + active (M-M)
 C-----------------------------------------------------------------------
-C  Revision history
-C
-C  12/22/2025 Created for hydroponic P management
-C-----------------------------------------------------------------------
-C  Called from: CROPGRO nutrient uptake modules
-C
-C-----------------------------------------------------------------------
+C  Called from: NUPTAK
+C=======================================================================
 
       SUBROUTINE SOLPi(
-     &    CONTROL, ISWITCH,                    !Input
-     &    FILECC, PLTPOP, RTDEP, PDEMAND,      !Input
-     &    UPO4,                                !Output - kg/ha/day
-     &    P_SOL)                               !I/O - Solution conc. mg/L
+     &    CONTROL, ISWITCH,
+     &    FILECC, PLTPOP, RTDEP, PDEMAND, TRLV,
+     &    UPO4,
+     &    P_SOL)
 
       USE ModuleDefs
       USE ModuleData
       IMPLICIT NONE
-      EXTERNAL GETLUN, ERROR, IGNORE
+      EXTERNAL GETLUN, ERROR, FIND, IGNORE
       SAVE
 
       CHARACTER*92 FILECC
-
       TYPE (ControlType) CONTROL
       TYPE (SwitchType)  ISWITCH
 
-C     Input variables
-      REAL PLTPOP        ! Plant population (plants/m2)
-      REAL RTDEP         ! Root depth (cm)
-      REAL PDEMAND       ! P demand (kg/ha/day)
+      REAL PLTPOP, RTDEP, PDEMAND, TRLV
+      REAL UPO4
+      REAL P_SOL
 
-C     Output variables
-      REAL UPO4          ! Phosphate uptake (kg/ha/day)
+      REAL SIGMA_P
+      REAL JMAX_P, KM_P
+      REAL EP, UPO4_MF, UPO4_ACT
+      REAL SOLVOL, VOL_PER_HA, DEPL_P
+      REAL AUTO_CONC_R
+      REAL PH_AVAIL_P, O2_STRESS
+      REAL ECSTRESS_JMAX_P, JMAX_EFF_P
 
-C     Solution concentrations (mg/L)
-      REAL P_SOL         ! Phosphorus in solution
-
-C     Local variables
-      REAL SOLVOL        ! Solution volume (mm) = (L/m2) - saved between calls
-      REAL SOLVOL_INIT   ! Initial solution volume (mm)
-      SAVE SOLVOL, SOLVOL_INIT, Vmax_P, Km_P
-
-C     Michaelis-Menten parameters for P
-      REAL Vmax_P        ! Max uptake rate P (mg/plant/day)
-      REAL Km_P          ! Half-saturation constant P (mg/L)
-      REAL Cmin_P        ! Min concentration for net uptake (mg/L)
-      REAL Vmax_P_stressed ! Vmax_P after EC stress
-      REAL Km_P_stressed   ! Km_P after pH stress
-      REAL ECSTRESS_JMAX_P ! EC stress factor for P Jmax
-      REAL PH_AVAIL_P      ! pH-dependent P availability factor
-      REAL PH_KM_FACTOR_P  ! pH-dependent P Km factor
-      REAL P_SOL_EFFECTIVE ! Effective P concentration (× pH availability)
-
-C     Uptake calculations
-      REAL UP_plant      ! P uptake per plant (mg/plant/day)
-      REAL UP_potential  ! Potential P uptake (kg/ha/day)
-      REAL UPTAKE_FACTOR ! Scaling factor for growth stage
-      REAL DEPL_P        ! Depletion rate (mg/L)
-      REAL VOL_PER_HA    ! Solution volume per hectare (L/ha)
-      REAL AUTO_CONC_R   ! AUTO_CONC flag (1.0=maintain conc, 0.0=deplete)
-
-C     Plant demand from P_PLANT module (tissue-based, like N demand)
-      REAL PDEMAND_USE   ! P demand from P_PLANT PTotDem (kg/ha/day)
-
-C     Environmental factors (like HYDRO_NUTRIENT)
-      REAL WATER_FACTOR  ! Water availability factor (0-1)
-      REAL FLOW_FACTOR   ! Solution circulation/flow factor (0-1)
-      REAL MIN_SOLVOL    ! Minimum solution volume for uptake (mm)
-      REAL CRITICAL_SOLVOL ! Critical solution volume threshold (mm)
-
-C     Mass flow variables
-      REAL TRANSP_MM     ! Transpiration rate (mm/day)
-      REAL MASS_FLOW_P   ! Passive P uptake via mass flow (kg/ha/day)
-      REAL MASS_FLOW_COEF_P ! Mass flow coefficient for P (lower than NO3/K)
-      DATA MASS_FLOW_COEF_P /0.08/  ! P is less mobile than NO3/NH4/K
-
-C     Species file reading variables
-      INTEGER LUNCRP, ERR, LINC, ISECT, FOUND
+      INTEGER LUNCRP, ERR, LINC, FOUND
       CHARACTER*6 SECTION
-      CHARACTER*80 CHAR
-
       INTEGER DYNAMIC
 
-C-----------------------------------------------------------------------
+      SAVE SIGMA_P, JMAX_P, KM_P
 
       DYNAMIC = CONTROL % DYNAMIC
 
       SELECT CASE (DYNAMIC)
 
       CASE (RUNINIT)
-C-----------------------------------------------------------------------
-C       Read species-specific P uptake parameters from .SPE file
-C-----------------------------------------------------------------------
         CALL GETLUN('FILEC', LUNCRP)
         OPEN (LUNCRP, FILE = FILECC, STATUS = 'OLD', IOSTAT=ERR)
         IF (ERR .NE. 0) CALL ERROR('SOLPi',42,FILECC,0)
 
-C       Find HYDROPONIC P UPTAKE PARAMETERS section
-        SECTION = '!*HYDR'
+        SECTION = '!*SOLP'
         CALL FIND(LUNCRP, SECTION, LINC, FOUND)
-        IF (LINC .EQ. 0) THEN
-          WRITE(*,*) 'SOLPi: !*HYDROPONIC P UPTAKE section not found'
-          WRITE(*,*) '       Using default values'
-          Vmax_P = 8.0     ! mg P/plant/day (default)
-          Km_P   = 0.3     ! mg/L (default)
-        ELSE
-C         Read P uptake parameters: Vmax_P, Km_P
-          READ(LUNCRP,'(14X,2F6.2)',IOSTAT=ERR) Vmax_P, Km_P
-          IF (ERR .NE. 0) THEN
-            WRITE(*,*) 'SOLPi: Error reading P uptake parameters'
-            WRITE(*,*) '       Using default values'
-            Vmax_P = 8.0
-            Km_P   = 0.3
-          ENDIF
-        ENDIF
+        IF (FOUND .EQ. 0) CALL ERROR('SOLPi',42,FILECC,0)
+        READ(LUNCRP,*,IOSTAT=ERR) SIGMA_P
+        IF (ERR .NE. 0) CALL ERROR('SOLPi',ERR,FILECC,0)
+        READ(LUNCRP,*,IOSTAT=ERR) JMAX_P, KM_P
+        IF (ERR .NE. 0) CALL ERROR('SOLPi',ERR,FILECC,0)
 
         CLOSE (LUNCRP)
-
-C       C_min for P: minimum concentration for net uptake (mg/L)
-C       Below C_min, efflux = influx, so net uptake = 0
-C       Literature: ~1 μM for most crops (Barber 1984)
-C       1 μM P = 0.031 mg/L (MW P = 31 g/mol)
-        Cmin_P = 0.03     ! mg/L (= 1 μM)
-
         UPO4 = 0.0
 
-        WRITE(*,100) Vmax_P, Km_P, Cmin_P
- 100    FORMAT(/,' Hydroponic Phosphorus Module',
-     &         /,'   Vmax_P: ',F6.2,' mg P/plant/day',
-     &         /,'   Km_P  : ',F6.2,' mg/L',
-     &         /,'   Cmin_P: ',F6.3,' mg/L',/)
+        WRITE(*,100) SIGMA_P, JMAX_P, KM_P
+ 100    FORMAT(/,' Hydroponic P Module (Mass Flow + Active M-M)',
+     &         /,'   Sigma_P: ',F5.2,
+     &         /,'   Jmax_P: ',F6.4,' mg/cm/d  Km_P: ',F5.2,
+     &            ' mg/L',/)
 
       CASE (SEASINIT)
-C-----------------------------------------------------------------------
-C       Initialize P concentration from ModuleData
-C       Also ensure Vmax_P and Km_P are initialized if not set in RUNINIT
-C-----------------------------------------------------------------------
-        CALL GET('HYDRO','SOLVOL',SOLVOL)
         CALL GET('HYDRO','P_CONC',P_SOL)
-
-C       Store initial solution volume for water-nutrient coupling
-        SOLVOL_INIT = SOLVOL
-
-        IF (SOLVOL .LT. 1.0) THEN
-          SOLVOL = 1000.0  ! Default 1000 mm (= L/m2)
-          SOLVOL_INIT = SOLVOL
-          WRITE(*,*) 'SOLPi: Using default SOLVOL=',SOLVOL,'mm'
-        ENDIF
-
-        IF (P_SOL .LT. 0.0) THEN
-          P_SOL = 60.0  ! Default P concentration (mg/L)
-          WRITE(*,*) 'SOLPi: Using default P_CONC=',P_SOL,'mg/L'
-        ENDIF
-
-C       Ensure Vmax_P and Km_P are initialized (defaults if not set in RUNINIT)
-        IF (Vmax_P .LT. 0.1) THEN
-          Vmax_P = 8.0     ! Default: 8 mg P/plant/day
-          Km_P = 0.3       ! Default: 0.3 mg/L
-          WRITE(*,*) 'SOLPi SEASINIT: Using default Vmax_P=',Vmax_P,
-     &               ' Km_P=',Km_P
-        ENDIF
-
-        WRITE(*,150) P_SOL
- 150    FORMAT(' SOLPi SEASINIT: Initial [P]=',F8.2,' mg/L')
+        UPO4 = 0.0
 
       CASE (RATE)
-C-----------------------------------------------------------------------
-C       Calculate daily P uptake with environmental factors
-C       Use demand-based approach when concentrations are adequate
-C       P_SOL is passed as argument from calling routine (not retrieved here)
-C-----------------------------------------------------------------------
-        CALL GET('HYDRO','SOLVOL',SOLVOL)
-        CALL GET('HYDRO','EP',TRANSP_MM)
-        IF (TRANSP_MM .LT. 0.0) TRANSP_MM = 0.0
-
-C-----------------------------------------------------------------------
-C       WATER-NUTRIENT COUPLING (same as HYDRO_NUTRIENT)
-C-----------------------------------------------------------------------
-        MIN_SOLVOL = SOLVOL_INIT * 0.10
-        CRITICAL_SOLVOL = SOLVOL_INIT * 0.05
-
-        IF (SOLVOL .LT. CRITICAL_SOLVOL) THEN
-          UPO4 = 0.0
-          RETURN
-        ENDIF
-
-        IF (SOLVOL .GE. SOLVOL_INIT) THEN
-          WATER_FACTOR = 1.0
-        ELSE IF (SOLVOL .LE. MIN_SOLVOL) THEN
-          WATER_FACTOR = 0.3
-        ELSE
-          WATER_FACTOR = 0.3 + 0.7 * (SOLVOL - MIN_SOLVOL) /
-     &                   (SOLVOL_INIT - MIN_SOLVOL)
-        ENDIF
-
-C       CRITICAL: Prevent division by zero with very small volumes
-        IF (SOLVOL .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
-          FLOW_FACTOR = (SOLVOL / SOLVOL_INIT) ** 0.67
-        ELSE
-          FLOW_FACTOR = 0.2  ! Minimum flow factor for very low volumes
-        ENDIF
-        FLOW_FACTOR = MIN(1.0, MAX(0.2, FLOW_FACTOR))
-
-C       Growth stage factor (simplified)
-        IF (RTDEP .LT. 20.0) THEN
-          UPTAKE_FACTOR = 0.3    ! Seedling stage
-        ELSEIF (RTDEP .LT. 50.0) THEN
-          UPTAKE_FACTOR = 0.7    ! Vegetative growth
-        ELSE
-          UPTAKE_FACTOR = 1.0    ! Peak growth
-        ENDIF
-
-C       Get plant P demand from ModuleData (fallback to PDEMAND if not set)
-        CALL GET('HYDRO','PTOTDEM',PDEMAND_USE)
-        IF (PDEMAND_USE .LT. 1.E-9 .AND. PDEMAND .GT. 1.E-9) THEN
-          PDEMAND_USE = PDEMAND
-        ENDIF
-
-C-----------------------------------------------------------------------
-C       MICHAELIS-MENTEN KINETICS (consistent with SOLKi approach)
-C       Always use M-M, then limit by demand - no hard threshold switch
-C-----------------------------------------------------------------------
-C       Get pH-dependent availability and Km factors
+        CALL GET('HYDRO','EP',EP)
+        CALL GET('HYDRO','P_CONC',P_SOL)
         CALL GET('HYDRO','PH_AVAIL_P',PH_AVAIL_P)
-        CALL GET('HYDRO','PH_KM_FACTOR_P',PH_KM_FACTOR_P)
-        IF (PH_AVAIL_P .LT. 0.01) PH_AVAIL_P = 1.0
-        IF (PH_KM_FACTOR_P .LT. 0.1) PH_KM_FACTOR_P = 1.0
-
-C       Get EC stress factor
+        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
         CALL GET('HYDRO','ECSTRESS_JMAX_P',ECSTRESS_JMAX_P)
-        IF (ECSTRESS_JMAX_P .LT. 0.1) ECSTRESS_JMAX_P = 1.0
+        IF (EP .LT. 0.0) EP = 0.0
+        IF (PH_AVAIL_P .LT. 0.01) PH_AVAIL_P = 1.0
+        IF (O2_STRESS .LT. 0.01) O2_STRESS = 1.0
+        IF (ECSTRESS_JMAX_P .LT. 0.01) ECSTRESS_JMAX_P = 1.0
 
-C       Calculate effective P concentration using pH availability
-        P_SOL_EFFECTIVE = P_SOL * PH_AVAIL_P
+C       Apply EC stress: non-competitive inhibition (reduces Jmax)
+        JMAX_EFF_P = JMAX_P * ECSTRESS_JMAX_P
 
-C       Apply pH-dependent Km (transporter affinity)
-        Km_P_stressed = Km_P * PH_KM_FACTOR_P
+C       Mass flow
+        UPO4_MF = EP * P_SOL * (1.0-SIGMA_P)
+     &          * PH_AVAIL_P * O2_STRESS * 0.01
 
-C       Apply EC stress to Vmax
-        Vmax_P_stressed = Vmax_P * ECSTRESS_JMAX_P
+C       Active uptake (Michaelis-Menten with EC stress)
+        UPO4_ACT = JMAX_EFF_P * P_SOL / (KM_P + P_SOL)
+     &           * TRLV * 100.0 * PH_AVAIL_P * O2_STRESS
 
-C       Calculate M-M uptake (always, regardless of concentration)
-        IF (Vmax_P .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C         Modified M-M with C_min threshold (Barber 1984)
-C         Below C_min, no net uptake (efflux = influx)
-          IF (P_SOL_EFFECTIVE .GT. Cmin_P) THEN
-            UP_plant = (Vmax_P_stressed * UPTAKE_FACTOR *
-     &                 WATER_FACTOR * FLOW_FACTOR *
-     &                 (P_SOL_EFFECTIVE - Cmin_P)) /
-     &                 (Km_P_stressed + P_SOL_EFFECTIVE - Cmin_P)
-          ELSE
-            UP_plant = 0.0  ! Below C_min: no net uptake
-          ENDIF
+        UPO4 = UPO4_MF + UPO4_ACT
 
-C         Convert from mg/plant/day to kg/ha/day
-          UP_potential = UP_plant * PLTPOP * 0.01
-        ELSE
-          UP_potential = 0.0
+C       Cap at 1.1x demand
+        IF (PDEMAND .GT. 1.E-9 .AND. UPO4 .GT. PDEMAND * 1.1) THEN
+          UPO4 = PDEMAND * 1.1
         ENDIF
 
-C-----------------------------------------------------------------------
-C       MASS FLOW COMPONENT (Passive uptake via transpiration)
-C       P is less mobile than NO3/NH4/K, so use lower coefficient (0.08)
-C-----------------------------------------------------------------------
-        IF (TRANSP_MM .GT. 0.0 .AND. P_SOL .GT. 0.0) THEN
-          MASS_FLOW_P = TRANSP_MM * 10000.0 * P_SOL * 1.0E-6 *
-     &                  MASS_FLOW_COEF_P * ECSTRESS_JMAX_P
-        ELSE
-          MASS_FLOW_P = 0.0
-        ENDIF
-
-C-----------------------------------------------------------------------
-C       TOTAL UPTAKE = Active (M-M) + Passive (Mass flow)
-C       Limited by plant demand (consistent with SOLKi approach)
-C-----------------------------------------------------------------------
-        UP_potential = UP_potential + MASS_FLOW_P
-
-C       Demand-based limitation (allow 10% luxury uptake for P)
-        IF (PDEMAND_USE .GT. 1.E-9) THEN
-          UPO4 = MIN(UP_potential, PDEMAND_USE * 1.1)
-        ELSE
-C         Low demand: allow passive uptake only
-          UPO4 = MASS_FLOW_P
-        ENDIF
-
-C       Ensure non-negative uptake
         UPO4 = MAX(0.0, UPO4)
 
-        WRITE(*,200) P_SOL, P_SOL_EFFECTIVE, UP_potential,
-     &               MASS_FLOW_P, UPO4, PDEMAND_USE
- 200    FORMAT(' SOLPi M-M Kinetics:',
-     &         /,'   [P]=',F6.1,' mg/L, [P]eff=',F6.1,' mg/L',
-     &         /,'   Potential=',F8.3,' MassFlow=',F8.4,' kg/ha/d',
-     &         /,'   Uptake=',F8.3,' Demand=',F8.3,' kg/ha/d')
+        WRITE(*,200) EP, TRLV, UPO4_MF, UPO4_ACT, UPO4, PDEMAND
+ 200    FORMAT(' HYDRO_P: EP=',F5.2,' TRLV=',F6.2,
+     &         ' MF=',F6.4,' Act=',F6.4,
+     &         ' Tot=',F6.4,' Dem=',F6.4,' kg/ha/d')
 
       CASE (INTEGR)
-C-----------------------------------------------------------------------
-C       Update solution P concentration after uptake
-C       If AUTO_CONC = Y (1.0), skip depletion (maintain constant conc)
-C-----------------------------------------------------------------------
         CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
-        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0  ! Default: deplete
+        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0
 
-        CALL GET('HYDRO','P_CONC',P_SOL)  ! Retrieve current P concentration
+        CALL GET('HYDRO','P_CONC',P_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
-C       Only deplete concentration if AUTO_CONC = N (0.0)
         IF (AUTO_CONC_R .LT. 0.5) THEN
-          IF (SOLVOL .GT. 0.0 .AND. PLTPOP .GT. 0.0) THEN
-C           SOLVOL is in mm (= L/m²), so L/ha = SOLVOL * 10000 m²/ha
-C           CRITICAL: Ensure minimum volume to prevent division overflow
-            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)  ! L/ha (min 10 L/ha = 0.001 mm)
-
-C           Calculate depletion (mg/L)
+          IF (SOLVOL .GT. 0.0) THEN
+            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
             DEPL_P = (UPO4 * 1.0E6) / VOL_PER_HA
-
-C           Update solution concentration
             P_SOL = MAX(0.0, P_SOL - DEPL_P)
-
-            WRITE(*,300) DEPL_P, P_SOL
- 300        FORMAT(' SOLPi depletion: dP=',F6.3,' mg/L',
-     &             ' New [P]=',F6.1,' mg/L')
           ENDIF
-C         Store updated concentration back to ModuleData
           CALL PUT('HYDRO','P_CONC',P_SOL)
-        ELSE
-          WRITE(*,*) ' AUTO_CONC=Y: P concentration maintained constant'
         ENDIF
 
       CASE (OUTPUT)

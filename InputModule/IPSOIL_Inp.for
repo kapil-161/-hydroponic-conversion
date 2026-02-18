@@ -36,6 +36,7 @@ C=======================================================================
       SUBROUTINE IPSOIL_Inp (RNMODE,FILES,PATHSL,NSENS,ISWITCH)
 
       USE ModuleDefs
+      USE ModuleData
       IMPLICIT NONE
       EXTERNAL ERROR, WARNING, IGNORE2, IGNORE, CLEAR, UPCASE, VERIFY, 
      &  PARSE_HEADERS, LYRSET, LYRSET3, LYRSET2, LMATCH, IGNORE3
@@ -59,6 +60,7 @@ C=======================================================================
 !      REAL    SLEC(NL),ZLYR(NL),ZZLYR(NL)
       REAL    ZLYR(NL)
       REAL    FLAG,SL,SLDP
+      REAL    CHLEN_NFT, REMAINDER
 
 !     Up to MAXCOL headers per line, up to 10 characters long each
       INTEGER, PARAMETER :: MAXCOL = 50
@@ -80,26 +82,48 @@ C=======================================================================
          SLPF  = 1.0
          NLAYR = 1
 
-!        HYDROPONIC MODE: Set minimal soil structure for compatibility
-!        In hydroponics, there is no soil, but some modules need
-!        soil structure to be defined (layer arrays, etc.)
+!        HYDROPONIC MODE: Set soil structure to represent NFT channel
+!        "Layers" represent sections along the horizontal channel
+!        CHLEN = channel length (cm) from experiment file
          IF (ISWITCH % ISWHYDRO .EQ. 'Y') THEN
-!          Set minimal hydroponic "soil" structure (3 layers for compatibility)
-           NLAYR = 3
            PEDON = 'HYDRO_NFT'
            SLNO  = 'HYDRO_NFT'
            SLTXS = '-99'
            SLDESC= 'Hydroponic NFT System - No Soil'
            SLSOUR= 'DSSAT-Hydro'
 
-!          Minimal layer structure (10 cm layers for root distribution)
-           DS(1) = 10.0
-           DS(2) = 20.0
-           DS(3) = 30.0
-           DLAYR(1) = 10.0
-           DLAYR(2) = 10.0
-           DLAYR(3) = 10.0
-           DEPMAX = 30.0
+!          Get channel length from ISWITCH (set by IPEXP/IPSOL)
+           CHLEN_NFT = ISWITCH % CHLEN
+           IF (CHLEN_NFT .LT. 10.0) THEN
+             WRITE(*,*) 'ERROR: CHLEN not set in experiment file.'
+             WRITE(*,*) '       Add CHLEN to *HYDROPONIC SOLUTION.'
+             STOP 'Missing CHLEN in experiment file'
+           ENDIF
+
+!          Create layers spanning channel length (10 cm sections)
+!          Cap at NL (max layers = 20)
+           NLAYR = MIN(NL, INT(CHLEN_NFT / 10.0))
+           REMAINDER = CHLEN_NFT - FLOAT(NLAYR) * 10.0
+           IF (REMAINDER .GT. 0.1 .AND. NLAYR .LT. NL) THEN
+             NLAYR = NLAYR + 1  ! Add partial layer for remainder
+           ENDIF
+
+           DO I = 1, NLAYR
+             IF (I .LT. NLAYR .OR. REMAINDER .LE. 0.1) THEN
+               DLAYR(I) = 10.0
+             ELSE
+               DLAYR(I) = REMAINDER  ! Last layer gets remainder
+             ENDIF
+             IF (I .EQ. 1) THEN
+               DS(I) = DLAYR(I)
+             ELSE
+               DS(I) = DS(I-1) + DLAYR(I)
+             ENDIF
+           ENDDO
+           DEPMAX = DS(NLAYR)
+
+           WRITE(*,*) 'HYDRO NFT: Channel length=',CHLEN_NFT,' cm'
+           WRITE(*,*) '  Layers=',NLAYR,' DEPMAX=',DEPMAX,' cm'
 
 !          Water properties (not used in hydroponics, but set for compatibility)
            DO I = 1, NLAYR

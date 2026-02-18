@@ -170,6 +170,8 @@ SITE(S)  Name and location of experimental site(s)                            IB
 SLDP     Soil depth, cm                                                       IB
 SLTX     Soil texture                                                         IB
 SM       Simulation control level                                             IB
+HS       Hydroponic solution level                                            IB
+HC       Hydroponic control level                                             IB
 SMHB     pH in buffer determination method, code                              IB
 SMKE     Potassium determination method, code                                 IB
 SMPX     Phosphorus determination method, code                                IB
@@ -432,7 +434,7 @@ FE401    Potassium carbonate K2CO3 solid                                      IB
 FE402    Potassium carbonate K2CO3 liquid                                     IB
 FE403    Potassium magnesium sulfate**                                        IB
 FE404    Manure salts                                                         IB
-FE405    Kainite KMg(SO4)Cl·3H2O                                              IB
+FE405    Kainite KMg(SO4)Clï¿½3H2O                                              IB
 FE406    Carnallite (hydrated potassium magnesium chloride)                   IB
 FE407    Lime-potash mixtures                                                 IB
 FE408    Greensand                                                            IB

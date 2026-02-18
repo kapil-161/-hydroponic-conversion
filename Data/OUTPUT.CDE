@@ -16,6 +16,7 @@ PlantC.OUT      PC Daily plant carbon output file                     OUTPC
 PlantGro.OUT    PG Daily plant growth output file                     OUTG
 PlantN.OUT      PN Daily plant nitrogen output file                   OUTPN
 PlantP.OUT      PP Daily plant phosphorus output
+PlantK.OUT      PK Daily plant potassium output file
 SoilDyn.OUT        Daily soil dynamics output file (temp)
 SoilNi.OUT      SN Daily inorganic soil N output file
 SoilOrg.OUT     SC Daily soil carbon output file
@@ -76,6 +77,7 @@ OVERVIEW.OUT    OV Seasonal overview output file                      OUTO
 PlantCBal.OUT      Not currently operational                          PCBAL
 PlantNBal.OUT      Plant nitrogen balance                             PNBAL
 PlantPBal.OUT      Plant phosphorus balance
+PlantKBal.OUT      Plant potassium balance                            PKBAL
 Plantsum.OUT       Not currently operational                          SOUTG
 SoilCBal.OUT       Seasonal soil carbon balance                       SCBAL
 SoilCBalSum.OUT    Soil C balance summary                                  

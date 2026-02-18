@@ -48,6 +48,7 @@ C-----------------------------------------------------------------------
       CHARACTER*1 ISWWAT, ISWHYDRO
       CHARACTER*2 CROP
       CHARACTER*92 FILECC
+      TYPE (SwitchType) ISWITCH
 
       INTEGER L, L1, NLAYR
 
@@ -84,8 +85,9 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       IF (DYNAMIC .EQ. RUNINIT) THEN
 !-----------------------------------------------------------------------
-!     Get hydroponic switch from ModuleData
-      CALL GET('MGMT','ISWHYDRO',ISWHYDRO)
+!     Get hydroponic switch from ISWITCH structure
+      CALL GET(ISWITCH)
+      ISWHYDRO = ISWITCH % ISWHYDRO
 
       CALL IPROOT(FILECC,                                 !Input
      &  PORMIN, RFAC1, RLDSM, RTDEPI, RTEXF,              !Output
@@ -152,18 +154,21 @@ C-----------------------------------------------------------------------
       ELSEIF (DYNAMIC .EQ. INTEGR) THEN
 !-----------------------------------------------------------------------
 C     HYDROPONIC NFT ROOT GROWTH
-C     In NFT hydroponics, roots grow in nutrient solution without
-C     soil layers, water stress, or depth progression
+C     In NFT, roots grow HORIZONTALLY along the channel with water flow.
+C     RTDEP represents horizontal root extension along channel (cm).
+C     "Layers" represent sections along the channel, not soil depth.
+C     Roots ACCUMULATE in each channel section (like soil layers),
+C     rather than being redistributed uniformly each day.
 C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
 !       Calculate new root growth based on photosynthate allocation
         RLNEW = WRDOTN * RFAC1 / 10000.
-        
+
 C       Apply EC stress to root growth (morphological suppression)
         CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
         IF (ECSTRESS_ROOT .LT. 0.1) ECSTRESS_ROOT = 1.0
         RLNEW = RLNEW * ECSTRESS_ROOT
-        
+
         CGRRT = AGRRT * WRDOTN
 
 !       Update RFAC3 based on yesterday's RTWT and TRLV
@@ -173,32 +178,105 @@ C       Apply EC stress to root growth (morphological suppression)
           RFAC3 = RFAC1
         ENDIF
 
-!       Natural senescence only (no water stress in NFT)
-!       Hydroponic roots have lower senescence due to optimal conditions
-        SRDOT = TRLV * RTSEN * DTX * 0.5 / RFAC3 * 1.E5
-!       Factor 0.5 = reduced senescence in hydroponics vs soil
-        SRDOT = AMAX1(SRDOT, 0.0)
+!       HORIZONTAL ROOT EXTENSION along NFT channel
+!       RFAC2 = root extension rate per physiological day (species file)
+        RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
+        RTDEP = RTDEP + DTX * RFAC2
 
-!       Distribute root senescence uniformly (no layering in NFT)
+!       Cap at channel length (DEPMAX = DS(NLAYR) from CHLEN)
+        IF (RTDEP .GT. DEPMAX) RTDEP = DEPMAX
+
+!       ---------------------------------------------------------------
+!       Layer-by-layer root accumulation (like soil mode)
+!       Distribute new growth uniformly across rooted channel sections
+!       (no water stress gradient in NFT — all sections equally favorable)
+!       ---------------------------------------------------------------
+        SRDOT = 0.0
+        RLSENTOT = 0.0
+        TRLDF = 0.0
+        L1 = 0
+
+!       Calculate distribution factors for rooted sections
+        CUMDEP = 0.0
         DO L = 1, NLAYR
-          IF (NLAYR > 0) THEN
-            SENRT(L) = SRDOT * 10. / FLOAT(NLAYR)  !kg/ha per layer
+          L1 = L
+          IF (CUMDEP + DLAYR(L) .LE. RTDEP) THEN
+!           Fully rooted section — uniform weighting
+            RLDF(L) = DLAYR(L)
+            TRLDF = TRLDF + RLDF(L)
+          ELSE IF (CUMDEP .LT. RTDEP) THEN
+!           Partially rooted section (root front is here)
+            RLDF(L) = RTDEP - CUMDEP
+            TRLDF = TRLDF + RLDF(L)
+            GO TO 2800
           ELSE
-            SENRT(L) = 0.0
+!           Beyond root front
+            RLDF(L) = 0.0
+            GO TO 2800
           ENDIF
+          CUMDEP = CUMDEP + DLAYR(L)
+        ENDDO
+ 2800   CONTINUE
+
+!       Calculate per-layer growth, senescence, and update RLV
+        DO L = 1, L1
+          IF (TRLDF .GT. 0.00001) THEN
+            RRLF(L) = RLDF(L) / TRLDF
+          ELSE
+            RRLF(L) = 0.0
+          ENDIF
+
+!         New root growth in this section (cm[root]/cm3[channel])
+          RLGRW(L) = RRLF(L) * RLNEW / DLAYR(L)
+
+!         Natural senescence (reduced 0.5x in hydroponics)
+          IF (TRLV + RLNEW .GT. TRLV_MIN) THEN
+            RLSEN(L) = RLV(L) * RTSEN * DTX * 0.5
+          ELSE
+            RLSEN(L) = 0.0
+          ENDIF
+
+!         No water stress senescence in hydroponics
+          RLV_WS(L) = 0.0
+
+!         Limit senescence to available RLV
+          IF (RLV(L) - RLSEN(L) + RLGRW(L) .LT. 0.0) THEN
+            RLSEN(L) = RLV(L) + RLGRW(L)
+          ENDIF
+
+          RLSENTOT = RLSENTOT + RLSEN(L) * DLAYR(L)
         ENDDO
 
-!       Update total root length density
-        TRLV = TRLV + RLNEW - (SRDOT / (RFAC3 * 1.E4))
-        TRLV = AMAX1(TRLV, 0.0)
+!       If senescence too high, reduce proportionally
+        IF (RLSENTOT .GT. 1.E-6 .AND.
+     &      TRLV + RLNEW - RLSENTOT .LT. TRLV_MIN) THEN
+          FACTOR = (TRLV + RLNEW - TRLV_MIN) / RLSENTOT
+          FACTOR = MAX(0.0, MIN(1.0, FACTOR))
+          DO L = 1, L1
+            RLSEN(L) = RLSEN(L) * FACTOR
+          ENDDO
+        ENDIF
 
-!       Distribute RLV uniformly across layers (no preference in NFT)
-        DO L = 1, NLAYR
-          RLV(L) = TRLV / (DLAYR(L) * FLOAT(NLAYR))
+!       Update RLV and TRLV from accumulated growth and senescence
+        TRLV = 0.0
+        DO L = 1, L1
+          RLV(L) = RLV(L) + RLGRW(L) - RLSEN(L)
+          RLV(L) = AMAX1(RLV(L), 0.0)
+          TRLV = TRLV + RLV(L) * DLAYR(L)
+
+!         Convert senescence to mass for output (kg/ha)
+          SENRT(L) = RLSEN(L) * DLAYR(L) / RFAC3 * 1.E5
+          SENRT(L) = AMAX1(SENRT(L), 0.0)
+          SRDOT = SRDOT + SENRT(L) / 10.0   !g/m2
         ENDDO
 
-!       No root depth progression in NFT - roots don't explore
-        RTDEP = RTDEPI
+!       Zero out unrooted sections
+        IF (L1 .LT. NLAYR) THEN
+          DO L = L1+1, NLAYR
+            RLV(L) = 0.0
+            SENRT(L) = 0.0
+          ENDDO
+        ENDIF
 
 !       No water stress in hydroponics
         SATFAC = 0.0
@@ -212,7 +290,7 @@ C     Calculate Root Depth Rate of Increase, Physiological Day (RFAC2)
 C-----------------------------------------------------------------------
       RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
       RLNEW = WRDOTN * RFAC1 / 10000.
-      
+
 C     Apply EC stress to root growth (morphological suppression)
       CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
       IF (ECSTRESS_ROOT .LT. 0.1) ECSTRESS_ROOT = 1.0

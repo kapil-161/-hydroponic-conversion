@@ -44,17 +44,14 @@ C     Local variables - all in mm
       REAL AUTO_VOL_R     ! Auto volume control flag (1.0=Y, 0.0=N)
       REAL PLANT_UPTAKE_MM ! Plant water uptake (mm/d) - actual
       REAL PLANT_DEMAND_MM ! Plant water demand (mm/d) - from EP
-      REAL MAX_WITHDRAWAL_MM ! Maximum withdrawal from depth (mm)
-      REAL MAX_WITHDRAWAL_RATE_MM ! Maximum withdrawal rate (mm/d)
       REAL SOL_EVAP_MM    ! Solution evaporation (mm/d) - minimal
       REAL GROWING_AREA   ! Growing area (m2) - for conversion
-      REAL IRRAMT         ! Irrigation amount (mm) - from irrigation module
       REAL WUF            ! Water uptake factor (demand/supply ratio, 0-1)
       REAL TRWUP_MM       ! Potential uptake in mm/d
       REAL TRWU_MM        ! Actual uptake in mm/d
-      REAL SOLVOL_L       ! Temporary: solution volume in L (from ModuleData)
       REAL ECSTRESS_ROOT  ! EC stress factor for root function (affects water uptake)
       INTEGER DYNAMIC
+      CHARACTER*1 IDETL   ! Detail level for output
 
 C-----------------------------------------------------------------------
 C     In hydroponic systems:
@@ -78,9 +75,15 @@ C-----------------------------------------------------------------------
         TRWU  = 0.0
         ES    = 0.0
 
+C       Get detail level for output
+        IDETL = ISWITCH % IDETL
+
 C       Get initial solution depth in mm from ModuleData
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
         SOLVOL_INIT_MM = SOLVOL_MM  ! Save for AUTO_VOL refill
+
+C       Store initial volume for AUTO_VOL refill target
+        CALL PUT('HYDRO','SOLVOL_INIT',SOLVOL_INIT_MM)
 
 C       Get growing area from experimental file (*FIELDS section)
         CALL GET('HYDRO','AREA',GROWING_AREA)
@@ -89,11 +92,13 @@ C       Get AUTO_VOL flag (1.0 = Y = constant volume, 0.0 = N = drift)
         CALL GET('HYDRO','AUTO_VOL',AUTO_VOL_R)
         IF (AUTO_VOL_R .LT. 0.0) AUTO_VOL_R = 0.0  ! Default to drift
 
-        WRITE(*,100) SOLVOL_MM, AUTO_VOL_R
- 100    FORMAT(/,' Hydroponic water module initialized',
-     &         /,' Initial solution depth: ',F8.1,' mm',
-     &         /,' AUTO_VOL: ',F3.1,' (1.0=constant, 0.0=drift)',
-     &         /,' Water supply: UNLIMITED from nutrient solution',/)
+        IF (IDETL .EQ. 'D') THEN
+          WRITE(*,100) SOLVOL_MM, AUTO_VOL_R
+ 100      FORMAT(/,' Hydroponic water module initialized',
+     &           /,' Initial solution depth: ',F8.1,' mm',
+     &           /,' AUTO_VOL: ',F3.1,' (1.0=constant, 0.0=drift)',
+     &           /,' Water supply: UNLIMITED from nutrient solution',/)
+        ENDIF
 
       CASE (RATE)
 C-----------------------------------------------------------------------
@@ -102,6 +107,9 @@ C       Potential supply is based on solution depth and flow capacity
 C-----------------------------------------------------------------------
         ES = 0.0     ! No soil evaporation in hydroponics
         TRWU = 0.0   ! Actual uptake calculated in INTEGR phase
+
+C       Get detail level for output
+        IDETL = ISWITCH % IDETL
 
 C       Get current solution depth in mm
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
@@ -119,18 +127,20 @@ C       Set to 100 cm/d which is >> any realistic ET demand
 C       Store potential supply for INTEGR phase (in mm/d)
         CALL PUT('HYDRO','TRWUP_MM',TRWUP_MM)
 
-        WRITE(*,200) SOLVOL_MM, TRWUP_MM, TRWUP
- 200    FORMAT(' HYDRO_WATER RATE: SOLVOL=',F8.1,' mm',
-     &         ' Potential supply=',F6.2,' mm/d (',F6.1,' cm/d)')
-
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       PHASE 2: Calculate ACTUAL water uptake (like XTRACT in soil)
 C       In hydroponics with unlimited water, actual = demand (no stress)
 C-----------------------------------------------------------------------
+C       Get detail level for output
+        IDETL = ISWITCH % IDETL
+
 C       Get current solution depth in mm
         CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
         SOLVOL_PREV_MM = SOLVOL_MM
+
+C       Get initial solution depth for AUTO_VOL refill target
+        CALL GET('HYDRO','SOLVOL_INIT',SOLVOL_INIT_MM)
 
 C       Get growing area from experimental file (*FIELDS section)
         CALL GET('HYDRO','AREA',GROWING_AREA)
@@ -171,13 +181,17 @@ C       Estimate as 1% of transpiration (typical for NFT systems)
         SOL_EVAP_MM = PLANT_UPTAKE_MM * 0.01  ! mm/d
         ES = 0.0  ! No soil evaporation in hydroponics (output variable)
 
-C       AUTO_VOL: Automatic volume control (1.0=refill, 0.0=drift)
+C       AUTO_VOL: Automatic volume control (1.0=refill to initial, 0.0=drift)
         CALL GET('HYDRO','AUTO_VOL',AUTO_VOL_R)
         IF (AUTO_VOL_R .LT. 0.0) AUTO_VOL_R = 0.0  ! Default to drift
 
         IF (AUTO_VOL_R .GT. 0.5) THEN
-C         Maintain constant volume by refilling
-          WATER_ADD_MM = PLANT_UPTAKE_MM + SOL_EVAP_MM
+C         Refill to initial volume (not just maintain current)
+C         This restores volume to SOLVOL_INIT_MM after losses
+          WATER_ADD_MM = SOLVOL_INIT_MM - SOLVOL_PREV_MM
+     &                 + PLANT_UPTAKE_MM + SOL_EVAP_MM
+C         Ensure we don't remove water (only add)
+          IF (WATER_ADD_MM .LT. 0.0) WATER_ADD_MM = 0.0
         ELSE
 C         Volume drifts naturally
           WATER_ADD_MM = 0.0
@@ -202,18 +216,35 @@ C       Minimum of 2.0 mm prevents numerical instability in nutrient calculation
 C       Store updated solution depth back to ModuleData (in mm)
         CALL PUT('HYDRO','SOLVOL',SOLVOL_MM)
 
-        WRITE(*,300) SOLVOL_PREV_MM, TRWUP_MM, PLANT_DEMAND_MM, TRWU_MM,
-     &               WUF, SOL_EVAP_MM, WATER_ADD_MM, SOLVOL_MM
- 300    FORMAT(' HYDRO_WATER INTEGR:',
-     &         ' SOLVOL_prev=',F8.1,' mm',
-     &         ' Supply=',F6.2,' Demand=',F6.2,' mm/d',
-     &         ' Actual=',F6.2,' mm/d (WUF=',F4.2,')',
-     &         ' Evap=',F5.2,' Add=',F5.2,' mm/d',
-     &         ' => SOLVOL_new=',F8.1,' mm')
+        IF (IDETL .EQ. 'D') THEN
+          WRITE(*,300) SOLVOL_PREV_MM, TRWUP_MM, PLANT_DEMAND_MM,
+     &                 TRWU_MM, WUF, SOL_EVAP_MM, WATER_ADD_MM, SOLVOL_MM
+ 300      FORMAT(' HYDRO_WATER INTEGR:',
+     &           ' SOLVOL_prev=',F8.1,' mm',
+     &           ' Supply=',F6.2,' Demand=',F6.2,' mm/d',
+     &           ' Actual=',F6.2,' mm/d (WUF=',F4.2,')',
+     &           ' Evap=',F5.2,' Add=',F5.2,' mm/d',
+     &           ' => SOLVOL_new=',F8.1,' mm')
+        ENDIF
 
       CASE (OUTPUT)
 C       Output - handled by main model
         CONTINUE
+
+      CASE (SEASEND)
+C-----------------------------------------------------------------------
+C       End of season cleanup
+C-----------------------------------------------------------------------
+        IDETL = ISWITCH % IDETL
+        CALL GET('HYDRO','SOLVOL',SOLVOL_MM)
+        CALL GET('HYDRO','SOLVOL_INIT',SOLVOL_INIT_MM)
+
+        IF (IDETL .EQ. 'D') THEN
+          WRITE(*,400) SOLVOL_INIT_MM, SOLVOL_MM
+ 400      FORMAT(/,' HYDRO_WATER: Season ended',
+     &           /,'   Initial volume: ',F8.1,' mm',
+     &           /,'   Final volume:   ',F8.1,' mm',/)
+        ENDIF
 
       END SELECT
 
