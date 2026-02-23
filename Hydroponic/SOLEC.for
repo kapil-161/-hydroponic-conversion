@@ -307,10 +307,11 @@ C         Limit to reasonable range (prevent division errors)
         ENDIF
 
 C       Convert mg/L to ppm (equivalent for dilute solutions)
-C       IMPORTANT: Nutrient concentrations in ModuleData are ALREADY in mg/L
-C       of the CURRENT solution volume. When volume decreases, the depletion
-C       calculations naturally account for concentration by calculating mg/L.
-C       DO NOT apply CONCENTRATION_FACTOR here - it would double-count the effect.
+C       NOTE: Nutrient concentrations are correctly updated each timestep:
+C       uptake depletion is applied in NUPTAK (HYDRO_NUTRIENT/SOLPi/SOLKi),
+C       and the transpiration concentration effect (V_old/V_new) is applied
+C       in HYDRO_WATER INTEGR immediately after volume reduction.
+C       Use concentrations directly for EC calculation.
         NO3_ppm = NO3_CONC
         NH4_ppm = NH4_CONC
         P_ppm   = P_CONC

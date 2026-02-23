@@ -141,7 +141,9 @@
 !      REAL PShutMobPool, PRootMobPool, PShelMobPool
       
 !     Hydroponic mode variables
-      REAL UPO4_HYDRO 
+      REAL UPO4_HYDRO
+      CHARACTER*1 ISWHYDRO
+      TYPE (SwitchType) ISWITCH
 
 !     From species file:
       REAL, DIMENSION(3) :: PCShutOpt, PCRootOpt, PCShelOpt, PCSeedOpt
@@ -304,6 +306,10 @@
 !***********************************************************************
       ELSEIF (DYNAMIC == INTEGR) THEN
 !-----------------------------------------------------------------------
+!     Get hydroponic mode switch (consistent with K_Plant)
+      CALL GET(ISWITCH)
+      ISWHYDRO = ISWITCH % ISWHYDRO
+
       Shut_kg = Leaf_kg + Stem_kg
       Plant_kg = Shut_kg + Root_kg + Shel_kg + Seed_kg
 
@@ -372,32 +378,16 @@
      &    PRootDem, PSeedDem, PShelDem, PShutDem,         !Output
      &    PTotDem)                                        !Output
 
-!     Store PTotDem in ModuleData for hydroponic SOLPi module
-!     SOLPi uses this to limit M-M supply by plant demand
       CALL PUT('HYDRO','PTOTDEM',PTotDem)
 
 !-----------------------------------------------------------------------
 !     P uptake
-!     Check if in hydroponic mode - try to get P uptake from ModuleData
-!     In hydroponic mode, NUPTAK stores UPO4 before P_CGRO is called
       CALL GET('HYDRO','UPO4',UPO4_HYDRO)
-!     Use hydroponic P uptake if ISWPHO allows P simulation
-!     (In hydroponic mode, ISWPHO is typically 'Y', and UPO4 is stored by NUPTAK)
-!     We assume that if UPO4 is available from HYDRO module, we're in hydroponic mode
-!     In pure soil mode without hydroponics, UPO4 won't be in ModuleData, 
-!     and we'll fall through to soil P uptake calculation below
-      IF (ISWPHO .NE. 'N' .AND. UPO4_HYDRO .GE. 0.0) THEN
-!       Hydroponic mode - use P uptake from NUPTAK/SOLPi
+      IF (ISWPHO .NE. 'N' .AND. ISWHYDRO .EQ. 'Y') THEN
         PUptakeProf = UPO4_HYDRO
-!       Debug: Check if UPO4_HYDRO is being retrieved correctly
-        IF (DYNAMIC .EQ. INTEGR) THEN
-          WRITE(*,*) ' P_PLANT: UPO4_HYDRO=',UPO4_HYDRO,' PUptakeProf=',PUptakeProf
-        ENDIF
-!       Set layer-wise uptake to zero (all uptake in solution, not from soil layers)
         DO I = 1, NL
           PUptake(I) = 0.0
         ENDDO
-!       Calculate N2P ratio for stress calculation (needed for P stress factors)
         IF (PConc_Veg .GT. 0.0 .AND. PCNVeg .GT. 0.0) THEN
           N2P = (PCNVeg / 100.0) / PConc_Veg
         ELSE

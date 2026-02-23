@@ -171,19 +171,6 @@
       KSeedDem = MAX(0.0, KSeedDem)
 
 !     ------------------------------------------------------------------
-!     K-SPECIFIC: Calculate LUXURY demand (uptake above optimum)
-!     K can be stored in vegetative tissue above optimum concentration
-      KLuxuryDem = 0.0
-      IF (KShutDem < 1.E-6 .AND. ShutKLux > ShutKOpt) THEN
-        !Already at optimum, can store more as luxury
-        KLuxuryDem = KLuxuryDem + (ShutKLux - KShut_kg)
-      ENDIF
-      IF (KRootDem < 1.E-6 .AND. RootKLux > RootKOpt) THEN
-        KLuxuryDem = KLuxuryDem + (RootKLux - KRoot_kg)
-      ENDIF
-      KLuxuryDem = MAX(0.0, KLuxuryDem)
-
-!     ------------------------------------------------------------------
 !     Mobilized K - reduce demand by amount which is mobilized.
 !     K is highly mobile - higher mobilization rates than P
 !     ------------------------------------------------------------------
@@ -329,6 +316,22 @@
       KRootMobPool = KRootMobPool + KRootMobToday
       KShelMobPool = KShelMobPool + KShelMobToday
 
+!     ------------------------------------------------------------------
+!     K-SPECIFIC: Calculate LUXURY demand AFTER mobilization.
+!     Mobilization may have resolved shoot/root deficits, so re-evaluate
+!     whether the plant is now at optimum and can request luxury storage.
+!     Use effective K (KShut_kg + DeltKShut) to reflect mobilization.
+      KLuxuryDem = 0.0
+      IF (KShutDem < 1.E-6 .AND. ShutKLux > ShutKOpt) THEN
+        KLuxuryDem = KLuxuryDem +
+     &              MAX(0.0, ShutKLux - (KShut_kg + DeltKShut))
+      ENDIF
+      IF (KRootDem < 1.E-6 .AND. RootKLux > RootKOpt) THEN
+        KLuxuryDem = KLuxuryDem +
+     &              MAX(0.0, RootKLux - (KRoot_kg + DeltKRoot))
+      ENDIF
+      KLuxuryDem = MAX(0.0, KLuxuryDem)
+
 !     Recalculate demand (does not include luxury demand)
       KTotDem = KShutDem + KRootDem + KShelDem + KSeedDem
 
@@ -390,9 +393,12 @@ C=======================================================================
       KShelMin = KConc_Shel_min * Shel_kg
 
 !     K available for mining (kg/ha)
-!     K is highly mobile - can mobilize more than P
-      KMine_Avail = KShut_kg  + KRoot_kg  + KShel_kg      !Actual K
-     &            - ShutKMin - KRootMin - KShelMin     !Minimum K
+!     Use effective K after K_Demand mobilization (KShut_kg + DeltKShut)
+!     to prevent over-mining tissue already allocated by K_Demand.
+      KMine_Avail = (KShut_kg + DeltKShut)               !Effective shoot K
+     &            + (KRoot_kg + DeltKRoot)                !Effective root K
+     &            + (KShel_kg + DeltKShel)                !Effective shell K
+     &            - ShutKMin - KRootMin - KShelMin        !Minimum K
 
 !     Maximum that can be mobilized in one day
 !     FracKMobil is typically higher than FracPMobil (0.20 vs 0.10)
@@ -400,8 +406,8 @@ C=======================================================================
 
 !     Fraction of mined K that will come from roots, shoots, and shells
       IF (KMine_Avail > 0.0) THEN
-        ShutMineFrac = (KShut_kg - ShutKMin) / KMine_Avail
-        RootMineFrac = (KRoot_kg - KRootMin) / KMine_Avail
+        ShutMineFrac = (KShut_kg + DeltKShut - ShutKMin) / KMine_Avail
+        RootMineFrac = (KRoot_kg + DeltKRoot - KRootMin) / KMine_Avail
         ShelMineFrac = 1.0 - ShutMineFrac - RootMineFrac
         ShelMineFrac = MAX(0.0, ShelMineFrac)
       ELSE

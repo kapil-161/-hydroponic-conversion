@@ -42,6 +42,7 @@ C     Local variables - all in mm
       REAL SOLVOL_INIT_MM ! Initial solution depth (mm) - for AUTO_VOL
       REAL WATER_ADD_MM   ! Water addition from irrigation (mm/d)
       REAL AUTO_VOL_R     ! Auto volume control flag (1.0=Y, 0.0=N)
+      REAL AUTO_CONC_R    ! Auto concentration flag (1.0=Y, 0.0=N)
       REAL PLANT_UPTAKE_MM ! Plant water uptake (mm/d) - actual
       REAL PLANT_DEMAND_MM ! Plant water demand (mm/d) - from EP
       REAL SOL_EVAP_MM    ! Solution evaporation (mm/d) - minimal
@@ -50,6 +51,9 @@ C     Local variables - all in mm
       REAL TRWUP_MM       ! Potential uptake in mm/d
       REAL TRWU_MM        ! Actual uptake in mm/d
       REAL ECSTRESS_ROOT  ! EC stress factor for root function (affects water uptake)
+C     Concentration correction variables
+      REAL CONC_FACTOR    ! Concentration factor from volume reduction (>= 1.0)
+      REAL NO3_CONC, NH4_CONC, P_CONC, K_CONC  ! mg/L
       INTEGER DYNAMIC
       CHARACTER*1 IDETL   ! Detail level for output
 
@@ -103,7 +107,8 @@ C       Get AUTO_VOL flag (1.0 = Y = constant volume, 0.0 = N = drift)
       CASE (RATE)
 C-----------------------------------------------------------------------
 C       PHASE 1: Calculate POTENTIAL water supply (like ROOTWU in soil)
-C       Potential supply is based on solution depth and flow capacity
+C       TRWUP = EP * ECSTRESS_ROOT so SPAM sets WUF = ECSTRESS_ROOT,
+C       propagating EC salinity stress to all plant growth modules
 C-----------------------------------------------------------------------
         ES = 0.0     ! No soil evaporation in hydroponics
         TRWU = 0.0   ! Actual uptake calculated in INTEGR phase
@@ -117,12 +122,17 @@ C       Get current solution depth in mm
 C       Get growing area from experimental file (*FIELDS section)
         CALL GET('HYDRO','AREA',GROWING_AREA)
 
-C       Calculate potential water supply from solution
-C       In hydroponic systems with unlimited water, set TRWUP very high
-C       to ensure plants are never water-stressed
-C       Set to 100 cm/d which is >> any realistic ET demand
-        TRWUP_MM = 100.0  ! mm/d (effectively unlimited)
-        TRWUP = TRWUP_MM * 0.1  ! 10.0 cm/d (per unit area)
+C       Get EC stress factor so TRWUP reflects actual root capacity
+        ECSTRESS_ROOT = -999.0
+        CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
+        IF (ECSTRESS_ROOT .LT. 0.1 .OR. ECSTRESS_ROOT .GT. 1.0) THEN
+          ECSTRESS_ROOT = 1.0
+        ENDIF
+
+C       Set TRWUP = EP * ECSTRESS_ROOT so SPAM propagates EC water
+C       stress through WUF to all plant growth modules consistently
+        TRWUP_MM = EP * ECSTRESS_ROOT   ! mm/d
+        TRWUP    = TRWUP_MM * 0.1       ! cm/d
 
 C       Store potential supply for INTEGR phase (in mm/d)
         CALL PUT('HYDRO','TRWUP_MM',TRWUP_MM)
@@ -215,6 +225,37 @@ C       Minimum of 2.0 mm prevents numerical instability in nutrient calculation
 
 C       Store updated solution depth back to ModuleData (in mm)
         CALL PUT('HYDRO','SOLVOL',SOLVOL_MM)
+
+C-----------------------------------------------------------------------
+C       CONCENTRATION EFFECT FROM WATER LOSS
+C       When volume decreases (transpiration in drift mode), dissolved
+C       nutrients concentrate. NUPTAK already applied uptake depletion
+C       using the old volume: C_depleted = C_old - uptake/V_old.
+C       Multiplying by V_old/V_new gives the exact correct result:
+C         C_depleted * (V_old/V_new) = (C_old*V_old - uptake) / V_new
+C       Skip when AUTO_CONC=Y (concentrations are reset each timestep)
+C-----------------------------------------------------------------------
+        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
+        IF (AUTO_CONC_R .LT. 0.5 .AND.
+     &      SOLVOL_PREV_MM .GT. SOLVOL_MM .AND.
+     &      SOLVOL_MM .GT. 0.0) THEN
+          CONC_FACTOR = SOLVOL_PREV_MM / SOLVOL_MM
+
+          CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+          CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+          CALL GET('HYDRO','P_CONC',P_CONC)
+          CALL GET('HYDRO','K_CONC',K_CONC)
+
+          NO3_CONC = NO3_CONC * CONC_FACTOR
+          NH4_CONC = NH4_CONC * CONC_FACTOR
+          P_CONC   = P_CONC   * CONC_FACTOR
+          K_CONC   = K_CONC   * CONC_FACTOR
+
+          CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
+          CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
+          CALL PUT('HYDRO','P_CONC',P_CONC)
+          CALL PUT('HYDRO','K_CONC',K_CONC)
+        ENDIF
 
         IF (IDETL .EQ. 'D') THEN
           WRITE(*,300) SOLVOL_PREV_MM, TRWUP_MM, PLANT_DEMAND_MM,

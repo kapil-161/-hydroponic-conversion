@@ -126,11 +126,8 @@ C       Cap at 1.2x demand
         UNO3 = MAX(0.0, UNO3)
         UNH4 = MAX(0.0, UNH4)
 
-        WRITE(*,200) EP, TRLV, UNO3_MF+UNH4_MF,
-     &               UNO3_ACT+UNH4_ACT, UNO3+UNH4, ANDEM
- 200    FORMAT(' HYDRO_N: EP=',F5.2,' TRLV=',F6.2,
-     &         ' MF=',F6.3,' Act=',F6.3,
-     &         ' Tot=',F6.3,' Dem=',F6.3,' kg/ha/d')
+        CALL PUT('HYDRO','UNO3',UNO3)
+        CALL PUT('HYDRO','UNH4',UNH4)
 
       CASE (INTEGR)
         CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)

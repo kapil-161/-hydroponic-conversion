@@ -165,8 +165,10 @@
       ENDDO
       RLVTOT = RLVTOT / DS(NLAYR)
 
+ 500  CONTINUE   ! Both soil and hydroponic paths converge here
+
 !-----------------------------------------------------------------------
-!     Calculate N:K and P:K ratios
+!     Calculate N:K and P:K ratios (applies to both soil and hydroponic)
       IF (KConc_Veg > 1.E-6) THEN
         N2K = (PCNVeg / 100.0) / KConc_Veg    !N:K ratio
         P2K = PConc_Veg / KConc_Veg           !P:K ratio
@@ -204,8 +206,6 @@
         KUptake     = KUp_Reduce * KUptake
         KUptakeProf = KUp_Reduce * KUptakeProf
       ENDIF
-
- 500  CONTINUE   ! Label for hydroponic mode to skip soil uptake
 
 !***********************************************************************
 !***********************************************************************

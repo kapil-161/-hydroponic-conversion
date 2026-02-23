@@ -402,17 +402,9 @@
 
 !-----------------------------------------------------------------------
 !     K uptake
-!     Check if in hydroponic mode - try to get K uptake from ModuleData
-!     SOLKi stores as 'UK', K_Uptake stores as 'UKi' - check both
       CALL GET('HYDRO','UK',UKi_HYDRO)
       IF (ISWPOT .NE. 'N' .AND. ISWHYDRO .EQ. 'Y') THEN
-!       Hydroponic mode - use K uptake from NUPTAK/SOLKi
         KUptakeProf = UKi_HYDRO
-        IF (DYNAMIC .EQ. INTEGR) THEN
-          WRITE(*,*) ' K_PLANT: UKi_HYDRO=',UKi_HYDRO,' KUptakeProf=',
-     &               KUptakeProf
-        ENDIF
-!       Set layer-wise uptake to zero (all uptake in solution)
         DO I = 1, NL
           KUptake(I) = 0.0
         ENDDO
@@ -423,6 +415,15 @@
         ELSE
           N2K = N2K_min
           P2K = P2K_min
+        ENDIF
+!       Apply physiological ratio constraints to hydroponic uptake
+!       (same throttle as soil mode — prevents toxic K accumulation
+!       when N or P are limiting)
+        IF (N2K .GT. 1.E-6 .AND. N2K .LT. N2K_min) THEN
+          KUptakeProf = KUptakeProf * (N2K / N2K_min)
+        ENDIF
+        IF (P2K .GT. 1.E-6 .AND. P2K .LT. P2K_min) THEN
+          KUptakeProf = KUptakeProf * (P2K / P2K_min)
         ENDIF
       ELSE
 !       Soil mode - calculate K uptake from soil

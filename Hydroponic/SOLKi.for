@@ -31,6 +31,7 @@ C=======================================================================
       REAL AUTO_CONC_R
       REAL PH_AVAIL_K, O2_STRESS
       REAL ECSTRESS_JMAX_K, JMAX_EFF_K
+      REAL KDEMAND_ACT
 
       INTEGER LUNCRP, ERR, LINC, FOUND
       CHARACTER*6 SECTION
@@ -92,17 +93,15 @@ C       Active uptake (Michaelis-Menten with EC stress)
 
         UK = UK_MF + UK_ACT
 
+        CALL GET('HYDRO','KTOTDEM',KDEMAND_ACT)
+        IF (KDEMAND_ACT .GT. 1.E-9) KDEMAND = KDEMAND_ACT
+
 C       Cap at 1.2x demand
         IF (KDEMAND .GT. 1.E-9 .AND. UK .GT. KDEMAND * 1.2) THEN
           UK = KDEMAND * 1.2
         ENDIF
 
         UK = MAX(0.0, UK)
-
-        WRITE(*,200) EP, TRLV, UK_MF, UK_ACT, UK, KDEMAND
- 200    FORMAT(' HYDRO_K: EP=',F5.2,' TRLV=',F6.2,
-     &         ' MF=',F6.3,' Act=',F6.3,
-     &         ' Tot=',F6.3,' Dem=',F6.3,' kg/ha/d')
 
         CALL PUT('HYDRO','UK',UK)
 

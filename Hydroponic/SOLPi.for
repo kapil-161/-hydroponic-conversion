@@ -31,6 +31,7 @@ C=======================================================================
       REAL AUTO_CONC_R
       REAL PH_AVAIL_P, O2_STRESS
       REAL ECSTRESS_JMAX_P, JMAX_EFF_P
+      REAL PDEMAND_ACT
 
       INTEGER LUNCRP, ERR, LINC, FOUND
       CHARACTER*6 SECTION
@@ -92,17 +93,17 @@ C       Active uptake (Michaelis-Menten with EC stress)
 
         UPO4 = UPO4_MF + UPO4_ACT
 
-C       Cap at 1.1x demand
-        IF (PDEMAND .GT. 1.E-9 .AND. UPO4 .GT. PDEMAND * 1.1) THEN
-          UPO4 = PDEMAND * 1.1
+        CALL GET('HYDRO','PTOTDEM',PDEMAND_ACT)
+        IF (PDEMAND_ACT .GT. 1.E-9) PDEMAND = PDEMAND_ACT
+
+C       Cap at 1.2x demand
+        IF (PDEMAND .GT. 1.E-9 .AND. UPO4 .GT. PDEMAND * 1.2) THEN
+          UPO4 = PDEMAND * 1.2
         ENDIF
 
         UPO4 = MAX(0.0, UPO4)
 
-        WRITE(*,200) EP, TRLV, UPO4_MF, UPO4_ACT, UPO4, PDEMAND
- 200    FORMAT(' HYDRO_P: EP=',F5.2,' TRLV=',F6.2,
-     &         ' MF=',F6.4,' Act=',F6.4,
-     &         ' Tot=',F6.4,' Dem=',F6.4,' kg/ha/d')
+        CALL PUT('HYDRO','UPO4',UPO4)
 
       CASE (INTEGR)
         CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)

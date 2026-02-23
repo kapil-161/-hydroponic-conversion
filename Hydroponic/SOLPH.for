@@ -212,10 +212,11 @@ C       If calculated HCO3- is very small, use minimum (typical in hydroponics)
 
 C       Calculate buffering capacity from HCO3- and phosphate
 C       CRITICAL: Use maximum to prevent very small volumes
-        SOLVOL_L = MAX(5.0, SOLVOL_INIT * AREA) / 1000.0  ! L (min 5.0 L/m²)
+        SOLVOL_L = MAX(5.0, SOLVOL_INIT * AREA)            ! L (min 5.0 L)
 
 C       Bicarbonate buffering
-        BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
+C       HCO3_CONC/MW_HCO3 gives mmol/L; divide by 1000 to get mol/L, then * L = mol
+        BUFFER_CAP = (HCO3_CONC / MW_HCO3 / 1000.0) * SOLVOL_L / 2.0  ! mol H+/pH unit
 
 C       Phosphate buffering: beta = 2.303 * C_total * f * (1-f)
 C       where f = [HPO4^2-] / ([H2PO4^-] + [HPO4^2-])
@@ -311,10 +312,11 @@ C       Calculate pH change using buffer capacity method
 C       This is chemically accurate for buffered hydroponic solutions
 C-----------------------------------------------------------------------
 C       Calculate solution volume in liters
-        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA) / 1000.0  ! L (min 5.0 L/m²)
+        SOLVOL_L = MAX(5.0, SOLVOL_CURRENT * AREA)            ! L (min 5.0 L)
 
 C       Bicarbonate buffering
-        BUFFER_CAP = (HCO3_CONC / MW_HCO3) * SOLVOL_L / 2.0  ! mol H+/pH unit
+C       HCO3_CONC/MW_HCO3 gives mmol/L; divide by 1000 to get mol/L, then * L = mol
+        BUFFER_CAP = (HCO3_CONC / MW_HCO3 / 1000.0) * SOLVOL_L / 2.0  ! mol H+/pH unit
 
 C       Phosphate buffering (P_RATIO already recalculated above)
         P_FRAC = P_RATIO / (1.0 + P_RATIO)

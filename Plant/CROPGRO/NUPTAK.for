@@ -46,7 +46,7 @@ C=======================================================================
       REAL NO3_SOL, NH4_SOL, P_SOL, K_SOL
       REAL UPO4_HYDRO, UK_HYDRO, UNO3_TOT, UNH4_TOT
       REAL PDEMAND, KDEMAND
-      REAL N_TO_P_RATIO, N_TO_K_RATIO
+      REAL N_TO_P_RATIO
       TYPE (ControlType) :: CONTROL_DUMMY
       SAVE
       REAL DLAYR(NL), LL(NL), DUL(NL), SAT(NL), SW(NL), RLV(NL)
@@ -182,9 +182,7 @@ C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
         ANDEM = (NDMTOT - NDMSDR) * 10.0
         N_TO_P_RATIO = 0.15
-        N_TO_K_RATIO = 1.2
         PDEMAND = ANDEM * N_TO_P_RATIO
-        KDEMAND = ANDEM * N_TO_K_RATIO
 
         CONTROL_DUMMY % DYNAMIC = RATE
         CALL HYDRO_NUTRIENT(
