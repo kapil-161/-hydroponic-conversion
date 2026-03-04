@@ -67,6 +67,7 @@ C=======================================================================
 
       CASE (SEASINIT)
         CALL GET('HYDRO','K_CONC',K_SOL)
+        CALL PUT('HYDRO','KTOTDEM', 0.0)
         UK = 0.0
 
       CASE (RATE)
@@ -94,11 +95,13 @@ C       Active uptake (Michaelis-Menten with EC stress)
         UK = UK_MF + UK_ACT
 
         CALL GET('HYDRO','KTOTDEM',KDEMAND_ACT)
-        IF (KDEMAND_ACT .GT. 1.E-9) KDEMAND = KDEMAND_ACT
+        IF (KDEMAND_ACT .GT. 1.E-9) THEN
+          KDEMAND = MAX(KDEMAND, KDEMAND_ACT)
+        ENDIF
 
-C       Cap at 1.2x demand
-        IF (KDEMAND .GT. 1.E-9 .AND. UK .GT. KDEMAND * 1.2) THEN
-          UK = KDEMAND * 1.2
+C       Cap at 1.0x demand
+        IF (UK .GT. KDEMAND * 1.0) THEN
+          UK = KDEMAND * 1.0
         ENDIF
 
         UK = MAX(0.0, UK)

@@ -115,12 +115,17 @@ C       Active uptake (Michaelis-Menten with EC stress)
         UNO3 = UNO3_MF + UNO3_ACT
         UNH4 = UNH4_MF + UNH4_ACT
 
-C       Cap at 1.2x demand
+C       Cap at 1.0x demand
         UN_TOTAL = UNO3 + UNH4
-        IF (ANDEM .GT. 1.E-9 .AND. UN_TOTAL .GT. ANDEM * 1.2) THEN
-          SCALE = ANDEM * 1.2 / UN_TOTAL
-          UNO3 = UNO3 * SCALE
-          UNH4 = UNH4 * SCALE
+        IF (UN_TOTAL .GT. ANDEM * 1.0) THEN
+          IF (UN_TOTAL .GT. 1.E-9) THEN
+            SCALE = ANDEM * 1.0 / UN_TOTAL
+            UNO3 = UNO3 * SCALE
+            UNH4 = UNH4 * SCALE
+          ELSE
+            UNO3 = 0.0
+            UNH4 = 0.0
+          ENDIF
         ENDIF
 
         UNO3 = MAX(0.0, UNO3)

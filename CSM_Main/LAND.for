@@ -381,9 +381,9 @@ C-----------------------------------------------------------------------
 C     Call Plant module to integrate daily plant processes and update
 C     plant state variables.
 C-----------------------------------------------------------------------
-      IF (CROP .NE. 'FA' .AND. 
+      IF (CROP .NE. 'FA' .AND.
      &        YRDOY .GE. YRPLT .AND. YRPLT .NE. -99) THEN
-        CALL PLANT(CONTROL, ISWITCH, 
+        CALL PLANT(CONTROL, ISWITCH,
      &    EO, EOP, EOS, EP, ES, FLOODWAT, HARVFRAC,       !Input
      &    IRRAMT, NH4_plant, NO3_plant, SKi_Avail,        !Input
      &    SPi_AVAIL, SNOW, SOILPROP, SRFTEMP, ST, SW,     !Input

@@ -15,14 +15,14 @@ C-----------------------------------------------------------------------
       SUBROUTINE IPSOL (LUNEXP,FILEX,LNSOL,LNCTL,
      &                  SOLVOL,EC,PH,DO2,TEMP,
      &                  NO3_CONC,NH4_CONC,P_CONC,K_CONC,ISWHYDRO,
-     &                  AUTO_PH,AUTO_VOL,AUTO_CONC,
+     &                  AUTO_PH,AUTO_VOL,AUTO_CONC,AUTO_O2,
      &                  CHLEN,CHSPC)
 
       IMPLICIT NONE
       EXTERNAL ERROR, FIND, FIND2, IGNORE
 
       CHARACTER*1  ISWHYDRO
-      CHARACTER*1  AUTO_PH, AUTO_VOL, AUTO_CONC  ! Hydroponic control flags
+      CHARACTER*1  AUTO_PH, AUTO_VOL, AUTO_CONC, AUTO_O2  ! Hydroponic control flags
       CHARACTER*6  ERRKEY,FINDCH,FINDCTL
       CHARACTER*12 FILEX
       CHARACTER*120 CHARTEST
@@ -61,6 +61,7 @@ C     Note: AUTO_EC removed - EC always drifts naturally with nutrient uptake
       AUTO_PH = 'N'
       AUTO_VOL = 'N'
       AUTO_CONC = 'N'  ! Concentration: N=deplete, Y=maintain constant
+      AUTO_O2 = 'N'    ! O2: N=dynamic DO2, Y=pin DO2 to initial value
 
       REWIND(LUNEXP)
 
@@ -131,13 +132,14 @@ C         Section found - read the control flags
 
           IF (ISECT .EQ. 1) THEN
             READ (CHARTEST,*,IOSTAT=ERRNUM) LN,AUTO_PH,AUTO_VOL,
-     &            AUTO_CONC
+     &            AUTO_CONC,AUTO_O2
 
             IF (ERRNUM .NE. 0) THEN
-C             Error reading - use defaults
+C             Error reading - use defaults (AUTO_O2 may be missing in old files)
               AUTO_PH = 'N'
               AUTO_VOL = 'N'
               AUTO_CONC = 'N'
+              AUTO_O2 = 'N'
               WRITE(*,*) 'IPSOL: Error reading HYDROPONIC CONTROL,',
      &                   ' using defaults (N)'
             ELSE
@@ -145,13 +147,14 @@ C             Validate flags (must be Y or N)
               IF (AUTO_PH .NE. 'Y' .AND. AUTO_PH .NE. 'N') AUTO_PH = 'N'
               IF (AUTO_VOL.NE. 'Y' .AND. AUTO_VOL.NE. 'N') AUTO_VOL= 'N'
               IF (AUTO_CONC.NE.'Y' .AND. AUTO_CONC.NE.'N') AUTO_CONC='N'
+              IF (AUTO_O2 .NE. 'Y' .AND. AUTO_O2 .NE. 'N') AUTO_O2 = 'N'
             ENDIF
           ENDIF
 
           IF (LN .NE. LNCTL) GO TO 70
 
 C         Print control settings
-          WRITE(*,110) AUTO_PH, AUTO_VOL, AUTO_CONC
+          WRITE(*,110) AUTO_PH, AUTO_VOL, AUTO_CONC, AUTO_O2
         ELSE
 C         Section not found - use defaults
           WRITE(*,*) ' HYDROPONIC CONTROL section not found,',
@@ -186,6 +189,7 @@ C-----------------------------------------------------------------------
      &        /,'   AUTO_PH  : ',A1,' (Y=constant, N=drift)',
      &        /,'   AUTO_VOL : ',A1,' (Y=constant, N=drift)',
      &        /,'   AUTO_CONC: ',A1,' (Y=replenish nutrients, N=deplete)',
+     &        /,'   AUTO_O2  : ',A1,' (Y=pin DO2 to initial, N=dynamic)',
      &        /,'   (EC always drifts naturally with nutrient uptake)',/)
 
       END SUBROUTINE IPSOL

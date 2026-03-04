@@ -664,8 +664,9 @@ C         Override EP in hydroponic mode to ensure demand-based transpiration
      &    PH_CALC, PH_TARGET)                       !Output
 
 !       Calculate dissolved oxygen
-!       Root respiration not directly available - use simple estimate
-        ROOT_RESP = 0.0  ! Could be linked to plant respiration later
+!       Get root respiration from ROOTS.for (set during INTEGR, 1-day lag OK)
+        CALL GET('HYDRO','ROOT_RESP',ROOT_RESP)
+        IF (ROOT_RESP .LT. 0.0) ROOT_RESP = 0.0
 
         CALL SOLO2(CONTROL, ISWITCH, WEATHER,
      &    PLTPOP, ROOT_RESP,                        !Input

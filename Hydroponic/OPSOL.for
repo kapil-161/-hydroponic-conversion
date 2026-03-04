@@ -16,14 +16,14 @@ C-----------------------------------------------------------------------
       USE ModuleDefs
       USE ModuleData
       IMPLICIT NONE
-      EXTERNAL GETLUN, HEADER, YR_DOY
+      EXTERNAL GETLUN, HEADER, YR_DOY, TIMDIF
       SAVE
 C-----------------------------------------------------------------------
       CHARACTER*1  IDETW, ISWHYDRO, RNMODE, FMOPT
       CHARACTER*13 OUTSOL
 
       INTEGER DAS, DAP, DOY, DYNAMIC, ERRNUM, FROP, NOUTSL
-      INTEGER RUN, YEAR, YRDOY, YRPLT
+      INTEGER RUN, YEAR, YRDOY, YRPLT, TIMDIF
 
 C     Solution state variables - retrieved from ModuleData
       REAL NO3_CONC, NH4_CONC, P_CONC, K_CONC     ! mg/L
@@ -126,7 +126,7 @@ C     Don't write if planting date is invalid (<=0) or if current date is before
 
 C     Calculate DAP (Days After Planting) instead of using DAS
 C     This matches soil-based simulations where output starts from planting
-      DAP = MAX(0, YRDOY - YRPLT)
+      DAP = MAX(0, TIMDIF(YRPLT, YRDOY))
 
 C     Write on output frequency or on planting day
       IF (MOD(DAS,FROP) .EQ. 0 .OR. YRDOY .EQ. YRPLT) THEN
@@ -216,7 +216,7 @@ C         Get date
           CALL YR_DOY(YRDOY, YEAR, DOY)
 
 C         Calculate DAP for final output
-          DAP = MAX(0, YRDOY - YRPLT)
+          DAP = MAX(0, TIMDIF(YRPLT, YRDOY))
 
 C         Write final day output
           WRITE (NOUTSL,200) YEAR, DOY, DAP,

@@ -78,6 +78,9 @@ C-----------------------------------------------------------------------
       REAL TRLV_MIN, RLSENTOT, FACTOR, RTWTMIN
       REAL TotRootMass, CumRootMass
       REAL ECSTRESS_ROOT  ! EC stress factor for root growth (0-1)
+      REAL ROOT_RESP      ! Root respiration rate (g CO2/m2/day)
+      REAL O2_STRESS      ! Dissolved O2 stress factor from SOLO2 (0-1)
+      REAL O2_DEATH       ! O2-depletion senescence term (fraction/day)
 
 !***********************************************************************
 !***********************************************************************
@@ -171,6 +174,18 @@ C       Apply EC stress to root growth (morphological suppression)
 
         CGRRT = AGRRT * WRDOTN
 
+!       Compute root respiration for SOLO2 O2 consumption
+!       Maintenance (RTWT*RO + FRRT*PG*RP) + growth overhead (CGRRT-WRDOTN)
+!       Units: g CH2O/m2/d * 44/30 -> g CO2/m2/d
+        ROOT_RESP = (RTWT * RO + FRRT * PG * RP) * 44.0/30.0
+        ROOT_RESP = ROOT_RESP + AMAX1(CGRRT - WRDOTN, 0.0) * 44.0/30.0
+        ROOT_RESP = AMAX1(ROOT_RESP, 0.0)
+        CALL PUT('HYDRO','ROOT_RESP',ROOT_RESP)
+
+!       Get O2 stress from SOLO2 (updated in INTEGR — same phase, prior call)
+        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
+        IF (O2_STRESS .LT. 0.0 .OR. O2_STRESS .GT. 1.0) O2_STRESS = 1.0
+
 !       Update RFAC3 based on yesterday's RTWT and TRLV
         IF (RTWT - WRDOTN .GE. 0.0001 .AND. TRLV .GE. 0.00001) THEN
           RFAC3 = TRLV * 10000.0 / RTWT
@@ -229,9 +244,11 @@ C       Apply EC stress to root growth (morphological suppression)
 !         New root growth in this section (cm[root]/cm3[channel])
           RLGRW(L) = RRLF(L) * RLNEW / DLAYR(L)
 
-!         Natural senescence (reduced 0.5x in hydroponics)
+!         Natural + O2-depletion senescence in hydroponics
+!         Natural rate halved (no drought stress); RTEXF scales with O2 deficit
           IF (TRLV + RLNEW .GT. TRLV_MIN) THEN
-            RLSEN(L) = RLV(L) * RTSEN * DTX * 0.5
+            O2_DEATH = RTEXF * (1.0 - O2_STRESS)
+            RLSEN(L) = RLV(L) * (RTSEN * 0.5 + O2_DEATH) * DTX
           ELSE
             RLSEN(L) = 0.0
           ENDIF

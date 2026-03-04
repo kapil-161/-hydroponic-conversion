@@ -67,6 +67,7 @@ C=======================================================================
 
       CASE (SEASINIT)
         CALL GET('HYDRO','P_CONC',P_SOL)
+        CALL PUT('HYDRO','PTOTDEM', 0.0)
         UPO4 = 0.0
 
       CASE (RATE)
@@ -94,11 +95,14 @@ C       Active uptake (Michaelis-Menten with EC stress)
         UPO4 = UPO4_MF + UPO4_ACT
 
         CALL GET('HYDRO','PTOTDEM',PDEMAND_ACT)
-        IF (PDEMAND_ACT .GT. 1.E-9) PDEMAND = PDEMAND_ACT
 
-C       Cap at 1.2x demand
-        IF (PDEMAND .GT. 1.E-9 .AND. UPO4 .GT. PDEMAND * 1.2) THEN
-          UPO4 = PDEMAND * 1.2
+        IF (PDEMAND_ACT .GT. 1.E-9) THEN
+          PDEMAND = MAX(PDEMAND, PDEMAND_ACT)
+        ENDIF
+
+C       Cap at 1.0x demand
+        IF (UPO4 .GT. PDEMAND * 1.0) THEN
+          UPO4 = PDEMAND * 1.0
         ENDIF
 
         UPO4 = MAX(0.0, UPO4)

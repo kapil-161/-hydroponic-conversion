@@ -578,6 +578,9 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL CHSPC              ! NFT channel spacing (cm)
         REAL SOLVOL_INIT        ! Initial solution volume (mm) for AUTO_VOL
         REAL O2_STRESS          ! Dissolved O2 stress factor (0-1)
+        REAL AUTO_O2            ! Auto O2 control flag (1.0=pin to init, 0.0=dynamic)
+        REAL DO2_INIT           ! Initial DO2 for AUTO_O2 pinning (mg/L)
+        REAL ROOT_RESP          ! Root respiration rate (g CO2/m2/day)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -912,6 +915,9 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('CHSPC');       Value = SAVE_data % HYDRO % CHSPC
         Case ('SOLVOL_INIT'); Value = SAVE_data % HYDRO % SOLVOL_INIT
         Case ('O2_STRESS');   Value = SAVE_data % HYDRO % O2_STRESS
+        Case ('AUTO_O2');     Value = SAVE_data % HYDRO % AUTO_O2
+        Case ('DO2_INIT');    Value = SAVE_data % HYDRO % DO2_INIT
+        Case ('ROOT_RESP');   Value = SAVE_data % HYDRO % ROOT_RESP
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1105,6 +1111,9 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('CHSPC');       SAVE_data % HYDRO % CHSPC = Value
         Case ('SOLVOL_INIT'); SAVE_data % HYDRO % SOLVOL_INIT = Value
         Case ('O2_STRESS');   SAVE_data % HYDRO % O2_STRESS = Value
+        Case ('AUTO_O2');     SAVE_data % HYDRO % AUTO_O2 = Value
+        Case ('DO2_INIT');    SAVE_data % HYDRO % DO2_INIT = Value
+        Case ('ROOT_RESP');   SAVE_data % HYDRO % ROOT_RESP = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 

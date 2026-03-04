@@ -46,7 +46,7 @@ C=======================================================================
       REAL NO3_SOL, NH4_SOL, P_SOL, K_SOL
       REAL UPO4_HYDRO, UK_HYDRO, UNO3_TOT, UNH4_TOT
       REAL PDEMAND, KDEMAND
-      REAL N_TO_P_RATIO
+      REAL N_TO_P_RATIO, N_TO_K_RATIO
       TYPE (ControlType) :: CONTROL_DUMMY
       SAVE
       REAL DLAYR(NL), LL(NL), DUL(NL), SAT(NL), SW(NL), RLV(NL)
@@ -57,6 +57,7 @@ C=======================================================================
       REAL RTNO3, RTNH4, MXNH4U, MXNO3U
       REAL TRLV    ! Total root length per unit area (cm/cm2) from ROOTS
       REAL VSTAGE  ! Vegetative stage (main stage variable)
+      REAL O2_STRESS  ! Dissolved O2 stress factor from SOLO2 (0-1)
 
 !***********************************************************************
 !***********************************************************************
@@ -181,8 +182,19 @@ C   HYDROPONIC MODE: Transpiration-driven mass flow uptake
 C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
         ANDEM = (NDMTOT - NDMSDR) * 10.0
-        N_TO_P_RATIO = 0.15
-        PDEMAND = ANDEM * N_TO_P_RATIO
+        
+        PDEMAND = 0.0
+        KDEMAND = 0.0
+        
+        IF (ISWITCH % ISWPHO .EQ. 'Y') THEN
+          N_TO_P_RATIO = 0.10
+          PDEMAND = ANDEM * N_TO_P_RATIO
+        ENDIF
+        
+        IF (ISWITCH % ISWPOT .EQ. 'Y') THEN
+          N_TO_K_RATIO = 1.00
+          KDEMAND = ANDEM * N_TO_K_RATIO
+        ENDIF
 
         CONTROL_DUMMY % DYNAMIC = RATE
         CALL HYDRO_NUTRIENT(
@@ -221,6 +233,15 @@ C-----------------------------------------------------------------------
      &    CONTROL_DUMMY, ISWITCH,
      &    FILECC, PLTPOP, RTDEP, KDEMAND, TRLV,
      &    UK_HYDRO, K_SOL)
+
+!       Apply O2 stress: anoxia reduces active nutrient transport
+!       O2_STRESS=1 (normal), 0 (no uptake); Michaelis-Menten from SOLO2
+        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
+        IF (O2_STRESS .LT. 0.0 .OR. O2_STRESS .GT. 1.0) O2_STRESS = 1.0
+        UNO3_TOT   = UNO3_TOT   * O2_STRESS
+        UNH4_TOT   = UNH4_TOT   * O2_STRESS
+        UPO4_HYDRO = UPO4_HYDRO * O2_STRESS
+        UK_HYDRO   = UK_HYDRO   * O2_STRESS
 
         CALL PUT('HYDRO','UNO3',UNO3_TOT)
         CALL PUT('HYDRO','UNH4',UNH4_TOT)
