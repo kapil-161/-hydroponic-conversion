@@ -236,12 +236,12 @@ C-----------------------------------------------------------------------
 
 !       Apply O2 stress: anoxia reduces active nutrient transport
 !       O2_STRESS=1 (normal), 0 (no uptake); Michaelis-Menten from SOLO2
-        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
-        IF (O2_STRESS .LT. 0.0 .OR. O2_STRESS .GT. 1.0) O2_STRESS = 1.0
-        UNO3_TOT   = UNO3_TOT   * O2_STRESS
-        UNH4_TOT   = UNH4_TOT   * O2_STRESS
-        UPO4_HYDRO = UPO4_HYDRO * O2_STRESS
-        UK_HYDRO   = UK_HYDRO   * O2_STRESS
+!       CALL GET('HYDRO','O2_STRESS',O2_STRESS)
+!       IF (O2_STRESS .LT. 0.0 .OR. O2_STRESS .GT. 1.0) O2_STRESS = 1.0
+!       UNO3_TOT   = UNO3_TOT   * O2_STRESS
+!       UNH4_TOT   = UNH4_TOT   * O2_STRESS
+!       UPO4_HYDRO = UPO4_HYDRO * O2_STRESS
+!       UK_HYDRO   = UK_HYDRO   * O2_STRESS
 
         CALL PUT('HYDRO','UNO3',UNO3_TOT)
         CALL PUT('HYDRO','UNH4',UNH4_TOT)
