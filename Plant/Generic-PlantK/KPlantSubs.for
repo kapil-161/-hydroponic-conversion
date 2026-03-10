@@ -456,9 +456,10 @@ C=======================================================================
         ADD = AMIN1(KSeedDem, KSupply)
         DeltKSeed = DeltKSeed + ADD
         KSupply = KSupply - ADD
-      ELSEIF (KSeedDem > 0. .AND. KSupply <= 0.) THEN
-        !K mining from vegetative tissue to meet K demand for seeds
-        !Only if there's significant seed demand and no supply left
+        KSeedDem = KSeedDem - ADD  !Update remaining demand
+      ENDIF
+!     Mine vegetative tissue if seed demand remains and supply exhausted
+      IF (KSeedDem > 0. .AND. KSupply <= 0.) THEN
         KMined = MIN(KSeedDem, K_Mobil_max)
         DeltKSeed = DeltKSeed + KMined
         !Distribute mining proportionally

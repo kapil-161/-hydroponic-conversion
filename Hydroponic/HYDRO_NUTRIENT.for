@@ -31,8 +31,9 @@ C=======================================================================
       REAL SOLVOL, VOL_PER_HA, DEPL_NO3, DEPL_NH4
       REAL AUTO_CONC_R
       REAL PH_AVAIL_NO3, PH_AVAIL_NH4, O2_STRESS
+      REAL PH_KM_FACTOR_NO3, PH_KM_FACTOR_NH4
       REAL ECSTRESS_JMAX_NO3, ECSTRESS_JMAX_NH4, ECSTRESS_KM_NO3
-      REAL JMAX_EFF_NO3, KM_EFF_NO3, JMAX_EFF_NH4
+      REAL JMAX_EFF_NO3, KM_EFF_NO3, JMAX_EFF_NH4, KM_EFF_NH4
 
       INTEGER LUNCRP, ERR, LINC, FOUND
       CHARACTER*6 SECTION
@@ -83,6 +84,8 @@ C=======================================================================
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
         CALL GET('HYDRO','PH_AVAIL_NO3',PH_AVAIL_NO3)
         CALL GET('HYDRO','PH_AVAIL_NH4',PH_AVAIL_NH4)
+        CALL GET('HYDRO','PH_KM_FACTOR_NO3',PH_KM_FACTOR_NO3)
+        CALL GET('HYDRO','PH_KM_FACTOR_NH4',PH_KM_FACTOR_NH4)
         CALL GET('HYDRO','O2_STRESS',O2_STRESS)
         CALL GET('HYDRO','ECSTRESS_JMAX_NO3',ECSTRESS_JMAX_NO3)
         CALL GET('HYDRO','ECSTRESS_JMAX_NH4',ECSTRESS_JMAX_NH4)
@@ -90,6 +93,8 @@ C=======================================================================
         IF (EP .LT. 0.0) EP = 0.0
         IF (PH_AVAIL_NO3 .LT. 0.01) PH_AVAIL_NO3 = 1.0
         IF (PH_AVAIL_NH4 .LT. 0.01) PH_AVAIL_NH4 = 1.0
+        IF (PH_KM_FACTOR_NO3 .LT. 0.01) PH_KM_FACTOR_NO3 = 1.0
+        IF (PH_KM_FACTOR_NH4 .LT. 0.01) PH_KM_FACTOR_NH4 = 1.0
         IF (O2_STRESS .LT. 0.01) O2_STRESS = 1.0
         IF (ECSTRESS_JMAX_NO3.LT.0.01) ECSTRESS_JMAX_NO3 = 1.0
         IF (ECSTRESS_JMAX_NH4.LT.0.01) ECSTRESS_JMAX_NH4 = 1.0
@@ -97,8 +102,9 @@ C=======================================================================
 
 C       Apply EC stress: non-competitive (Jmax) and competitive (Km)
         JMAX_EFF_NO3 = JMAX_NO3 * ECSTRESS_JMAX_NO3
-        KM_EFF_NO3   = KM_NO3   * ECSTRESS_KM_NO3
+        KM_EFF_NO3   = KM_NO3   * ECSTRESS_KM_NO3 * PH_KM_FACTOR_NO3
         JMAX_EFF_NH4 = JMAX_NH4 * ECSTRESS_JMAX_NH4
+        KM_EFF_NH4   = KM_NH4   * PH_KM_FACTOR_NH4
 
 C       Mass flow
         UNO3_MF = EP * NO3_SOL * (1.0-SIGMA_NO3)
@@ -109,7 +115,7 @@ C       Mass flow
 C       Active uptake (Michaelis-Menten with EC stress)
         UNO3_ACT = JMAX_EFF_NO3 * NO3_SOL / (KM_EFF_NO3 + NO3_SOL)
      &           * TRLV * 100.0 * PH_AVAIL_NO3 * O2_STRESS
-        UNH4_ACT = JMAX_EFF_NH4 * NH4_SOL / (KM_NH4 + NH4_SOL)
+        UNH4_ACT = JMAX_EFF_NH4 * NH4_SOL / (KM_EFF_NH4 + NH4_SOL)
      &           * TRLV * 100.0 * PH_AVAIL_NH4 * O2_STRESS
 
         UNO3 = UNO3_MF + UNO3_ACT

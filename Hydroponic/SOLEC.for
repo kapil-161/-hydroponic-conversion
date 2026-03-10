@@ -81,10 +81,8 @@ C     EC Stress parameters for EC-based stress (high AND low)
       REAL EC_STRESS_HIGH ! Stress factor from high EC (>EC_OPT_HIGH)
       REAL EC_STRESS_TOTAL ! Combined EC stress factor (0-1)
 
-C     Transpiration concentration variables
+C     Solution volume (for initialization only)
       REAL SOLVOL_INIT   ! Initial solution volume (mm)
-      REAL SOLVOL_CURRENT ! Current solution volume (mm)
-      REAL CONCENTRATION_FACTOR ! Factor accounting for water loss (≥1.0)
 
 C     Conversion factors for EC estimation
 C     Approximate relationship: EC (dS/m) ~ TotalIons (ppm) / 640
@@ -289,29 +287,10 @@ C       Store initial stress factors in ModuleData (so they're available immedia
       CASE (RATE)
 C-----------------------------------------------------------------------
 C       Calculate current EC based on ion concentrations
-C       Account for transpiration concentration effect
+C       NOTE: Concentrations already reflect uptake depletion (HYDRO_NUTRIENT/
+C       SOLPi/SOLKi) and transpiration concentration (HYDRO_WATER V_old/V_new).
+C       Use concentrations directly — no separate concentration factor needed.
 C-----------------------------------------------------------------------
-C       Get current solution volume to calculate concentration factor
-        CALL GET('HYDRO','SOLVOL',SOLVOL_CURRENT)
-        
-C       Calculate concentration factor due to water loss
-C       As plants transpire water, ions become more concentrated
-C       CONCENTRATION_FACTOR = Initial_Volume / Current_Volume
-C       Example: 100 mm initial → 80 mm current = 1.25× concentration
-        IF (SOLVOL_CURRENT .GT. 0.1 .AND. SOLVOL_INIT .GT. 0.1) THEN
-          CONCENTRATION_FACTOR = SOLVOL_INIT / SOLVOL_CURRENT
-C         Limit to reasonable range (prevent division errors)
-          CONCENTRATION_FACTOR = MAX(1.0, MIN(CONCENTRATION_FACTOR, 5.0))
-        ELSE
-          CONCENTRATION_FACTOR = 1.0  ! No concentration if volumes invalid
-        ENDIF
-
-C       Convert mg/L to ppm (equivalent for dilute solutions)
-C       NOTE: Nutrient concentrations are correctly updated each timestep:
-C       uptake depletion is applied in NUPTAK (HYDRO_NUTRIENT/SOLPi/SOLKi),
-C       and the transpiration concentration effect (V_old/V_new) is applied
-C       in HYDRO_WATER INTEGR immediately after volume reduction.
-C       Use concentrations directly for EC calculation.
         NO3_ppm = NO3_CONC
         NH4_ppm = NH4_CONC
         P_ppm   = P_CONC
@@ -437,13 +416,11 @@ C       Debug: Verify ECSTRESS_ROOT is being stored
         ENDIF
 
         WRITE(*,200) NO3_CONC, NH4_CONC, P_CONC, K_CONC,
-     &               CONCENTRATION_FACTOR, SOLVOL_CURRENT,
      &               EC_CALC, EC_TARGET, EC_OPT_LOW, EC_OPT_HIGH,
      &               EC_STRESS_LOW, EC_STRESS_HIGH, EC_STRESS_TOTAL,
      &               ECSTRESS_ROOT, ECSTRESS_JMAX_NO3
  200    FORMAT(' SOLEC: NO3=',F6.1,' NH4=',F6.1,' P=',F6.1,' K=',F6.1,
-     &         ' mg/L',/,
-     &         '   ConcFactor=',F5.2,' (Vol=',F6.1,' mm)',
+     &         ' mg/L',
      &         ' => EC=',F5.2,' dS/m (Target=',F5.2,', Opt=',F4.2,
      &         '-',F4.2,')',/,
      &         '   EC Stress: Low=',F5.3,' High=',F5.3,' Total=',F5.3,

@@ -222,7 +222,7 @@ C-----------------------------------------------------------------------
           ELSEIF ((FLAG .GT. 0) .OR. (EXP .GT. (I-1))) THEN
             WRITE (*,1101) (I-1)
             GO TO 850
-          ELSEIF (EXP .NE. NINT(EXP)) THEN
+          ELSEIF (ABS(EXP - REAL(NINT(EXP))) .GT. 1.E-5) THEN
             WRITE (*,1102)
             GO TO 850
           ELSEIF (EXP .GT. 0.0) THEN

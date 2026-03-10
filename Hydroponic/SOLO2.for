@@ -130,7 +130,8 @@ C       Convert temperature to Kelvin
 C-----------------------------------------------------------------------
 C       Calculate DO2 consumption and aeration
 C-----------------------------------------------------------------------
-C       Get current solution temperature (use air temp as proxy if needed)
+C       Get current solution volume and temperature (use air temp as proxy if needed)
+        CALL GET('HYDRO','SOLVOL',SOLVOL)
         CALL GET('HYDRO','TEMP',SOLTEMP)
         IF (SOLTEMP .LT. -50.0) THEN
           SOLTEMP = WEATHER % TAVG  ! Use air temperature
@@ -187,9 +188,13 @@ C         AUTO_O2=Y or DAP=0: pin DO2 to initial value
           DO2_CALC = DO2_INIT
         ELSE
 C         AUTO_O2=N: dynamic O2 balance (consumption vs aeration)
+C         Cap consumption to available O2 to maintain mass balance
+          IF (O2_CONSUME .GT. DO2_CALC + O2_AERATION) THEN
+            O2_CONSUME = DO2_CALC + O2_AERATION
+          ENDIF
           DO2_CALC = DO2_CALC - O2_CONSUME + O2_AERATION
 
-C         Keep DO2 within bounds
+C         Keep DO2 within bounds for safety against floating point drift
           IF (DO2_CALC .LT. 0.0) DO2_CALC = 0.0
           IF (DO2_CALC .GT. DO2_SAT * 1.2) DO2_CALC = DO2_SAT * 1.2
 C         Allow slight supersaturation (up to 120%)

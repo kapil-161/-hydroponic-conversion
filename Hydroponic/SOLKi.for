@@ -29,8 +29,8 @@ C=======================================================================
       REAL EP, UK_MF, UK_ACT
       REAL SOLVOL, VOL_PER_HA, DEPL_K
       REAL AUTO_CONC_R
-      REAL PH_AVAIL_K, O2_STRESS
-      REAL ECSTRESS_JMAX_K, JMAX_EFF_K
+      REAL PH_AVAIL_K, O2_STRESS, PH_KM_FACTOR_K
+      REAL ECSTRESS_JMAX_K, JMAX_EFF_K, KM_EFF_K
       REAL KDEMAND_ACT
 
       INTEGER LUNCRP, ERR, LINC, FOUND
@@ -74,22 +74,25 @@ C=======================================================================
         CALL GET('HYDRO','EP',EP)
         CALL GET('HYDRO','K_CONC',K_SOL)
         CALL GET('HYDRO','PH_AVAIL_K',PH_AVAIL_K)
+        CALL GET('HYDRO','PH_KM_FACTOR_K',PH_KM_FACTOR_K)
         CALL GET('HYDRO','O2_STRESS',O2_STRESS)
         CALL GET('HYDRO','ECSTRESS_JMAX_K',ECSTRESS_JMAX_K)
         IF (EP .LT. 0.0) EP = 0.0
         IF (PH_AVAIL_K .LT. 0.01) PH_AVAIL_K = 1.0
+        IF (PH_KM_FACTOR_K .LT. 0.01) PH_KM_FACTOR_K = 1.0
         IF (O2_STRESS .LT. 0.01) O2_STRESS = 1.0
         IF (ECSTRESS_JMAX_K .LT. 0.01) ECSTRESS_JMAX_K = 1.0
 
 C       Apply EC stress: non-competitive inhibition (reduces Jmax)
         JMAX_EFF_K = JMAX_K * ECSTRESS_JMAX_K
+        KM_EFF_K   = KM_K   * PH_KM_FACTOR_K
 
 C       Mass flow
         UK_MF = EP * K_SOL * (1.0-SIGMA_K)
      &        * PH_AVAIL_K * O2_STRESS * 0.01
 
 C       Active uptake (Michaelis-Menten with EC stress)
-        UK_ACT = JMAX_EFF_K * K_SOL / (KM_K + K_SOL)
+        UK_ACT = JMAX_EFF_K * K_SOL / (KM_EFF_K + K_SOL)
      &         * TRLV * 100.0 * PH_AVAIL_K * O2_STRESS
 
         UK = UK_MF + UK_ACT
