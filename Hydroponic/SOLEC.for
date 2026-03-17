@@ -54,6 +54,10 @@ C     Variables for EC/nutrient calculation
       REAL NutrientRatio_NO3, NutrientRatio_NH4, NutrientRatio_P, NutrientRatio_K
       LOGICAL EC_PROVIDED, NUTRIENTS_PROVIDED
 
+C     Feed-and-drift management
+      REAL AUTO_CONC_R   ! Auto concentration flag (1.0=Y feed-and-drift, 0.0=N deplete)
+      REAL FEED_SCALE    ! Scale factor to replenish concentrations to EC_OPT_HIGH
+
 C     EC Stress variables - ballast ions (Na, Cl)
       REAL NA_CONC       ! Sodium concentration (mg/L or mol/m3)
       REAL CL_CONC       ! Chloride concentration (mg/L or mol/m3)
@@ -93,7 +97,7 @@ C     This is a rough empirical relationship for hydroponic solutions
       INTEGER DYNAMIC
       SAVE EC_INIT, NO3_INIT, NH4_INIT, P_INIT, K_INIT, SOLVOL_INIT
       SAVE C_NA0_5, K_INHIB_NO3, K_INHIB_K, K_INHIB_P
-      SAVE EC_OPT_LOW, EC_OPT_HIGH
+      SAVE EC_OPT_LOW, EC_OPT_HIGH, AUTO_CONC_R
 
 C-----------------------------------------------------------------------
 
@@ -113,6 +117,10 @@ C       Get ballast ion concentrations (Na, Cl) from ModuleData
 C       If not set in experiment file, will default to 0.0
         CALL GET('HYDRO','NA_CONC',NA_CONC)
         CALL GET('HYDRO','CL_CONC',CL_CONC)
+
+C       Get AUTO_CONC flag: Y=feed-and-drift, N=pure depletion
+        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
+        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0
 
 C       Note: AUTO_EC removed - EC always drifts naturally
 
@@ -428,10 +436,58 @@ C       Debug: Verify ECSTRESS_ROOT is being stored
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
+C       Re-read post-depletion concentrations from ModuleData
+C       (HYDRO_NUTRIENT/SOLPi/SOLKi INTEGR have already run and depleted)
+        CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+        CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+        CALL GET('HYDRO','P_CONC',P_CONC)
+        CALL GET('HYDRO','K_CONC',K_CONC)
+
+C       Recalculate EC from post-depletion concentrations
+        TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
+        EC_CALC = TotalIons / EC_FACTOR
+        IF (EC_CALC .LT. 0.1) EC_CALC = 0.1
+
+C-----------------------------------------------------------------------
+C       FEED-AND-DRIFT MANAGEMENT (AUTO_CONC=Y)
+C       When EC drops below lower optimum, replenish to upper optimum.
+C       Simulates grower adding fresh nutrient solution to the reservoir.
+C-----------------------------------------------------------------------
+        IF (AUTO_CONC_R .GT. 0.5 .AND. EC_CALC .LT. EC_OPT_LOW) THEN
+C         Scale initial concentrations to reach EC_OPT_HIGH.
+C         Base the scale on the EC actually derived from initial nutrients
+C         (not EC_INIT from the experiment file, which may differ from
+C          the formula-derived EC due to unmeasured counter-ions).
+          TotalIons = (NO3_INIT+NH4_INIT+P_INIT+K_INIT) * 2.5
+          EC_RATIO = TotalIons / EC_FACTOR   ! EC formula gives for init conc
+          IF (EC_RATIO .GT. 0.1) THEN
+            FEED_SCALE = EC_OPT_HIGH / EC_RATIO
+          ELSE
+            FEED_SCALE = 1.0
+          ENDIF
+          NO3_CONC = NO3_INIT * FEED_SCALE
+          NH4_CONC = NH4_INIT * FEED_SCALE
+          P_CONC   = P_INIT   * FEED_SCALE
+          K_CONC   = K_INIT   * FEED_SCALE
+          CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
+          CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
+          CALL PUT('HYDRO','P_CONC',P_CONC)
+          CALL PUT('HYDRO','K_CONC',K_CONC)
+
+C         Recalculate EC after replenishment
+          TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
+          EC_CALC = TotalIons / EC_FACTOR
+
+          WRITE(*,310) EC_OPT_LOW, EC_OPT_HIGH, EC_CALC
+ 310      FORMAT(' SOLEC: FEED EVENT - EC below',F4.2,' dS/m,',
+     &           ' replenished to target',F4.2,' dS/m',
+     &           ' => EC=',F5.2,' dS/m')
+        ENDIF
+
 C       Calculate EC deviation from target for monitoring
         EC_DEVIATION = EC_TARGET - EC_CALC
 
-C       Update EC in ModuleData (already calculated in RATE section)
+C       Update EC in ModuleData
         CALL PUT('HYDRO','EC',EC_CALC)
 
         WRITE(*,300) EC_CALC, EC_DEVIATION

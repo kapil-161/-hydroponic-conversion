@@ -114,8 +114,9 @@ C-----------------------------------------------------------------------
 C     Read *HYDROPONIC CONTROL section (optional)
 C     Format: @  L  AUTO_PH  AUTO_VOL  AUTO_CONC
 C             1     Y        Y         N
-C     AUTO_CONC: Y = maintain constant nutrient concentration (replenish)
-C                N = allow concentration to deplete naturally
+C     AUTO_CONC: Y = feed-and-drift: deplete naturally, replenish when EC
+C                    drops below EC_OPT_LOW (refills to EC_OPT_HIGH)
+C                N = pure depletion, no replenishment
 C     If section not found, use defaults (all 'N' = allow drift)
 C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
@@ -188,7 +189,7 @@ C-----------------------------------------------------------------------
  110  FORMAT (' HYDROPONIC CONTROL SETTINGS:',
      &        /,'   AUTO_PH  : ',A1,' (Y=constant, N=drift)',
      &        /,'   AUTO_VOL : ',A1,' (Y=constant, N=drift)',
-     &        /,'   AUTO_CONC: ',A1,' (Y=replenish nutrients, N=deplete)',
+     &        /,'   AUTO_CONC: ',A1,' (Y=feed-and-drift EC, N=deplete)',
      &        /,'   AUTO_O2  : ',A1,' (Y=pin DO2 to initial, N=dynamic)',
      &        /,'   (EC always drifts naturally with nutrient uptake)',/)
 

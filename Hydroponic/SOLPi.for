@@ -28,7 +28,7 @@ C=======================================================================
       REAL JMAX_P, KM_P
       REAL EP, UPO4_MF, UPO4_ACT
       REAL SOLVOL, VOL_PER_HA, DEPL_P
-      REAL AUTO_CONC_R
+C      REAL AUTO_CONC_R  ! removed - depletion now always happens
       REAL PH_AVAIL_P, O2_STRESS, PH_KM_FACTOR_P
       REAL ECSTRESS_JMAX_P, JMAX_EFF_P, KM_EFF_P
       REAL PDEMAND_ACT
@@ -113,20 +113,17 @@ C       Cap at 1.0x demand
         CALL PUT('HYDRO','UPO4',UPO4)
 
       CASE (INTEGR)
-        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
-        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0
-
+C       Depletion always happens regardless of AUTO_CONC.
+C       Feed-and-drift replenishment is handled by SOLEC INTEGR.
         CALL GET('HYDRO','P_CONC',P_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
-        IF (AUTO_CONC_R .LT. 0.5) THEN
-          IF (SOLVOL .GT. 0.0) THEN
-            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
-            DEPL_P = (UPO4 * 1.0E6) / VOL_PER_HA
-            P_SOL = MAX(0.0, P_SOL - DEPL_P)
-          ENDIF
-          CALL PUT('HYDRO','P_CONC',P_SOL)
+        IF (SOLVOL .GT. 0.0) THEN
+          VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
+          DEPL_P = (UPO4 * 1.0E6) / VOL_PER_HA
+          P_SOL = MAX(0.0, P_SOL - DEPL_P)
         ENDIF
+        CALL PUT('HYDRO','P_CONC',P_SOL)
 
       CASE (OUTPUT)
         CONTINUE

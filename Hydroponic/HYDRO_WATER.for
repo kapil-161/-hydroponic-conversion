@@ -42,7 +42,7 @@ C     Local variables - all in mm
       REAL SOLVOL_INIT_MM ! Initial solution depth (mm) - for AUTO_VOL
       REAL WATER_ADD_MM   ! Water addition from irrigation (mm/d)
       REAL AUTO_VOL_R     ! Auto volume control flag (1.0=Y, 0.0=N)
-      REAL AUTO_CONC_R    ! Auto concentration flag (1.0=Y, 0.0=N)
+C      REAL AUTO_CONC_R  ! removed - transpiration concentration now always applies
       REAL PLANT_UPTAKE_MM ! Plant water uptake (mm/d) - actual
       REAL PLANT_DEMAND_MM ! Plant water demand (mm/d) - from EP
       REAL SOL_EVAP_MM    ! Solution evaporation (mm/d) - minimal
@@ -233,11 +233,9 @@ C       nutrients concentrate. NUPTAK already applied uptake depletion
 C       using the old volume: C_depleted = C_old - uptake/V_old.
 C       Multiplying by V_old/V_new gives the exact correct result:
 C         C_depleted * (V_old/V_new) = (C_old*V_old - uptake) / V_new
-C       Skip when AUTO_CONC=Y (concentrations are reset each timestep)
+C       Always apply - feed-and-drift replenishment handled by SOLEC INTEGR
 C-----------------------------------------------------------------------
-        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
-        IF (AUTO_CONC_R .LT. 0.5 .AND.
-     &      SOLVOL_PREV_MM .GT. SOLVOL_MM .AND.
+        IF (SOLVOL_PREV_MM .GT. SOLVOL_MM .AND.
      &      SOLVOL_MM .GT. 0.0) THEN
           CONC_FACTOR = SOLVOL_PREV_MM / SOLVOL_MM
 

@@ -29,7 +29,7 @@ C=======================================================================
       REAL EP, UN_TOTAL, SCALE
       REAL UNO3_MF, UNH4_MF, UNO3_ACT, UNH4_ACT
       REAL SOLVOL, VOL_PER_HA, DEPL_NO3, DEPL_NH4
-      REAL AUTO_CONC_R
+C      REAL AUTO_CONC_R  ! removed - depletion now always happens
       REAL PH_AVAIL_NO3, PH_AVAIL_NH4, O2_STRESS
       REAL PH_KM_FACTOR_NO3, PH_KM_FACTOR_NH4
       REAL ECSTRESS_JMAX_NO3, ECSTRESS_JMAX_NH4, ECSTRESS_KM_NO3
@@ -141,24 +141,21 @@ C       Cap at 1.0x demand
         CALL PUT('HYDRO','UNH4',UNH4)
 
       CASE (INTEGR)
-        CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
-        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0
-
+C       Depletion always happens regardless of AUTO_CONC.
+C       Feed-and-drift replenishment is handled by SOLEC INTEGR.
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
 
-        IF (AUTO_CONC_R .LT. 0.5) THEN
-          IF (SOLVOL .GT. 0.0) THEN
-            VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
-            DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA
-            DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
-            NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
-            NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
-          ENDIF
-          CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
-          CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
+        IF (SOLVOL .GT. 0.0) THEN
+          VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
+          DEPL_NO3 = (UNO3 * 1.0E6) / VOL_PER_HA
+          DEPL_NH4 = (UNH4 * 1.0E6) / VOL_PER_HA
+          NO3_SOL = MAX(0.0, NO3_SOL - DEPL_NO3)
+          NH4_SOL = MAX(0.0, NH4_SOL - DEPL_NH4)
         ENDIF
+        CALL PUT('HYDRO','NO3_CONC',NO3_SOL)
+        CALL PUT('HYDRO','NH4_CONC',NH4_SOL)
 
       CASE (OUTPUT)
         CONTINUE
