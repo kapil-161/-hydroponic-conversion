@@ -1,0 +1,11 @@
+$BATCH(LETTUCE)
+!
+! Directory    : C:\DSSAT48\Lettuce
+! Command Line : C:\DSSAT48\DSCSM048.EXE CRGRO048 B DSSBatch.v48
+! Crop         : Lettuce
+! Experiment   : WAGA9101.LUX
+! ExpNo        : 1
+! Debug        : C:\DSSAT48\DSCSM048.EXE CRGRO048 " B DSSBatch.v48"
+!
+@FILEX                                                                                        TRTNO     RP     SQ     OP     CO
+C:\DSSAT48\Lettuce\WAGA9101.LUX                                                                   1      1      0      1      0
