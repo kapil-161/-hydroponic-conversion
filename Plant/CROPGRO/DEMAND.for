@@ -662,6 +662,10 @@ C 24 changed to TS by Bruce Kimball on 3Jul17
 !    Total N Demand
 !-----------------------------------------------------------------------
       NDMTOT = NDMREP + NDMVEG + NDMOLD
+      IF (MOD(DAS, 5) .EQ. 0) THEN
+          WRITE(*,*) 'DAS: ', DAS, ' NDMNEW: ', NDMNEW, 
+     &               ' NDMOLD: ', NDMOLD, ' TOTAL: ', NDMTOT
+      ENDIF
 !-----------------------------------------------------------------------
 !    Compute Total Demand for C, and Max. C that Could be Mined
 !     CDMTOT not used - chp

@@ -506,20 +506,10 @@ C     CALCULATE K CONCENTRATIONS (fractions)
         KSTRESS_RATIO = 1.0
       ENDIF
 
-!     ALSO calculate K stress from supply vs demand
-      IF (KTotDem .GT. 1.E-6) THEN
-        IF (KUptakeProf .LT. KSTFAC * KTotDem) THEN
-!         K supply (uptake) is insufficient
-          KSTRESS_SUPPLY = MIN(1.0, KUptakeProf / (KTotDem * KSTFAC))
-        ELSE
-          KSTRESS_SUPPLY = 1.0
-        ENDIF
-      ELSE
-        KSTRESS_SUPPLY = 1.0  ! No demand = no stress
-      ENDIF
-
-C     Use the MINIMUM of tissue-based and supply-based stress ratios
-      KSTRESS_RATIO = MIN(KSTRESS_RATIO, KSTRESS_SUPPLY)
+!     Supply-based K stress override removed (analogous to P_Plant.for fix):
+!     In hydroponic mode, KUptakeProf≈0 with tiny roots at DAS3-4 even when
+!     K is abundant in solution, causing spurious KSTRESS_SUPPLY=0 collapse.
+!     Tissue-based KSTRESS_RATIO alone is the appropriate stress indicator.
       KSTRESS_RATIO = MAX(0.0, KSTRESS_RATIO)
 
 C     Calculate KStres1 (Stomatal conductance) - more sensitive

@@ -330,10 +330,15 @@ C-----------------------------------------------------------------------
       WRDOTN = FRRT * VGRDEM
       
 C     Apply EC stress to leaf expansion (morphological suppression)
-C     Plants maintain functional balance: reduced root growth → reduced leaf expansion
+C     Plants maintain functional balance: reduced root growth -> reduced leaf expansion
       CALL GET('HYDRO','ECSTRESS_LEAF',ECSTRESS_LEAF)
       IF (ECSTRESS_LEAF .LT. 0.1) ECSTRESS_LEAF = 1.0
       WLDOTN = WLDOTN * ECSTRESS_LEAF
+      IF (MOD(DAS, 5) .EQ. 0) THEN
+         WRITE(*,'(A,I4,A,F6.3,A,F8.4)') 'VEGGR DAS:', DAS, 
+     &    ' ECSTRESS_LEAF:', ECSTRESS_LEAF, ' WLDOTN:', WLDOTN
+      ENDIF
+
 C-----------------------------------------------------------------------
 C     Compute maximum N required for tissue growth
 C-----------------------------------------------------------------------

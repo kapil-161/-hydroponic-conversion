@@ -185,16 +185,6 @@ C-----------------------------------------------------------------------
         
         PDEMAND = 0.0
         KDEMAND = 0.0
-        
-        IF (ISWITCH % ISWPHO .EQ. 'Y') THEN
-          N_TO_P_RATIO = 0.10
-          PDEMAND = ANDEM * N_TO_P_RATIO
-        ENDIF
-        
-        IF (ISWITCH % ISWPOT .EQ. 'Y') THEN
-          N_TO_K_RATIO = 1.00
-          KDEMAND = ANDEM * N_TO_K_RATIO
-        ENDIF
 
         CONTROL_DUMMY % DYNAMIC = RATE
         CALL HYDRO_NUTRIENT(

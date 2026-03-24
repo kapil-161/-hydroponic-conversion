@@ -8,7 +8,19 @@
       "Bash(\"/c/dssat-csm-os/build/bin/dscsm048.exe\" A UFGA2401.LUX)",
       "Bash(cmake --build:*)",
       "Bash(python3:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(grep -n 'SUBROUTINE IGNORE' /c/dssat-csm-os/Utilities/*.for)",
+      "Bash(/c/dssat-csm-os/build/bin/dscsm048.exe LULUM048 A WAGA9101.LUX 0)",
+      "Read(//c/DSSAT48/Lettuce/**)",
+      "Bash(/c/dssat-csm-os/build/bin/dscsm048.exe LSUB A WAGA9101.LUX)",
+      "Bash(awk 'NR>3' PlantGro.OUT)",
+      "Read(//c/dssat-csm-os/**)",
+      "Bash(awk 'NR>3' PlantN.OUT)",
+      "Bash(awk 'NR>3' PlantP.OUT)",
+      "Bash(awk 'NR>3' PlantK.OUT)",
+      "Bash(find /c/dssat-csm-os -name K_Plant* -o -name KPlant*)",
+      "Bash(\"C:/dssat-csm-os/build/bin/dscsm048.exe\" A WAGA9101.LUX)",
+      "Bash(\"C:/dssat-csm-os/build/bin/dscsm048.exe\" A UFGA2201.LUX)"
     ]
   }
 }

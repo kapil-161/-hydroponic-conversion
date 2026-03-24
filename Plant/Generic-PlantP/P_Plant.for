@@ -462,22 +462,8 @@ C MA problem of transfer of shoot ( stems) to panicle at grain filling
         PSTRESS_RATIO = MIN(1.0, (PConc_Shut - PConc_Shut_Min) /  
      &                       (PConc_Shut_opt - PConc_Shut_Min))
         
-!     ALSO calculate P stress from supply vs demand (like N and K stress)
-!     This provides immediate response when P uptake is insufficient
-        IF (PTotDem .GT. 1.E-6) THEN
-          IF (PUptakeProf .LT. PSTFAC * PTotDem) THEN
-!           P supply (uptake) is insufficient - calculate stress from supply vs demand
-            PSTRESS_SUPPLY = MIN(1.0, PUptakeProf / (PTotDem * PSTFAC))
-          ELSE
-            PSTRESS_SUPPLY = 1.0
-          ENDIF
-        ELSE
-          PSTRESS_SUPPLY = 1.0  ! No demand = no stress
-        ENDIF
-        
-C     Use the MINIMUM of tissue-based and supply-based stress ratios
-C     (if either is limiting, stress occurs - similar to N and K stress)
-        PSTRESS_RATIO = MIN(PSTRESS_RATIO, PSTRESS_SUPPLY)
+!     Tissue-based stress only: supply-based override removed (caused DAS8 collapse
+!     when PUptakeProf≈0 with tiny roots even at low demand)
 
 C     Calculate PStres1 (Photosynthesis)
       IF (PSTRESS_RATIO .GE. SRATPHOTO) THEN

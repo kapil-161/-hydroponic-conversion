@@ -1,0 +1,36 @@
+﻿diff --git a/Plant/CROPGRO/DEMAND.for b/Plant/CROPGRO/DEMAND.for
+index 8cddf1b5..09d82966 100644
+--- a/Plant/CROPGRO/DEMAND.for
++++ b/Plant/CROPGRO/DEMAND.for
+@@ -662,6 +662,10 @@ C 24 changed to TS by Bruce Kimball on 3Jul17
+ !    Total N Demand
+ !-----------------------------------------------------------------------
+       NDMTOT = NDMREP + NDMVEG + NDMOLD
++      IF (MOD(DAS, 5) .EQ. 0) THEN
++          WRITE(*,*) 'DAS: ', DAS, ' NDMNEW: ', NDMNEW, 
++     &               ' NDMOLD: ', NDMOLD, ' TOTAL: ', NDMTOT
++      ENDIF
+ !-----------------------------------------------------------------------
+ !    Compute Total Demand for C, and Max. C that Could be Mined
+ !     CDMTOT not used - chp
+diff --git a/Plant/CROPGRO/NUPTAK.for b/Plant/CROPGRO/NUPTAK.for
+index 3226b0b3..58bae406 100644
+--- a/Plant/CROPGRO/NUPTAK.for
++++ b/Plant/CROPGRO/NUPTAK.for
+@@ -185,16 +185,6 @@ C-----------------------------------------------------------------------
+         
+         PDEMAND = 0.0
+         KDEMAND = 0.0
+-        
+-        IF (ISWITCH % ISWPHO .EQ. 'Y') THEN
+-          N_TO_P_RATIO = 0.10
+-          PDEMAND = ANDEM * N_TO_P_RATIO
+-        ENDIF
+-        
+-        IF (ISWITCH % ISWPOT .EQ. 'Y') THEN
+-          N_TO_K_RATIO = 1.00
+-          KDEMAND = ANDEM * N_TO_K_RATIO
+-        ENDIF
+ 
+         CONTROL_DUMMY % DYNAMIC = RATE
+         CALL HYDRO_NUTRIENT(

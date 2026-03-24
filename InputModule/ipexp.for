@@ -67,7 +67,8 @@ C=======================================================================
      &           CONTROL, ISWITCH, UseSimCtr, MODELARG,PMWD)
 
       USE ModuleDefs
-      USE ModuleData    
+      USE ModuleData
+      USE HydroFertData_mod
       Use CsvOutput   ! VSH
       IMPLICIT NONE
       EXTERNAL ERROR, FIND, WARNING, YR_DOY, IGNORE, VERIFY, CLEAR,
@@ -964,6 +965,30 @@ C       Also store target values for when AUTO mode is enabled
      &             ' AUTO_CONC=',AUTO_CONC,' AUTO_O2=',AUTO_O2
       ELSE
         WRITE(*,*) 'Soil-based experiment (no hydroponic section found)'
+      ENDIF
+
+C-----------------------------------------------------------------------
+C     Copy IPFERT fertilizer events into HydroFertData_mod.
+C     HYDRO_FERT uses these to add nutrients to solution (AUTO_CONC=N).
+C     IPFERT already handled date conversion (Y4K_DOY) and level
+C     filtering (LNFER), so HFER_DAY is already in YYYYDDD format.
+C     Units: ANFER/APFER/AKFER are kg/ha; HYDRO_FERT converts to mg/L.
+C-----------------------------------------------------------------------
+      IF (ISWHYDRO .EQ. 'Y') THEN
+        NHFERT = NFERT
+        DO I = 1, NFERT
+          HFER_DAY(I)  = FDAY(I)
+          HFER_FMCD(I) = IFTYPE(I)
+          HFER_FAMN(I) = ANFER(I)
+          HFER_FAMP(I) = APFER(I)
+          HFER_FAMK(I) = AKFER(I)
+        ENDDO
+        IF (NHFERT .GT. 0) THEN
+          WRITE(*,120) NHFERT
+ 120      FORMAT('   Hydroponic fertilizer events scheduled: ',I3)
+        ENDIF
+      ELSE
+        NHFERT = 0
       ENDIF
 
       CLOSE(LUNEXP)

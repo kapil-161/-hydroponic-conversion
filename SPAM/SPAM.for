@@ -46,12 +46,13 @@ C=======================================================================
       USE ModuleDefs
       USE ModuleData
       USE FloodModule
+      USE HydroFertData_mod
 
       IMPLICIT NONE
       EXTERNAL ETPHOT, STEMP_EPIC, STEMP, ROOTWU, SOILEV, TRANS
       EXTERNAL MULCH_EVAP, OPSPAM, PET, PSE, FLOOD_EVAP, ESR_SOILEVAP
       EXTERNAL XTRACT
-      EXTERNAL SOLEC, SOLPH, SOLO2, OPSOL, HYDRO_WATER
+      EXTERNAL SOLEC, SOLPH, SOLO2, OPSOL, HYDRO_WATER, HYDRO_FERT
       SAVE
 
       CHARACTER*1  IDETW, ISWWAT, ISWHYDRO
@@ -98,6 +99,7 @@ C=======================================================================
       REAL UNO3_HYDRO, UNH4_HYDRO              ! N uptake for pH calculation (kg/ha/d)
       REAL UPO4_HYDRO, UK_HYDRO                ! P and K uptake (kg/ha/d)
       REAL ROOT_RESP                           ! Root respiration for O2 consumption
+      REAL O2_STRESS_SPAM                      ! O2 stress factor for water uptake (0-1)
       REAL PLTPOP                              ! Plant population (plants/m2)
 
 !-----------------------------------------------------------------------
@@ -319,6 +321,9 @@ C=======================================================================
         UNH4_HYDRO = 0.0
         UPO4_HYDRO = 0.0
         UK_HYDRO = 0.0
+
+!       Initialize hydroponic fertilizer events
+        CALL HYDRO_FERT(CONTROL, ISWITCH)
 
 !       Call OPSOL to initialize output file (SEASINIT phase)
         CALL OPSOL(CONTROL, ISWITCH)
@@ -557,7 +562,8 @@ C=======================================================================
 !           Don't restrict by XHLAI to avoid chicken-egg problem
             IF (EOP .GT. 1.E-6) THEN
               EP = EOP    ! Actual = potential (unlimited water supply)
-              WRITE(*,*) 'HYDRO EP: EOP=',EOP,' EP=',EP,' (demand-based)'
+              WRITE(*,*) 'HYDRO EP: EOP=',EOP,' EP=',EP,
+     &                   ' (demand-based)'
             ELSE
               EP = 0.0
               WRITE(*,*) 'HYDRO EP=0: EOP=',EOP
@@ -705,6 +711,9 @@ C         Override EP in hydroponic mode to ensure demand-based transpiration
 !     HYDROPONIC SOLUTION MANAGEMENT (INTEGR phase)
 !-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
+!       Apply any scheduled nutrient additions for today
+        CALL HYDRO_FERT(CONTROL, ISWITCH)
+
 !       Update solution volume based on water balance
 !       (water additions, plant uptake, evaporation)
         CALL HYDRO_WATER(CONTROL, ISWITCH,
