@@ -1,5 +1,5 @@
-*GUINEA GRASS GENOTYPE COEFFICIENTS
-! Guinea grass - Panicum maximum
+*GUINEAGRASS GENOTYPE COEFFICIENTS
+! Guineagrass - Panicum maximum
 !
 ! COEFF   DEFINITIONS
 ! =====   ===========
@@ -32,6 +32,6 @@
 !
 @VAR#  VRNAME.......... EXPNO   ECO#  CSDL PPSEN EM-FL FL-SH FL-SD SD-PM FL-LF LFMAX SLAVR SIZLF  XFRT WTPSD SFDUR SDPDV PODUR THRSH SDPRO SDLIP
 !                                        1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18
-SP0009 Mombaca                GG0009 12.00 0.200  99.0  10.0  18.0 33.00 25.00  1.91  180.   2.0  0.01 0.020  15.0  2.05  20.0  78.0  .115  .035
-SP0009 Tanzania               GG0009 12.00 0.200  99.0  10.0  18.0 33.00 25.00  1.91  180.   2.0  0.01 0.020  15.0  2.05  20.0  78.0  .115  .035
 
+SP0009 Mombaca      GG0009       . 12.00   0.20 99.000  10.0  18.0  33.0  25.0   1.9 180.000    2.   0.0 0.020 15.000   2.0 20.00  78.0   0.1 0.035 0.000
+SP0009 Tanzania     GG0009       . 12.00   0.20 99.000  10.0  18.0  33.0  25.0   1.9 180.000    2.   0.0 0.020 15.000   2.0 20.00  78.0   0.1 0.035 0.000

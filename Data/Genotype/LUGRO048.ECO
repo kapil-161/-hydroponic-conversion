@@ -1,0 +1,17 @@
+*LETTUCE ECOTYPE COEFFICIENTS: CRGRO048 MODEL
+!
+! Lettuce (Lactuca sativa) - Hydroponic NFT ecotypes
+! Created for DSSAT-CSM Hydroponic Module
+!
+@ECO#  ECONAME.......... MG TM PP-SS PL-EM EM-V1 V1-JU JU-R0  PM06  PM09 LNHSH R7-R8 FL-VS TRIFL RWDTH RHGHT R1PPO OPTBI SLOBI
+!                                  1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16
+!Calibration              N  N     N     N     N     N     N     N     G     G     P     G     G     G     G     N     N     N
+
+999991 MINIMA             .  .   0.0   2.0   3.0   0.0  02.0   0.0  0.30  15.0   8.0 18.00  0.40   0.8   0.8  .000  12.0  .025
+999992 MAXIMA             .  .   0.0   3.0   5.5   0.0  04.5   0.0  0.50  25.0  12.0 35.00  0.55   1.5   1.2  .000  18.0  .035
+
+LU0401 BUTTERHEAD TYPE   03 01   0.0   2.5   4.0   0.0  03.0   0.0  0.35  18.0  10.0 25.00  1.60   1.0   1.0  .000  15.0  .030
+LU0402 ROMAINE TYPE      04 01   0.0   2.5   4.5   0.0  03.5   0.0  0.38  20.0  11.0 28.00  1.27   1.0   1.0  .000  15.0  .030
+LU0403 LEAF TYPE         02 01   0.0   2.5   3.5   0.0  02.5   0.0  0.32  15.0   9.0 22.00  0.50   1.2   1.0  .000  15.0  .030
+LU0404 CRISPHEAD TYPE    05 01   0.0   2.5   5.0   0.0  04.0   0.0  0.40  22.0  12.0 30.00  0.40   1.0   1.0  .000  15.0  .030
+DFAULT DEFAULT TYPE      03 01   0.0   2.5   4.0   0.0  03.0   0.0  0.35  18.0  10.0 25.00  0.45   1.0   1.0  .000  15.0  .030
