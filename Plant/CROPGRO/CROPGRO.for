@@ -359,6 +359,7 @@ C-----------------------------------------------------------------------
      &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
+     &    PCNL, ISWHYDRO,                                  !Input (N-stress)
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
@@ -641,6 +642,7 @@ C     Initialize pest coupling point and damage variables
      &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
+     &    PCNL, ISWHYDRO,                                  !Input (N-stress)
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
@@ -874,6 +876,7 @@ C-----------------------------------------------------------------------
      &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
+     &    PCNL, ISWHYDRO,                                  !Input (N-stress)
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
@@ -1224,6 +1227,7 @@ C-----------------------------------------------------------------------
      &    PStres2, KStres2, ROWSPC, RVSTGE, STMWT, TGRO,  !Input
      &    TRNU, TURFAC, VSTAGE, WCRLF, WCRRT, WCRSH,      !Input
      &    WCRST, WTLF, XLAI, YRDOY, YREMRG,               !Input
+     &    PCNL, ISWHYDRO,                                  !Input (N-stress)
      &    AGRVG, FRLF, FRRT, FRSTM,                       !I/O
      &    CADLF, CADST, CANHT, CANWH, CMINEA, CRUSLF,     !Output
      &    CRUSRT, CRUSSH, CRUSST, EXCESS, NADLF, NADRT,   !Output
