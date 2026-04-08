@@ -790,14 +790,6 @@ C-----------------------------------------------------------------------
      &    EO, EOP, EOS, EP, ES, ET, TMAX, TMIN, TRWUP, SRAD,
      &    ES_LYR, SOILPROP)
 
-!-----------------------------------------------------------------------
-!     HYDROPONIC SOLUTION OUTPUT
-!-----------------------------------------------------------------------
-      IF (ISWHYDRO .EQ. 'Y') THEN
-!       Call solution output module (retrieves all data from ModuleData)
-        CALL OPSOL(CONTROL, ISWITCH)
-      ENDIF
-
       IF (CROP .NE. 'FA' .AND. MEPHO .EQ. 'L') THEN
         CALL ETPHOT(CONTROL, ISWITCH,
      &    PORMIN, PSTRES1, RLV, RWUMX, SOILPROP, ST, SW,  !Input
@@ -848,11 +840,6 @@ C-----------------------------------------------------------------------
      &    PORMIN, PSTRES1, RLV, RWUMX, SOILPROP, ST, SW,  !Input
      &    WEATHER, XLAI,                                  !Input
      &    EOP, EP, ES, RWU, TRWUP)                        !Output
-      ENDIF
-
-!     Close hydroponic solution output file
-      IF (ISWHYDRO .EQ. 'Y') THEN
-        CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
 !     Transfer data to storage routine

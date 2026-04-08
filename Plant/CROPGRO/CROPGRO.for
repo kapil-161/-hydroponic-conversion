@@ -58,9 +58,9 @@ C=======================================================================
 
       IMPLICIT NONE
       EXTERNAL DEMAND, FREEZE, GROW, HRES_CGRO, INCOMP, IPPLNT,
-     &  K_CGRO, MOBIL, NFIX, NUPTAK, OPGROW, OPHARV, P_CGRO, PEST,
-     &  PHENOL, PHOTO, PLANTNBAL, PODDET, PODS, RESPIR, ROOTS, SENES,
-     &  VEGGR
+     &  K_CGRO, MOBIL, NFIX, NUPTAK, OPGROW, OPHARV, OPSOL, P_CGRO,
+     &  PEST, PHENOL, PHOTO, PLANTNBAL, PODDET, PODS, RESPIR, ROOTS,
+     &  SENES, VEGGR
       SAVE
 !-----------------------------------------------------------------------
       CHARACTER*1 DETACH, IDETO, ISWNIT, ISWSYM,
@@ -680,7 +680,9 @@ C-----------------------------------------------------------------------
      &    WTNSD, WTNUP, WTNFX, XLAI, YRPLT, TRLV, LINTW, LINTP,
      &    WTNRT, WTNSH)
 
-      CALL OPHARV (CONTROL, ISWITCH, 
+      IF (ISWHYDRO .EQ. 'Y') CALL OPSOL(CONTROL, ISWITCH)
+
+      CALL OPHARV (CONTROL, ISWITCH,
      &    AGEFAC, CANHT, CANNAA, CANWAA, CROP,            !Input
      &    HARVFRAC, LAIMX, MDATE, NSTRES, PCLSD, PCNSD,   !Input
      &    PODNO, PODWT, PStres1, PStres2, SDRATE, SDWT,   !Input
@@ -1412,6 +1414,8 @@ C-----------------------------------------------------------------------
      &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &      KStres1, KStres2, KUptake, FracRts)             !Output
         ENDIF
+
+        IF (ISWHYDRO .EQ. 'Y') CALL OPSOL(CONTROL, ISWITCH)
       ENDIF
 
 !     Write to Overview.out and summary.out files.
@@ -1428,12 +1432,13 @@ C-----------------------------------------------------------------------
 !     Call PlantNBal only for seasonal output.
       IF (DYNAMIC .EQ. SEASEND) THEN
         IF (CROP .NE. 'FA') THEN
-          CALL PlantNBal (CONTROL, ISWITCH, 
+          CALL PlantNBal (CONTROL, ISWITCH,
      &      SEEDNI, TNLEAK, WTNFX, WTNLA, WTNLF, WTNLO,     !Input
      &      WTNNA, WTNNO, WTNNOD, WTNRA, WTNRO, WTNRT,      !Input
      &      WTNSA, WTNSD, WTNSDA, WTNSDO, WTNSH, WTNSHA,    !Input
      &      WTNSHO, WTNSO, WTNST, WTNUP)                    !Input
         ENDIF
+        IF (ISWHYDRO .EQ. 'Y') CALL OPSOL(CONTROL, ISWITCH)
 !-----------------------------------------------------------------------
 !     Calculate harvest residue left in field
         CALL HRes_CGRO(CONTROL,
