@@ -111,11 +111,38 @@ C       Cap at 1.0x demand
 
         CALL PUT('HYDRO','UK',UK)
 
+C       Store active-only component so INTEGR can recompute passive with today's EP
+        CALL PUT('HYDRO','UK_ACT',UK_ACT)
+
       CASE (INTEGR)
-C       Depletion always happens regardless of AUTO_CONC.
+C       Recompute passive (mass flow) component using today's EP.
+C       HYDRO_WATER INTEGR runs before NUPTAK INTEGR, so GET('HYDRO','EP')
+C       returns today's actual EP and K_CONC is already post-concentration.
 C       Feed-and-drift replenishment is handled by SOLEC INTEGR.
+        CALL GET('HYDRO','EP',EP)
         CALL GET('HYDRO','K_CONC',K_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
+        CALL GET('HYDRO','PH_AVAIL_K',PH_AVAIL_K)
+        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
+        CALL GET('HYDRO','UK_ACT',UK_ACT)
+        IF (EP .LT. 0.0) EP = 0.0
+        IF (PH_AVAIL_K .LT. 0.01) PH_AVAIL_K = 1.0
+        IF (O2_STRESS  .LT. 0.01) O2_STRESS  = 1.0
+
+C       Passive flow with today's EP and post-concentration C
+        UK_MF = EP * K_SOL * (1.0-SIGMA_K)
+     &        * PH_AVAIL_K * O2_STRESS * 0.01
+
+        UK = UK_MF + UK_ACT
+
+C       Re-apply demand cap (KDEMAND is current-day value from NUPTAK)
+        IF (UK .GT. KDEMAND * 1.0) THEN
+          UK = KDEMAND * 1.0
+        ENDIF
+        UK = MAX(0.0, UK)
+
+C       Update stored uptake with today's passive flow
+        CALL PUT('HYDRO','UK',UK)
 
         IF (SOLVOL .GT. 0.0) THEN
           VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)

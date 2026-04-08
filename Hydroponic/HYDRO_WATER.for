@@ -50,11 +50,6 @@ C      REAL AUTO_CONC_R  ! removed - transpiration concentration now always appl
       REAL WUF            ! Water uptake factor (demand/supply ratio, 0-1)
       REAL TRWUP_MM       ! Potential uptake in mm/d
       REAL TRWU_MM        ! Actual uptake in mm/d
-      REAL ECSTRESS_ROOT  ! EC stress factor for root function (affects water uptake)
-      REAL TRLV           ! Total root length density (cm root/cm2 ground) from ROOTS
-      REAL TRLV_REF       ! Reference mature TRLV at which uptake is unconstrained
-      PARAMETER (TRLV_REF = 1.0)  ! cm/cm2 — lettuce NFT mature root density
-      REAL TRLV_FAC       ! Root-area limitation factor (0-1)
 C     Concentration correction variables
       REAL CONC_FACTOR    ! Concentration factor from volume reduction (>= 1.0)
       REAL NO3_CONC, NH4_CONC, P_CONC, K_CONC  ! mg/L
@@ -111,8 +106,8 @@ C       Get AUTO_VOL flag (1.0 = Y = constant volume, 0.0 = N = drift)
       CASE (RATE)
 C-----------------------------------------------------------------------
 C       PHASE 1: Calculate POTENTIAL water supply (like ROOTWU in soil)
-C       TRWUP = EP * ECSTRESS_ROOT so SPAM sets WUF = ECSTRESS_ROOT,
-C       propagating EC salinity stress to all plant growth modules
+C       In hydroponics water is unlimited: TRWUP = previous day EP
+C       EC stress propagates through ECSTRESS factors in SOLEC, not WUF
 C-----------------------------------------------------------------------
         ES = 0.0     ! No soil evaporation in hydroponics
         TRWU = 0.0   ! Actual uptake calculated in INTEGR phase
@@ -126,23 +121,10 @@ C       Get current solution depth in mm
 C       Get growing area from experimental file (*FIELDS section)
         CALL GET('HYDRO','AREA',GROWING_AREA)
 
-C       Get EC stress factor so TRWUP reflects actual root capacity
-        ECSTRESS_ROOT = -999.0
-        CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
-        IF (ECSTRESS_ROOT .LT. 0.1 .OR. ECSTRESS_ROOT .GT. 1.0) THEN
-          ECSTRESS_ROOT = 1.0
-        ENDIF
-
-C       Get TRLV from ROOTS — no roots means no uptake capacity
-        TRLV = 0.0
-        CALL GET('HYDRO','TRLV',TRLV)
-        TRLV_FAC = MIN(1.0, TRLV / TRLV_REF)
-        TRLV_FAC = MAX(0.0, TRLV_FAC)
-
-C       Set TRWUP = EP * ECSTRESS_ROOT * TRLV_FAC
-C       Root area limits uptake: zero roots = zero uptake, mature roots = full demand
-        TRWUP_MM = EP * ECSTRESS_ROOT * TRLV_FAC  ! mm/d
-        TRWUP    = TRWUP_MM * 0.1                  ! cm/d
+C       TRWUP = EP — unlimited supply, potential = demand
+C       EP=0 at RATE call time; SPAM RATE overrides TRWU = EP at line 627
+        TRWUP_MM = EP   ! mm/d
+        TRWUP    = TRWUP_MM * 0.1  ! cm/d
 
 C       Store potential supply for INTEGR phase (in mm/d)
         CALL PUT('HYDRO','TRWUP_MM',TRWUP_MM)
@@ -169,28 +151,14 @@ C       DEMAND-BASED: Plant water demand from transpiration (EP)
 C       EP is already in mm/d (rate per unit area)
         PLANT_DEMAND_MM = EP  ! mm/d
 
-C       Get EC stress factor for root function
-        ECSTRESS_ROOT = -999.0
-        CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
-
-C       Validate and limit range
-        IF (ECSTRESS_ROOT .LT. 0.1 .OR. ECSTRESS_ROOT .GT. 1.0) THEN
-          ECSTRESS_ROOT = 1.0
-        ENDIF
-
 C       Store EP for nutrient uptake module (for mass flow calculations)
         CALL PUT('HYDRO','EP',EP)
 
-C       Get TRLV from ROOTS — no roots means no uptake capacity
-        TRLV = 0.0
-        CALL GET('HYDRO','TRLV',TRLV)
-        TRLV_FAC = MIN(1.0, TRLV / TRLV_REF)
-        TRLV_FAC = MAX(0.0, TRLV_FAC)
-
-C       Actual uptake = demand * EC stress * root area factor
-C       Zero roots = zero uptake; mature roots = full demand met
-        TRWU_MM = PLANT_DEMAND_MM * ECSTRESS_ROOT * TRLV_FAC
-        WUF = ECSTRESS_ROOT * TRLV_FAC  ! Water uptake factor
+C       In hydroponics, water is unlimited: actual uptake = full demand
+C       EC stress acts on nutrient kinetics and growth via ECSTRESS factors
+C       in SOLEC, not through the water uptake factor (WUF)
+        TRWU_MM = PLANT_DEMAND_MM  ! Tank drained by full transpiration
+        WUF = 1.0                   ! No water stress
 
 C       Get potential supply from RATE phase for reporting only
         CALL GET('HYDRO','TRWUP_MM',TRWUP_MM)
@@ -245,10 +213,10 @@ C       Store updated solution depth back to ModuleData (in mm)
 C-----------------------------------------------------------------------
 C       CONCENTRATION EFFECT FROM WATER LOSS
 C       When volume decreases (transpiration in drift mode), dissolved
-C       nutrients concentrate. NUPTAK already applied uptake depletion
-C       using the old volume: C_depleted = C_old - uptake/V_old.
-C       Multiplying by V_old/V_new gives the exact correct result:
-C         C_depleted * (V_old/V_new) = (C_old*V_old - uptake) / V_new
+C       nutrients concentrate. HYDRO_WATER INTEGR runs before NUPTAK INTEGR
+C       (SPAM before PLANT in LAND.for), so concentration factor is applied
+C       first; NUPTAK then depletes using V_new. Both orderings give the same
+C       final result: C_final = (C_old*V_old - uptake_mass) / V_new.
 C       Always apply - feed-and-drift replenishment handled by SOLEC INTEGR
 C-----------------------------------------------------------------------
         IF (SOLVOL_PREV_MM .GT. SOLVOL_MM .AND.

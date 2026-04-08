@@ -140,12 +140,58 @@ C       Cap at 1.0x demand
         CALL PUT('HYDRO','UNO3',UNO3)
         CALL PUT('HYDRO','UNH4',UNH4)
 
+C       Store active-only components so INTEGR can recompute passive with
+C       today's EP (HYDRO_WATER INTEGR stores EP before NUPTAK INTEGR runs)
+        CALL PUT('HYDRO','UNO3_ACT',UNO3_ACT)
+        CALL PUT('HYDRO','UNH4_ACT',UNH4_ACT)
+
       CASE (INTEGR)
-C       Depletion always happens regardless of AUTO_CONC.
+C       Recompute passive (mass flow) component using today's EP.
+C       HYDRO_WATER INTEGR runs before NUPTAK INTEGR (SPAM before PLANT in
+C       LAND.for), so GET('HYDRO','EP') now returns today's actual EP and
+C       concentrations already include the volume-reduction factor.
 C       Feed-and-drift replenishment is handled by SOLEC INTEGR.
+        CALL GET('HYDRO','EP',EP)
         CALL GET('HYDRO','NO3_CONC',NO3_SOL)
         CALL GET('HYDRO','NH4_CONC',NH4_SOL)
         CALL GET('HYDRO','SOLVOL',SOLVOL)
+        CALL GET('HYDRO','PH_AVAIL_NO3',PH_AVAIL_NO3)
+        CALL GET('HYDRO','PH_AVAIL_NH4',PH_AVAIL_NH4)
+        CALL GET('HYDRO','O2_STRESS',O2_STRESS)
+        CALL GET('HYDRO','UNO3_ACT',UNO3_ACT)
+        CALL GET('HYDRO','UNH4_ACT',UNH4_ACT)
+        IF (EP .LT. 0.0) EP = 0.0
+        IF (PH_AVAIL_NO3 .LT. 0.01) PH_AVAIL_NO3 = 1.0
+        IF (PH_AVAIL_NH4 .LT. 0.01) PH_AVAIL_NH4 = 1.0
+        IF (O2_STRESS    .LT. 0.01) O2_STRESS    = 1.0
+
+C       Passive flow with today's EP and post-concentration C
+        UNO3_MF = EP * NO3_SOL * (1.0-SIGMA_NO3)
+     &          * PH_AVAIL_NO3 * O2_STRESS * 0.01
+        UNH4_MF = EP * NH4_SOL * (1.0-SIGMA_NH4)
+     &          * PH_AVAIL_NH4 * O2_STRESS * 0.01
+
+        UNO3 = UNO3_MF + UNO3_ACT
+        UNH4 = UNH4_MF + UNH4_ACT
+
+C       Re-apply demand cap (ANDEM is the current-day value from NUPTAK)
+        UN_TOTAL = UNO3 + UNH4
+        IF (UN_TOTAL .GT. ANDEM * 1.0) THEN
+          IF (UN_TOTAL .GT. 1.E-9) THEN
+            SCALE = ANDEM * 1.0 / UN_TOTAL
+            UNO3 = UNO3 * SCALE
+            UNH4 = UNH4 * SCALE
+          ELSE
+            UNO3 = 0.0
+            UNH4 = 0.0
+          ENDIF
+        ENDIF
+        UNO3 = MAX(0.0, UNO3)
+        UNH4 = MAX(0.0, UNH4)
+
+C       Update stored uptake with today's passive flow
+        CALL PUT('HYDRO','UNO3',UNO3)
+        CALL PUT('HYDRO','UNH4',UNH4)
 
         IF (SOLVOL .GT. 0.0) THEN
           VOL_PER_HA = MAX(10.0, SOLVOL * 10000.0)
