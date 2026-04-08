@@ -50,7 +50,7 @@ C-----------------------------------------------------------------------
       CHARACTER*92 FILECC
       TYPE (SwitchType) ISWITCH
 
-      INTEGER L, L1, NLAYR
+      INTEGER L, L1, L1_PREV, NLAYR
 
       INTEGER DYNAMIC
 
@@ -195,6 +195,9 @@ C       Apply EC stress to root growth (morphological suppression)
 
 !       HORIZONTAL ROOT EXTENSION along NFT channel
 !       RFAC2 = root extension rate per physiological day (species file)
+!       Cultivar differentiation comes through VSTAGE progression:
+!       slower-developing ecotypes (higher OPTBI) remain at higher RFAC2
+!       longer, naturally giving more channel coverage.
         RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
         RTDEP = RTDEP + DTX * RFAC2
 
@@ -245,10 +248,11 @@ C       Apply EC stress to root growth (morphological suppression)
           RLGRW(L) = RRLF(L) * RLNEW / DLAYR(L)
 
 !         Natural + O2-depletion senescence in hydroponics
-!         Natural rate halved (no drought stress); RTEXF scales with O2 deficit
+!         RTSEN is a plant property; water-stress senescence (RLV_WS) is zero
+!         RTEXF scales O2-depletion senescence with dissolved O2 deficit
           IF (TRLV + RLNEW .GT. TRLV_MIN) THEN
             O2_DEATH = RTEXF * (1.0 - O2_STRESS)
-            RLSEN(L) = RLV(L) * (RTSEN * 0.5 + O2_DEATH) * DTX
+            RLSEN(L) = RLV(L) * (RTSEN + O2_DEATH) * DTX
           ELSE
             RLSEN(L) = 0.0
           ENDIF
@@ -298,6 +302,9 @@ C       Apply EC stress to root growth (morphological suppression)
 !       No water stress in hydroponics
         SATFAC = 0.0
 
+!       Share TRLV with hydroponic water module for root-area-limited uptake
+        CALL PUT('HYDRO','TRLV',TRLV)
+
         CumRootMass = CumRootMass + WRDOTN * 10. - SRDOT * 10.
 
       ELSE
@@ -308,11 +315,6 @@ C-----------------------------------------------------------------------
       RFAC2 = TABEX(YRTFAC, XRTFAC, VSTAGE, 4)
       RLNEW = WRDOTN * RFAC1 / 10000.
 
-C     Apply EC stress to root growth (morphological suppression)
-      CALL GET('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
-      IF (ECSTRESS_ROOT .LT. 0.1) ECSTRESS_ROOT = 1.0
-      RLNEW = RLNEW * ECSTRESS_ROOT
-      
       CGRRT = AGRRT * WRDOTN
 
 C-----------------------------------------------------------------------

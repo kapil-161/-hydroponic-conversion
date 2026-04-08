@@ -294,11 +294,15 @@ C       Store initial stress factors in ModuleData (so they're available immedia
 
       CASE (RATE)
 C-----------------------------------------------------------------------
-C       Calculate current EC based on ion concentrations
-C       NOTE: Concentrations already reflect uptake depletion (HYDRO_NUTRIENT/
-C       SOLPi/SOLKi) and transpiration concentration (HYDRO_WATER V_old/V_new).
-C       Use concentrations directly — no separate concentration factor needed.
+C       Calculate current EC based on ion concentrations.
+C       GET from ModuleData (not argument list) so that fertilizer
+C       additions made by HYDRO_FERT in INTEGR are visible here.
 C-----------------------------------------------------------------------
+        CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+        CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+        CALL GET('HYDRO','P_CONC',P_CONC)
+        CALL GET('HYDRO','K_CONC',K_CONC)
+
         NO3_ppm = NO3_CONC
         NH4_ppm = NH4_CONC
         P_ppm   = P_CONC
