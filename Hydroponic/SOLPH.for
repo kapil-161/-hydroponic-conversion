@@ -108,26 +108,20 @@ C     CO2_AQ = KH_CO2 * pCO2 = 3.4e-2 * 370e-6 = 1.258e-5 mol/L
       PARAMETER (K1_CA  = 4.47E-7)   ! 10^-6.35
       PARAMETER (CO2_AQ = 1.258E-5)  ! KH * pCO2 (mol/L)
 
-C     Background alkalinity (HCO3- from irrigation water, meq/L)
-C     Provides realistic buffer capacity independent of solution bicarbonate.
-C     0.5 meq/L = ~30 mg/L HCO3- corresponds to moderately soft tap water.
+C     Background alkalinity; pH scale/Km factors — read from SPE at RUNINIT
       REAL BGALKAL
-      PARAMETER (BGALKAL = 0.5E-3)   ! mol/L (0.5 mmol/L = 0.5 meq/L)
 
-C     pH-dependent availability scaling factors
-      PARAMETER (PH_SCALE_NO3 = 0.8)
-      PARAMETER (PH_SCALE_NH4 = 0.8)
-      PARAMETER (PH_SCALE_P   = 0.5)
-      PARAMETER (PH_SCALE_K   = 1.0)
-
-C     pH-dependent Km sensitivity factors
-      PARAMETER (PH_KM_ALPHA_NO3 = 0.15)
-      PARAMETER (PH_KM_ALPHA_NH4 = 0.15)
-      PARAMETER (PH_KM_ALPHA_P   = 0.20)
-      PARAMETER (PH_KM_ALPHA_K   = 0.10)
-
-C     Optimal pH for lettuce (center of 5.5-6.0 range)
-      PARAMETER (PH_OPT = 5.75)
+C     File reading for SPE parameters
+      CHARACTER*30 FILEIO_LOC
+      CHARACTER*12 FILEC_LOC
+      CHARACTER*80 PATHCR_LOC, C80_TMP
+      CHARACTER*92 FILECC_LOC
+      CHARACTER*6  SECTION
+      INTEGER LUNIO_LOC, LUNCRP_LOC, LINC_LOC, FOUND_LOC
+      INTEGER PATHL_LOC, ERR, LNUM_TMP, ISECT_TMP
+      CHARACTER*1  BLANK_LOC
+      PARAMETER (BLANK_LOC = ' ')
+      EXTERNAL GETLUN, ERROR, FIND, IGNORE
 
       INTEGER DYNAMIC
 
@@ -138,6 +132,45 @@ C-----------------------------------------------------------------------
       SELECT CASE (DYNAMIC)
 
       CASE (RUNINIT, SEASINIT)
+C-----------------------------------------------------------------------
+C       Read pH stress parameters from SPE file
+C-----------------------------------------------------------------------
+        FILEIO_LOC = CONTROL % FILEIO
+        LUNIO_LOC  = CONTROL % LUNIO
+        OPEN(LUNIO_LOC, FILE=FILEIO_LOC, STATUS='OLD', IOSTAT=ERR)
+        IF (ERR .NE. 0) CALL ERROR('SOLPH ',ERR,FILEIO_LOC,0)
+        READ(LUNIO_LOC,'(6(/),15X,A12,1X,A80)',IOSTAT=ERR)
+     &       FILEC_LOC, PATHCR_LOC
+        CLOSE(LUNIO_LOC)
+
+        PATHL_LOC = INDEX(PATHCR_LOC, BLANK_LOC)
+        IF (PATHL_LOC .LE. 1) THEN
+          FILECC_LOC = FILEC_LOC
+        ELSE
+          FILECC_LOC = PATHCR_LOC(1:(PATHL_LOC-1)) // FILEC_LOC
+        ENDIF
+
+        CALL GETLUN('FILEC', LUNCRP_LOC)
+        OPEN(LUNCRP_LOC, FILE=FILECC_LOC, STATUS='OLD', IOSTAT=ERR)
+        IF (ERR .NE. 0) CALL ERROR('SOLPH ',42,FILECC_LOC,0)
+
+        SECTION = '!*PHST'
+        CALL FIND(LUNCRP_LOC, SECTION, LINC_LOC, FOUND_LOC)
+        IF (FOUND_LOC .EQ. 0) CALL ERROR('SOLPH ',42,FILECC_LOC,0)
+        LNUM_TMP = 0
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR) PH_OPT, PH_SCALE_NO3, PH_SCALE_NH4,
+     &                             PH_SCALE_P, PH_SCALE_K
+        IF (ERR .NE. 0) CALL ERROR('SOLPH ',ERR,FILECC_LOC,0)
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR) PH_KM_ALPHA_NO3, PH_KM_ALPHA_NH4,
+     &                             PH_KM_ALPHA_P, PH_KM_ALPHA_K
+        IF (ERR .NE. 0) CALL ERROR('SOLPH ',ERR,FILECC_LOC,0)
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR) BGALKAL
+        IF (ERR .NE. 0) CALL ERROR('SOLPH ',ERR,FILECC_LOC,0)
+        CLOSE(LUNCRP_LOC)
+
 C-----------------------------------------------------------------------
 C       Initialize pH from ModuleData
 C-----------------------------------------------------------------------

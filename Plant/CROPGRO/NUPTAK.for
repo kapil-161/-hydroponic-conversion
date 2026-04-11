@@ -183,8 +183,12 @@ C-----------------------------------------------------------------------
       IF (ISWHYDRO .EQ. 'Y') THEN
         ANDEM = (NDMTOT - NDMSDR) * 10.0
         
-        PDEMAND = 0.0
-        KDEMAND = 0.0
+C       Get P and K demands from previous day (stored by P_Plant/K_Plant INTEGR)
+C       Using yesterday's demand is correct explicit-Euler integration.
+        CALL GET('HYDRO','PTOTDEM',PDEMAND)
+        IF (PDEMAND .LT. 0.0) PDEMAND = 0.0
+        CALL GET('HYDRO','KTOTDEM',KDEMAND)
+        IF (KDEMAND .LT. 0.0) KDEMAND = 0.0
 
         CONTROL_DUMMY % DYNAMIC = RATE
         CALL HYDRO_NUTRIENT(

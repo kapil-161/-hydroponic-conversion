@@ -44,8 +44,7 @@
 
 !     Hydroponic variables
       CHARACTER*1 ISWHYDRO
-      CHARACTER*92 FILECC
-      REAL K_SOL, PLTPOP, RTDEP, UKi_HYDRO
+      REAL UKi_HYDRO
 
 !***********************************************************************
 !***********************************************************************
@@ -80,35 +79,12 @@
 
       IF (ISWHYDRO .EQ. 'Y') THEN
 !-----------------------------------------------------------------------
-!       HYDROPONIC MODE: Use solution-based K uptake
+!       HYDROPONIC MODE: K uptake already computed by NUPTAK -> SOLKi.
+!       Just read the stored result - do NOT call SOLKi again.
 !-----------------------------------------------------------------------
-!       Get solution K concentration and plant parameters
-        CALL GET('HYDRO','K_CONC',K_SOL)
-        CALL GET('PLANT','PLTPOP',PLTPOP)
-        CALL GET('PLANT','RTDEP',RTDEP)
-        FILECC = ' '  ! Not used by SOLKi yet, but required for interface
-
-!       Call hydroponic K uptake module
-!       Note: demand includes luxury for K
-        CALL SOLKi(CONTROL, ISWITCH,
-     &    FILECC, PLTPOP, RTDEP, KTotDem + KLuxuryDem,    !Input
-     &    UKi_HYDRO,                               !Output - kg/ha/day
-     &    K_SOL)                                   !I/O - Solution conc. mg/L
-
-!       Store updated K concentration
-        CALL PUT('HYDRO','K_CONC',K_SOL)
-
-!       Store K uptake rate in ModuleData for output
-        CALL PUT('HYDRO','UKi',UKi_HYDRO)
-
-!       Set uptake profile total
+        CALL GET('HYDRO','UK',UKi_HYDRO)
         KUptakeProf = UKi_HYDRO
-
-!       Set layer uptake to zero (not layer-based in hydroponics)
-        KUptake = 0.0
-
-        WRITE(*,*) 'Hydroponic K uptake: Demand=',KTotDem+KLuxuryDem,
-     &             ' Uptake=',KUptakeProf,' kg/ha/d'
+        KUptake     = 0.0
 
 !       Skip soil-based uptake
         GO TO 500
@@ -178,6 +154,9 @@
       ENDIF
 
 !-----------------------------------------------------------------------
+!     Ratio guards: skip in hydroponic mode — SOLKi already caps at demand
+      IF (ISWHYDRO .NE. 'Y') THEN
+
 !     Reduce uptake if N:K ratio is below minimum
 !     (prevents excessive K uptake when N is limiting)
       IF (N2K > 1.E-6 .AND. N2K < N2K_min) THEN
@@ -192,7 +171,6 @@
         KUptakeProf = KUp_Reduce * KUptakeProf
       ENDIF
 
-!-----------------------------------------------------------------------
 !     Reduce uptake if P:K ratio is below minimum
 !     (K-specific: maintains P:K balance)
       IF (P2K > 1.E-6 .AND. P2K < P2K_min) THEN
@@ -206,6 +184,8 @@
         KUptake     = KUp_Reduce * KUptake
         KUptakeProf = KUp_Reduce * KUptakeProf
       ENDIF
+
+      ENDIF  ! ISWHYDRO .NE. 'Y'
 
 !***********************************************************************
 !***********************************************************************

@@ -72,7 +72,7 @@ C     EC Stress factors (0.0 to 1.0, where 1.0 = no stress)
       REAL ECSTRESS_ROOT      ! Stress factor for root growth (morphological)
       REAL ECSTRESS_LEAF      ! Stress factor for leaf expansion (morphological)
 
-C     EC Stress parameters for Na-based stress (high EC)
+C     EC Stress parameters for Na-based stress (high EC) — read from SPE
       REAL C_NA0_5       ! Na concentration at 50% growth reduction (mol/m3)
       REAL K_INHIB_NO3  ! Inhibition constant for NO3 (from NaCl studies)
       REAL K_INHIB_K    ! Inhibition constant for K (exponential decay)
@@ -85,6 +85,13 @@ C     EC Stress parameters for EC-based stress (high AND low)
       REAL EC_STRESS_HIGH ! Stress factor from high EC (>EC_OPT_HIGH)
       REAL EC_STRESS_TOTAL ! Combined EC stress factor (0-1)
 
+C     EC threshold fractions and stress curve params — read from SPE
+      REAL EC_FRAC_LOW   ! Fraction of EC_INIT for replenish trigger
+      REAL EC_FRAC_HIGH  ! Fraction of EC_INIT for replenish target
+      REAL EC_STRESS_MIN ! Minimum stress factor at EC=0 (low-EC curve)
+      REAL EC_STRESS_SLP ! Slope of low-EC linear stress curve
+      REAL EC_DECAY_K    ! Exponential decay constant for high-EC stress
+
 C     Solution volume (for initialization only)
       REAL SOLVOL_INIT   ! Initial solution volume (mm)
 
@@ -94,10 +101,24 @@ C     This is a rough empirical relationship for hydroponic solutions
       REAL EC_FACTOR
       PARAMETER (EC_FACTOR = 640.0)
 
+C     File reading for SPE parameters
+      CHARACTER*30 FILEIO_LOC
+      CHARACTER*12 FILEC_LOC
+      CHARACTER*80 PATHCR_LOC, C80_TMP
+      CHARACTER*92 FILECC_LOC
+      CHARACTER*6  SECTION_LOC
+      INTEGER LUNIO_LOC, LUNCRP_LOC, LINC_LOC, FOUND_LOC
+      INTEGER PATHL_LOC, ERR_LOC, LNUM_TMP, ISECT_TMP
+      CHARACTER*1  BLANK_LOC
+      PARAMETER (BLANK_LOC = ' ')
+      EXTERNAL GETLUN, ERROR, FIND, IGNORE
+
       INTEGER DYNAMIC
       SAVE EC_INIT, NO3_INIT, NH4_INIT, P_INIT, K_INIT, SOLVOL_INIT
       SAVE C_NA0_5, K_INHIB_NO3, K_INHIB_K, K_INHIB_P
       SAVE EC_OPT_LOW, EC_OPT_HIGH, AUTO_CONC_R
+      SAVE EC_FRAC_LOW, EC_FRAC_HIGH, EC_STRESS_MIN, EC_STRESS_SLP
+      SAVE EC_DECAY_K
 
 C-----------------------------------------------------------------------
 
@@ -106,6 +127,45 @@ C-----------------------------------------------------------------------
       SELECT CASE (DYNAMIC)
 
       CASE (RUNINIT, SEASINIT)
+C-----------------------------------------------------------------------
+C       Read EC stress parameters from SPE file
+C-----------------------------------------------------------------------
+        FILEIO_LOC = CONTROL % FILEIO
+        LUNIO_LOC  = CONTROL % LUNIO
+        OPEN(LUNIO_LOC, FILE=FILEIO_LOC, STATUS='OLD', IOSTAT=ERR_LOC)
+        IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',ERR_LOC,FILEIO_LOC,0)
+        READ(LUNIO_LOC,'(6(/),15X,A12,1X,A80)',IOSTAT=ERR_LOC)
+     &       FILEC_LOC, PATHCR_LOC
+        CLOSE(LUNIO_LOC)
+
+        PATHL_LOC = INDEX(PATHCR_LOC, BLANK_LOC)
+        IF (PATHL_LOC .LE. 1) THEN
+          FILECC_LOC = FILEC_LOC
+        ELSE
+          FILECC_LOC = PATHCR_LOC(1:(PATHL_LOC-1)) // FILEC_LOC
+        ENDIF
+
+        CALL GETLUN('FILEC', LUNCRP_LOC)
+        OPEN(LUNCRP_LOC, FILE=FILECC_LOC, STATUS='OLD', IOSTAT=ERR_LOC)
+        IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',42,FILECC_LOC,0)
+
+        SECTION_LOC = '!*ECST'
+        CALL FIND(LUNCRP_LOC, SECTION_LOC, LINC_LOC, FOUND_LOC)
+        IF (FOUND_LOC .EQ. 0) CALL ERROR('SOLEC ',42,FILECC_LOC,0)
+        LNUM_TMP = 0
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR_LOC) EC_FRAC_LOW, EC_FRAC_HIGH
+        IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',ERR_LOC,FILECC_LOC,0)
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR_LOC) EC_STRESS_MIN, EC_STRESS_SLP,
+     &                                 EC_DECAY_K
+        IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',ERR_LOC,FILECC_LOC,0)
+        CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
+        READ(C80_TMP,*,IOSTAT=ERR_LOC) C_NA0_5, K_INHIB_NO3,
+     &                                 K_INHIB_K, K_INHIB_P
+        IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',ERR_LOC,FILECC_LOC,0)
+        CLOSE(LUNCRP_LOC)
+
 C-----------------------------------------------------------------------
 C       Initialize EC from ModuleData
 C       Calculate missing values: EC from nutrients OR nutrients from EC
@@ -239,24 +299,12 @@ C       Optimal EC range: derived from EC_TARGET so the model works for any
 C       experiment recipe, not just those near 1.5 dS/m.
 C       Feed-and-drift: replenish when EC drops to 85% of target; refill to 115%.
 C       Stress thresholds: below 70% of target is deficiency; above 200% is toxicity.
-        EC_OPT_LOW  = EC_INIT * 0.85  ! replenish trigger  (85% of initial EC)
-        EC_OPT_HIGH = EC_INIT * 1.15  ! replenish target   (115% of initial EC)
+        EC_OPT_LOW  = EC_INIT * EC_FRAC_LOW   ! replenish trigger
+        EC_OPT_HIGH = EC_INIT * EC_FRAC_HIGH  ! replenish target
         IF (EC_OPT_LOW  .LT. 0.1) EC_OPT_LOW  = 0.1
         IF (EC_OPT_HIGH .LT. 0.2) EC_OPT_HIGH = 0.2
 
-C       Na-based stress parameters (if Na data is available)
-C       C_NA0_5: Na concentration causing 50% root growth reduction (mol/m3)
-C       From literature: typically 20-50 mol/m3 for sensitive crops
-        C_NA0_5 = 30.0  ! mol/m3 (≈690 mg/L Na)
-
-C       Inhibition constants (from rose studies and general literature)
-C       K_INHIB_NO3: Hyperbolic inhibition constant for NO3 Jmax
-        K_INHIB_NO3 = 50.0  ! mol/m3 (NaCl concentration for 50% inhibition)
-
-C       Exponential decay constants for K and P
-C       Jmax = Jmax_0 * exp(-k * C_Na)
-        K_INHIB_K = 0.023   ! Silberbush et al. (2005) Table 1, lettuce: Jmax_K = 5.12e-8 * exp(-0.023 * C_Na)
-        K_INHIB_P = 0.0022  ! From literature: Jmax_P = Jmax_0 * exp(-0.0022 * C_Na)
+C       Na stress params (C_NA0_5, K_INHIB_NO3, K_INHIB_K, K_INHIB_P) read from SPE
 
         EC_TARGET = EC_INIT
         EC_CALC = EC_INIT
@@ -336,9 +384,10 @@ C       Simple, practical, works without Na data
 C=======================================================================
 C       Calculate stress from LOW EC (nutrient deficiency)
         IF (EC_CALC .LT. EC_OPT_LOW) THEN
-C         Linear decline: EC=0 → stress=0.3, EC=EC_OPT_LOW → stress=1.0
-          EC_STRESS_LOW = 0.3 + 0.7 * (EC_CALC / EC_OPT_LOW)
-          EC_STRESS_LOW = MAX(0.3, MIN(1.0, EC_STRESS_LOW))
+C         Linear decline: EC=0 → EC_STRESS_MIN, EC=EC_OPT_LOW → 1.0
+          EC_STRESS_LOW = EC_STRESS_MIN + EC_STRESS_SLP *
+     &                    (EC_CALC / EC_OPT_LOW)
+          EC_STRESS_LOW = MAX(EC_STRESS_MIN, MIN(1.0, EC_STRESS_LOW))
         ELSE
 C         No stress from low EC
           EC_STRESS_LOW = 1.0
@@ -347,8 +396,7 @@ C         No stress from low EC
 C       Calculate stress from HIGH EC (salinity/toxicity)
         IF (EC_CALC .GT. EC_OPT_HIGH) THEN
 C         Exponential decline: simulate salt toxicity accumulation
-C         At EC = 2*EC_OPT_HIGH, stress = 0.5
-          EC_STRESS_HIGH = EXP(-0.277 * (EC_CALC - EC_OPT_HIGH))
+          EC_STRESS_HIGH = EXP(-EC_DECAY_K * (EC_CALC - EC_OPT_HIGH))
           EC_STRESS_HIGH = MAX(0.1, MIN(1.0, EC_STRESS_HIGH))
         ELSE
 C         No stress from high EC

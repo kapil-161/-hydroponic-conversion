@@ -25,7 +25,7 @@
       USE ModuleDefs
       USE ModuleData
       IMPLICIT  NONE
-      EXTERNAL WARNING, SOLPi
+      EXTERNAL WARNING
       SAVE
 !     ------------------------------------------------------------------
 !      CHARACTER*1  ISWPHO
@@ -48,7 +48,7 @@
 
 !     Hydroponic variables
       CHARACTER*1 ISWHYDRO
-      REAL P_SOL, PLTPOP, RTDEP, UPO4_HYDRO               
+      REAL UPO4_HYDRO
 
 !***********************************************************************
 !***********************************************************************
@@ -106,33 +106,12 @@
 
       IF (ISWHYDRO .EQ. 'Y') THEN
 !-----------------------------------------------------------------------
-!       HYDROPONIC MODE: Use solution-based P uptake
+!       HYDROPONIC MODE: P uptake already computed by NUPTAK -> SOLPi.
+!       Just read the stored result - do NOT call SOLPi again.
 !-----------------------------------------------------------------------
-!       Get solution P concentration and plant parameters
-        CALL GET('HYDRO','P_CONC',P_SOL)
-        CALL GET('PLANT','PLTPOP',PLTPOP)
-        CALL GET('PLANT','RTDEP',RTDEP)
-
-!       Call hydroponic P uptake module
-        CALL SOLPi(CONTROL, ISWITCH,
-     &    PLTPOP, RTDEP, PTotDem,              !Input
-     &    UPO4_HYDRO,                          !Output - kg/ha/day
-     &    P_SOL)                               !I/O - Solution conc. mg/L
-
-!       Store updated P concentration
-        CALL PUT('HYDRO','P_CONC',P_SOL)
-
-!       Store P uptake rate in ModuleData for output
-        CALL PUT('HYDRO','UPO4',UPO4_HYDRO)
-
-!       Set uptake profile total
+        CALL GET('HYDRO','UPO4',UPO4_HYDRO)
         PUptakeProf = UPO4_HYDRO
-
-!       Set layer uptake to zero (not layer-based in hydroponics)
-        PUptake = 0.0
-
-        WRITE(*,*) 'Hydroponic P uptake: Demand=',PTotDem,
-     &             ' Uptake=',PUptakeProf,' kg/ha/d'
+        PUptake     = 0.0
 
 !       Skip soil-based uptake
         GO TO 500
