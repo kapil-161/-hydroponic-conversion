@@ -185,7 +185,8 @@
 !
 ! K concentrations in % dry matter (divide by 100 for decimal fraction)
    -99.0   -99.0   -99.0  Optimum Shoot K Conc (emergence, 1st flower, full seed)
-  0.0960  0.0790  0.0610  Optimum Leaf K Conc  (emergence, 1st flower, full seed)
+! OBS SHKPD ≈ 7.85-9.4% DW (Heinen 1994 T1); reduced from 0.0960 to match
+  0.0800  0.0790  0.0610  Optimum Leaf K Conc  (emergence, 1st flower, full seed)
   0.0900  0.0730  0.0560  Optimum Stem K Conc  (emergence, 1st flower, full seed)
   0.0850  0.0680  0.0520  Optimum Root K Conc  (emergence, 1st flower, full seed)
    -99.0  0.0200  0.0150  Optimum Shell K Conc (emergence, 1st flower, full seed)
@@ -214,4 +215,4 @@
     0.50    0.65  SRATPHOTO_K, SRATSTOM - K stress thresholds for photosyn, stomata
     0.20          FracKMobil - max fraction of K which can be mobilized per day (higher than P)
     1.00          FracKUptake - fraction of available soil K used for uptake
-    1.40          KMAX_LUXURY - maximum luxury factor (can store 40% above optimum)
+    1.05          KMAX_LUXURY - maximum luxury factor (5% above opt; prevents K% overshoot to 13%)
