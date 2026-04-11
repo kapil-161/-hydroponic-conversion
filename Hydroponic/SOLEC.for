@@ -235,11 +235,14 @@ C       APPROACH: Use total EC deviation from optimal range
 C       This is simpler and more practical than Na-based stress
 C       Works even when Na concentration is not measured
 C-----------------------------------------------------------------------
-C       Optimal EC range for lettuce (from literature)
-C       Narrower range: 1.2-1.8 dS/m for optimal lettuce growth
-C       Outside this range: nutrient deficiency (low) or toxicity (high)
-        EC_OPT_LOW  = 1.2   ! dS/m - below this, nutrient deficiency stress
-        EC_OPT_HIGH = 1.8   ! dS/m - above this, salinity/toxicity stress
+C       Optimal EC range: derived from EC_TARGET so the model works for any
+C       experiment recipe, not just those near 1.5 dS/m.
+C       Feed-and-drift: replenish when EC drops to 85% of target; refill to 115%.
+C       Stress thresholds: below 70% of target is deficiency; above 200% is toxicity.
+        EC_OPT_LOW  = EC_INIT * 0.85  ! replenish trigger  (85% of initial EC)
+        EC_OPT_HIGH = EC_INIT * 1.15  ! replenish target   (115% of initial EC)
+        IF (EC_OPT_LOW  .LT. 0.1) EC_OPT_LOW  = 0.1
+        IF (EC_OPT_HIGH .LT. 0.2) EC_OPT_HIGH = 0.2
 
 C       Na-based stress parameters (if Na data is available)
 C       C_NA0_5: Na concentration causing 50% root growth reduction (mol/m3)
@@ -252,7 +255,7 @@ C       K_INHIB_NO3: Hyperbolic inhibition constant for NO3 Jmax
 
 C       Exponential decay constants for K and P
 C       Jmax = Jmax_0 * exp(-k * C_Na)
-        K_INHIB_K = 0.0136  ! From rose studies: Jmax_K = Jmax_0 * exp(-0.0136 * C_Na)
+        K_INHIB_K = 0.023   ! Silberbush et al. (2005) Table 1, lettuce: Jmax_K = 5.12e-8 * exp(-0.023 * C_Na)
         K_INHIB_P = 0.0022  ! From literature: Jmax_P = Jmax_0 * exp(-0.0022 * C_Na)
 
         EC_TARGET = EC_INIT
