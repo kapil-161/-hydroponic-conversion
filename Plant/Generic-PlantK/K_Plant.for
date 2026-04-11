@@ -397,8 +397,10 @@
      &    KRootDem, KSeedDem, KShelDem, KShutDem,         !Output
      &    KTotDem, KLuxuryDem)                            !Output
 
-!     Store KTotDem in ModuleData for hydroponic SOLKi module
-      CALL PUT('HYDRO','KTOTDEM',KTotDem)
+!     Store total K demand (optimum + luxury) for hydroponic SOLKi module.
+!     Must include luxury so uptake continues when plant is at optimum K%
+!     (otherwise KDEMAND=0, UK=0, and growth dilutes K% from 9.5%->4.7%).
+      CALL PUT('HYDRO','KTOTDEM',KTotDem + KLuxuryDem)
 
 !-----------------------------------------------------------------------
 !     K uptake
