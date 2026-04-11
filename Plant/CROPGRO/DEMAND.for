@@ -28,7 +28,7 @@ C=======================================================================
      &  LNGPEG, NDLEAF, NSTRES, PAR, PCNL, PCNRT, PCNST,  !Input
      &  PGAVL, PUNCSD, PUNCTR, PLTPOP, RPROAV, RTWT,      !Input
      &  SDDES, SDNO, SDVAR, SHELN, SHVAR, STMWT, SWFAC,   !Input
-     &  TAVG, TDUMX, TDUMX2, TGRO, TURFAC, VSTAGE, WCRLF, !Input
+     &  TAVG, TDUMX, TDUMX2, TGRO, TURFAC, VSTAGE, WCRLF,  !Input
      &  WCRRT, WCRST, WNRLF, WNRRT, WNRSH, WNRST, WTLF,   !Input
      &  WTSD, WTSHE, XPOD, NVEG0, NR1, NR2, NR5, NR7,     !Input
 
@@ -215,7 +215,12 @@ C=======================================================================
           PNTIM(NPP) = 0.
         END DO
         FNINSD = SDPRO * 0.16   
-        FNINL  = PROLFI * 0.16  
+!       Leaf N target declines from PROLFI (initial, ~week1 peak) to PROLFF
+!       (mature, ~harvest) using VSTAGE normalized to harvest stage.
+!       VegFrac stays 0 for lettuce (never flowers), so VSTAGE/50 used instead.
+!       At VSTAGE=0: FNINL=PROLFI*0.16 (peak N%); at VSTAGE>=50: FNINL=PROLFF*0.16
+        FNINL  = (PROLFI + (PROLFF - PROLFI) * MIN(1.0, MAX(0.0,
+     &            VSTAGE / 50.0))) * 0.16
         FNINS  = PROSTI * 0.16  
         FNINR  = PRORTI * 0.16  
 
@@ -228,6 +233,12 @@ C=======================================================================
 !     DAS = MAX(0,TIMDIF(YRSIM,YRDOY))
       CALL GET(CONTROL)
       DAS = CONTROL % DAS
+!-----------------------------------------------------------------------
+!     Update leaf N target daily: interpolate from PROLFI (peak N% at start)
+!     to PROLFF (minimum N% at harvest) using VSTAGE normalized to ~50 nodes.
+!     VSTAGE advances 0→66 for lettuce; capped at 1.0 so FNINL→PROLFF*0.16.
+      FNINL  = (PROLFI + (PROLFF - PROLFI) * MIN(1.0, MAX(0.0,
+     &          VSTAGE / 50.0))) * 0.16
 !-----------------------------------------------------------------------
 !     Compute max N mining, NMINEP, based on stage-dependent mining
 !     rate, NMOBR
