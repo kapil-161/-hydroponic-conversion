@@ -1,6 +1,6 @@
 # Calibration Next Steps — DSSAT Hydroponic Lettuce Model
 
-**Date:** 2026-04-12 (updated after Priority 1–3)
+**Date:** 2026-04-12 (updated after Priority 1–4)
 **Model:** CRGRO048 (CROPGRO lettuce), DSSAT 4.8.5
 **Experiments:** WAGA9101 (Heinen 1994), UFGA2201 (JP Thesis 2022), UFGA2402 (Donald Coon 2024–2025)
 
@@ -12,9 +12,13 @@
 |-----------|------|-------|-------|
 | XLMAXT/YLMAXT | LUGRO048.SPE | `-10 0 26 34 42 55 / 0 0 1.0 0.70 0.0 0.0` | Peak at 26°C; recalibrated 2026-04-12 |
 | SITONIA LFMAX | LUGRO048.CUL | 0.731 | Calibrated to WAGA9101 (+5.2%) |
-| REX LFMAX | LUGRO048.CUL | 0.660 | Calibrated to UFGA2201 28°C (−2%) |
-| MUIR LFMAX | LUGRO048.CUL | 0.850 | Recalibrated 2026-04-12 (was 0.650) |
-| SKYPHOS LFMAX | LUGRO048.CUL | 1.200 | Recalibrated 2026-04-12 (was 0.850) |
+| SITONIA SLAVR | LUGRO048.CUL | 240 | Unchanged; WAGA9101 stable at +5.2% |
+| REX LFMAX | LUGRO048.CUL | 0.690 | Recalibrated Priority 4 (SLAVR+LFMAX) |
+| REX SLAVR | LUGRO048.CUL | 320 | Calibrated to UFGA2201 observed LAPD at 28°C |
+| MUIR LFMAX | LUGRO048.CUL | 0.620 | Recalibrated Priority 4 (was 0.850→0.720→0.620) |
+| MUIR SLAVR | LUGRO048.CUL | 370 | Calibrated to UFGA2201 observed LAPD at 28°C (was 210) |
+| SKYPHOS LFMAX | LUGRO048.CUL | 0.720 | Recalibrated Priority 4 (was 1.200→0.970→0.720) |
+| SKYPHOS SLAVR | LUGRO048.CUL | 390 | Calibrated to UFGA2201 observed LAPD at 28°C (was 185) |
 | BG23-1251 LFMAX | LUGRO048.CUL | 0.590 | Original; 25°C overshoot is CO2 artifact |
 | WALDMANNS_GR LFMAX | LUGRO048.CUL | 0.650 | Original; 25°C overshoot is CO2 artifact |
 | PRORTI | LUGRO048.SPE | 0.260 | Stable; 0.280 caused N-stress cascade |
@@ -29,20 +33,20 @@
 
 ### UFGA2201 Harvest CWAM (kg/ha)
 
-| Treatment | LFMAX | Sim | Obs | Bias | Status |
-|-----------|-------|-----|-----|------|--------|
-| Rex_24°C | 0.660 | 1430 | 1146 | +25% | Day-length confound (Apr, 13.1h) |
-| Rex_26°C | 0.660 | 1392 | 1177 | +18% | Day-length confound (Aug, 12.2h) |
-| Rex_28°C | 0.660 | 1466 | 1491 | −2% | ✓ Calibrated |
-| Rex_30°C | 0.660 | 940 | 1499 | −37% | Day-length confound (Mar, 11.8h) |
-| Muir_24°C | 0.850 | 1510 | 914 | +65% | Day-length/N confound (Apr, 13.1h) |
-| Muir_26°C | 0.850 | 1449 | 1148 | +26% | Partial confound |
-| Muir_28°C | 0.850 | 1449 | 1224 | +18% | ✓ Acceptable (calibrated here) |
-| Muir_30°C | 0.850 | 1023 | 1447 | −29% | Day-length confound (Mar, 11.8h) |
-| Skyphos_24°C | 1.200 | 2004 | 1494 | +34% | Day-length/N confound (Apr, 13.1h) |
-| Skyphos_26°C | 1.200 | 1834 | 1675 | +10% | Acceptable |
-| Skyphos_28°C | 1.200 | 1776 | 1761 | +1% | ✓ Calibrated |
-| Skyphos_30°C | 1.200 | 1428 | 1466 | −3% | ✓ Excellent |
+| Treatment | LFMAX | SLAVR | Sim | Obs | Bias | Status |
+|-----------|-------|-------|-----|-----|------|--------|
+| Rex_24°C | 0.690 | 320 | 1430 | 1146 | +25% | Day-length confound (Apr, 13.1h) |
+| Rex_26°C | 0.690 | 320 | 1392 | 1177 | +18% | Day-length confound (Aug, 12.2h) |
+| Rex_28°C | 0.690 | 320 | 1450 | 1491 | −3% | ✓ Calibrated |
+| Rex_30°C | 0.690 | 320 | 943 | 1499 | −37% | Day-length confound (Mar, 11.8h) |
+| Muir_24°C | 0.620 | 370 | 1238 | 914 | +35% | Day-length confound (Apr, 13.1h) |
+| Muir_26°C | 0.620 | 370 | 1189 | 1148 | +4% | ✓ |
+| Muir_28°C | 0.620 | 370 | 1263 | 1224 | +3% | ✓ Calibrated |
+| Muir_30°C | 0.620 | 370 | 779 | 1447 | −46% | Day-length confound (Mar, 11.8h) |
+| Skyphos_24°C | 0.720 | 390 | 1649 | 1494 | +10% | Day-length confound (Apr, 13.1h) |
+| Skyphos_26°C | 0.720 | 390 | 1612 | 1675 | −4% | ✓ |
+| Skyphos_28°C | 0.720 | 390 | 1652 | 1761 | −6% | ✓ Calibrated |
+| Skyphos_30°C | 0.720 | 390 | 1132 | 1466 | −23% | Day-length confound (Mar, 11.8h) |
 
 ### UFGA2402 Harvest CWAM (kg/ha)
 
@@ -85,23 +89,17 @@ Calibrated Muir (0.650→0.850) and Skyphos (0.850→1.200) to the 28°C optimal
 
 ---
 
-## Priority 4 — SLAVR Calibration (LAI vs Biomass Trade-off)
+## ~~Priority 4 — SLAVR Calibration (LAI vs Biomass Trade-off)~~ ✅ DONE (2026-04-12)
 
-**Problem:** Specific leaf area (SLAVR) controls how LAI scales with leaf dry weight. Currently:
-- SITONIA: 240 cm²/g
-- REX: 400 cm²/g
-- MUIR: 210 cm²/g
-- SKYPHOS: 185 cm²/g
-- BG23-1251: 351 cm²/g
-- WALDMANNS_GR: 380 cm²/g
+**Resolution:** Calibrated SLAVR per cultivar using observed LAPD at DAS_plant=28 for the 28°C treatment (no daylength confound). LFMAX simultaneously adjusted to maintain CWAD target at 28°C.
 
-LAIX from Summary shows very different values across cultivars (Rex: 5.2, Muir: 2.5, Skyphos: 2.3–2.4). Observed LAI data in UFGA2201.LUT (LAPD column) allows direct comparison.
+| Cultivar | SLAVR before | SLAVR after | LFMAX before | LFMAX after | LAIX sim | LAIX obs | CWAD bias |
+|----------|-------------|-------------|-------------|-------------|----------|----------|-----------|
+| REX | 400 | 320 | 0.660 | 0.690 | 3.8 | 3.77 | −3% ✓ |
+| MUIR | 210 | 370 | 0.850 | 0.620 | 4.3 | 4.32 | +3% ✓ |
+| SKYPHOS | 185 | 390 | 1.200 | 0.720 | 4.8 | 4.86 | −6% ✓ |
 
-**Approach:**
-1. Extract simulated LAID at each LUT observation date for all 12 UFGA2201 treatments
-2. Compare with observed LAPD from LUT
-3. Adjust SLAVR per cultivar: if sim LAI > obs → decrease SLAVR; if sim LAI < obs → increase
-4. Note: SLAVR and LFMAX interact — changing SLAVR changes light interception → changes CWAD. Always re-check CWAD after SLAVR adjustment.
+SITONIA, BG23-1251, WALDMANNS_GR SLAVR unchanged (no observed LAPD available for direct calibration). WAGA9101 SITONIA CWAD remains +5.2% ✓.
 
 ---
 
