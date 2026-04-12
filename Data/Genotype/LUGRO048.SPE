@@ -10,6 +10,8 @@
 ! XLMAXT/YLMAXT recalibrated 2026-04-12 using UFGA2201 (Rex 24-30C) and UFGA2402 (BG23+WG 21-34C)
 ! Peak at 26C; YLMAXT=0.70 at 34C, 0.0 at 42C
 ! Fits: TMAX=27C->0.963(obs~1.0), TMAX=33C->0.737(obs~0.843), TMAX=36C->0.525(obs~0.518)
+! NOTE: residual 30C bias confounded by March planting (DAYLA=11.8h) vs July at 28C (13.5h)
+!   Real lab used constant 16.5h LED photoperiod; model uses ambient — known limitation
  -6.00 10.00  50.0  60.0   QDR             FNPGL(4),TYPPGL-TMIN EFFECT-LEAF PG
  .1460  0.15  0.80   2.0                   PGEFF SCV KDIF, LFANGB
  .0035 .0001 .5000  3.50 1.030             SLWREF,SLWSLO,NSLOPE,LNREF,PGREF
