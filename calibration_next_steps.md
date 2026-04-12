@@ -103,16 +103,9 @@ SITONIA, BG23-1251, WALDMANNS_GR SLAVR unchanged (no observed LAPD available for
 
 ---
 
-## Priority 5 — FNPGT Alignment with XLMAXT (Low Priority)
+## ~~Priority 5 — FNPGT Alignment with XLMAXT~~ ✅ DONE (2026-04-12)
 
-**Problem:** FNPGT (canopy-level temperature effect on gross photosynthesis) has breakpoints at 8, 26, 32, 46°C. This is slightly inconsistent with the XLMAXT peak at 26°C. The canopy PG plateaus over 26–32°C while the leaf-level YLMAXT peaks exactly at 26°C.
-
-**Proposed change:**
-```
-Current:  8.0  26.0  32.0  46.0  LIN   FNPGT
-Proposed: 8.0  26.0  34.0  46.0  LIN   FNPGT
-```
-Low priority — secondary effect.
+**Resolution:** FNPGT upper plateau breakpoint shifted 32.0→34.0°C to match XLMAXT decline onset at 34°C. No change to model output (secondary canopy-level factor). All three experiments unchanged after edit.
 
 ---
 

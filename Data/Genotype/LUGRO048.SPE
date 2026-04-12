@@ -4,7 +4,7 @@
  40.00 68.00  0.65                         PARMAX,PHTMAX,KCAN
   80.0  2.09 .0105                         CCMP,CCMAX,CCEFF; CO2 EFFECT ON PGCAN
   1.20  3.50  20.0  20.0   QDR             FNPGN(4),TYPPGN-LEAF N EFFECT ON PG
-  8.0   26.0  32.0  46.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
+  8.0   26.0  34.0  46.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
  -10.0   0.0  26.0  34.0  42.0  55.0       XLMAXT (6 VALUES)
    0.0   0.0   1.0   0.7   0.0   0.0       YLMAXT (6 VALUES)
 ! XLMAXT/YLMAXT recalibrated 2026-04-12 using UFGA2201 (Rex 24-30C) and UFGA2402 (BG23+WG 21-34C)
