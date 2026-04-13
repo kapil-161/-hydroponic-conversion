@@ -1,0 +1,9 @@
+$BATCH(LETTUCE)
+!
+! Skyphos-only batch for UFGA2201
+!
+@FILEX                                                                                        TRTNO     RP     SQ     OP     CO
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       9      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      10      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      11      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      12      1      0      1      0

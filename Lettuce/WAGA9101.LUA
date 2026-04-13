@@ -1,0 +1,4 @@
+*EXP. DATA (A): Heinen (1999) Exp 6705 NFT Lettuce - Wageningen
+
+@TRNO     DATE    CWAD    RWAD   LN%D   RN%D  SHPPD  RTPPD  SHKPD  RTKPD    NUPC    PUPC     KUPC   NO3CL   PCCL    KCCL
+     1  1991203  2862.1  385.83  3.591  4.161  0.743  1.174  8.410  7.577  118.79   25.79   269.91   93.89 31.695  171.52

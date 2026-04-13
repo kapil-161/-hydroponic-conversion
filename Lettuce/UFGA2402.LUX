@@ -1,0 +1,174 @@
+*EXP.DETAILS: UFGA2402LU LETTUCE GROWTH CHAMBER TEMP X VARIETY NFT (DONALD COON)
+
+*GENERAL
+@PEOPLE
+Donald Coon
+@ADDRESS
+University of Florida, Gainesville, FL
+@SITE
+Controlled Environment Growth Chamber
+@ PAREA  PRNO  PLEN  PLDR  PLSP  PLAY HAREA  HRNO  HLEN  HARM.........
+    -99   -99   -99   -99   -99   -99   -99   -99   -99   -99
+
+*TREATMENTS                        -------------FACTOR LEVELS------------
+@N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM HS HC
+ 1 1 0 0 BG23_21C                  1  1  0  1  1  1  0  0  0  0  1  1  1  1  1
+ 2 1 0 0 WG_21C                    2  1  0  2  2  1  0  0  0  0  1  1  1  1  1
+ 3 1 0 0 BG23_25C                  1  1  0  3  3  1  0  0  0  0  2  2  1  2  1
+ 4 1 0 0 WG_25C                    2  1  0  4  4  1  0  0  0  0  2  2  1  2  1
+ 5 1 0 0 BG23_31C                  1  1  0  5  5  1  0  0  0  0  3  3  1  3  1
+ 6 1 0 0 WG_31C                    2  1  0  6  6  1  0  0  0  0  3  3  1  3  1
+ 7 1 0 0 BG23_34C                  1  1  0  7  7  1  0  0  0  0  4  4  1  4  1
+ 8 1 0 0 WG_34C                    2  1  0  8  8  1  0  0  0  0  4  4  1  4  1
+
+*CULTIVARS
+@C CR INGENO CNAME
+ 1 LU LU0201 BG23-1251
+ 2 LU LU0202 Waldmanns Green
+
+*FIELDS
+@L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
+ 1 UFGB0001 UFGB2401   -99   -99   -99   -99   -99   -99 -99    -99         -99 Hydroponic NFT Chamber
+@L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
+ 1             -99             -99       -99                50   -99   -99   -99   -99   -99
+
+*INITIAL CONDITIONS
+@C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
+ 1    LU 24347   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t1=21.25C g3 transplanted Dec12-2024
+ 2    LU 24347   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t1=21.25C g3 transplanted Dec12-2024
+ 3    LU 25031   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t2=24.75C g6 transplanted Jan31-2025
+ 4    LU 25031   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t2=24.75C g6 transplanted Jan31-2025
+ 5    LU 25108   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t3=30.75C g9 transplanted Apr18-2025
+ 6    LU 25108   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t3=30.75C g9 transplanted Apr18-2025
+ 7    LU 25143   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t4=33.75C g12 transplanted May23-2025
+ 8    LU 25143   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t4=33.75C g12 transplanted May23-2025
+
+*PLANTING DETAILS
+! PPOP=16 plants/m2, PLRS=25cm row spacing (25x25cm = 16/m2), PAGE=14 days seedling age at transplant
+! PLWT = variety-specific dry weight at DAS14 (from biomass_complete_dataset.csv)
+@P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
+ 1 24347   -99    16    16     T     R    25     0     5    39    14    22   -99     3                        BG23 t1 Transplant Dec12-2024 g3 (DW 39mg)
+ 2 24347   -99    16    16     T     R    25     0     5    28    14    22   -99     3                        WG   t1 Transplant Dec12-2024 g3 (DW 28mg)
+ 3 25031   -99    16    16     T     R    25     0     5    61    14    25   -99     3                        BG23 t2 Transplant Jan31-2025 g6 (DW 61mg)
+ 4 25031   -99    16    16     T     R    25     0     5    43    14    25   -99     3                        WG   t2 Transplant Jan31-2025 g6 (DW 43mg)
+ 5 25108   -99    16    16     T     R    25     0     5    23    14    31   -99     3                        BG23 t3 Transplant Apr18-2025 g9 (DW 23mg)
+ 6 25108   -99    16    16     T     R    25     0     5    19    14    31   -99     3                        WG   t3 Transplant Apr18-2025 g9 (DW 19mg)
+ 7 25143   -99    16    16     T     R    25     0     5    24    14    34   -99     3                        BG23 t4 Transplant May23-2025 g12 (DW 24mg)
+ 8 25143   -99    16    16     T     R    25     0     5    21    14    34   -99     3                        WG   t4 Transplant May23-2025 g12 (DW 21mg)
+
+*IRRIGATION AND WATER MANAGEMENT
+@I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
+ 1   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*RESIDUES AND ORGANIC FERTILIZER
+@R RDATE  RCOD  RAMT  RESN  RESP  RESK  RINP  RDEP  RMET RENAME
+ 1   -99   -99   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*CHEMICAL APPLICATIONS
+@C CDATE CHCOD CHAMT  CHME CHDEP   CHT..CHNAME
+ 1   -99   -99   -99   -99   -99   -99  Not used in hydroponics
+
+*TILLAGE AND ROTATIONS
+@T TDATE TIMPL  TDEP TNAME
+ 1   -99   -99   -99 Not used in hydroponics
+
+*ENVIRONMENT MODIFICATIONS
+! Growth chamber: constant temperature per treatment with treatment-specific RH and CO2 targets
+! Daily avg temps: t1=21.25C, t2=24.75C, t3=30.75C, t4=33.75C (5C day-night differential)
+! RH and CO2 ranges are assigned by temperature group and apply to both cultivars within each group:
+!   BG23_21C and WG_21C: RH=37-81%, CO2=390-420 ppm
+!   BG23_25C and WG_25C: RH=59-79%, CO2=620-650 ppm
+!   BG23_31C and WG_31C: RH=41-68%, CO2=470-620 ppm
+!   BG23_34C and WG_34C: RH=55-73%, CO2=385-602 ppm
+! ECO2 below uses temperature-group midpoint CO2 values:
+!   21.25C group=405 ppm, 24.75C group=635 ppm, 30.75C group=545 ppm, 33.75C group=494 ppm
+! EMAX = avg + 2.5C (day), EMIN = avg - 2.5C (night)
+! t1: day=23.75->24C, night=18.75->19C
+! t2: day=27.25->27C, night=22.25->22C
+! t3: day=33.25->33C, night=28.25->28C
+! t4: day=36.25->36C, night=31.25->31C
+@E ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
+ 1 24347 R18.0 R10.8 R  24 R  19 A 0.0 R 405 A   0 A   0 t1_21.25C_g3_Dec2024
+ 2 25031 R18.0 R10.8 R  27 R  22 A 0.0 R 635 A   0 A   0 t2_24.75C_g6_Jan2025
+ 3 25108 R18.0 R10.8 R  33 R  28 A 0.0 R 545 A   0 A   0 t3_30.75C_g9_Apr2025
+ 4 25143 R18.0 R10.8 R  36 R  31 A 0.0 R 494 A   0 A   0 t4_33.75C_g12_May2025
+
+*HARVEST DETAILS
+! All harvests at DAS 21 from transplanting (= DAS 35 from seeding)
+! Final biomass (g FW/plant): t1 BG=182.5 WG=149.2, t2 BG=245.6 WG=225.7
+!                              t3 BG=157.0 WG=146.7,  t4 BG=68.1  WG=66.5
+@H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
+ 1 25002 GS000     C     A   -99   -99 t1 Harvest DAS35 Jan02-2025 g3
+ 2 25052 GS000     C     A   -99   -99 t2 Harvest DAS35 Feb21-2025 g6
+ 3 25129 GS000     C     A   -99   -99 t3 Harvest DAS35 May09-2025 g9
+ 4 25164 GS000     C     A   -99   -99 t4 Harvest DAS35 Jun13-2025 g12
+
+*HYDROPONIC SOLUTION
+! Standard nutrient solution (EC 1.5 dS/m, Hoagland-based); solution temp tracks air temp
+@  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC    CHLEN    CHSPC
+   1      50.0       1.50     5.75     8.0     21.0       150.0        12.0       40.0      250.0    183.0     15.0
+   2      50.0       1.50     5.75     8.0     25.0       150.0        12.0       40.0      250.0    183.0     15.0
+   3      50.0       1.50     5.75     8.0     31.0       150.0        12.0       40.0      250.0    183.0     15.0
+   4      50.0       1.50     5.75     8.0     34.0       150.0        12.0       40.0      250.0    183.0     15.0
+
+*HYDROPONIC CONTROL
+@  L  AUTO_PH  AUTO_VOL  AUTO_CONC  AUTO_O2
+   1     Y        Y         Y          Y
+
+*SIMULATION CONTROLS
+@N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
+ 1 GE              1     1     S 24347  2150 DC Lettuce Temp x Variety
+@N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
+ 1 OP              Y     Y     N     Y     Y     N     N     N     M
+@N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
+ 1 ME              M     M     E     R     S     L     Y     1     G     S     2
+@N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
+ 1 MA              R     N     N     N     R
+@N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
+ 1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     Y     N     Y     A
+
+@  AUTOMATIC MANAGEMENT
+@N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
+ 1 PL          24347 25143    40   100    30    40    10
+@N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
+ 1 IR             30    50   100 GS000 IR001    10     1
+@N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF
+ 1 NI             30    50    25 FE001 GS000
+@N RESIDUES    RIPCN RTIME RIDEP
+ 1 RE            100     1    20
+@N HARVEST     HFRST HLAST HPCNP HPCNR
+ 1 HA              0 02001   100     0
+
+
+! =============================================================================
+! DONALD COON TEMPERATURE x VARIETY EXPERIMENT - HYDROPONIC NFT
+! =============================================================================
+! Grow cycles: 3 replications per temperature treatment (g3-g5=t1, g6-g8=t2,
+!              g9-g11=t3, g12-g14=t4); representative first cycle used per treatment
+!
+! Temperature treatments (5C day/night differential):
+!   t1 = 21.25C avg  (day 23.75C / night 18.75C)  grow cycles: g3, g4, g5
+!   t2 = 24.75C avg  (day 27.25C / night 22.25C)  grow cycles: g6, g7, g8
+!   t3 = 30.75C avg  (day 33.25C / night 28.25C)  grow cycles: g9, g10, g11
+!   t4 = 33.75C avg  (day 36.25C / night 31.25C)  grow cycles: g12, g13, g14
+!
+! Varieties: BG = BG23-1251 (LU0201), WG = Waldmanns Green (LU0202)
+!
+! Observed final biomass at DAS35 (from biomass_complete_dataset.csv):
+!   t1: BG FW=182.5g DW=7.24g,  WG FW=149.2g DW=7.09g
+!   t2: BG FW=245.6g DW=11.19g, WG FW=225.7g DW=11.41g  (optimal range)
+!   t3: BG FW=157.0g DW=9.80g,  WG FW=146.7g DW=9.25g
+!   t4: BG FW=68.1g  DW=6.00g,  WG FW=66.5g  DW=5.70g   (heat stress)
+!
+! Transplant DW at DAS14 (from biomass_complete_dataset.csv, used as PLWT):
+!   t1: BG=39mg WG=28mg (avg=34mg)   t2: BG=61mg WG=43mg (avg=52mg)
+!   t3: BG=23mg WG=19mg (avg=21mg)   t4: BG=24mg WG=21mg (avg=23mg)
+!
+! Data files in /donald coon/:
+!   biomass_complete_dataset.csv  - FW and DW per plant at DAS 14,21,28,35
+!   transpiration_corrected.csv   - daily transpiration (mL/plant/day)
+!   photos_height.csv             - canopy height (cm) from image analysis
+!   photos_with_LAI.csv           - LAI from image analysis
+!   fluorescence_complete.csv     - SPAD, leaf thickness, leaf temp (PhotosynQ2)
+!   licor-complete-dataset.csv    - gas exchange at midday (LI-COR 6800)
+!   plant_nutrition_dataset.csv   - elemental analysis of plant tissue

@@ -1,0 +1,119 @@
+*EXP.DETAILS: WAGA9101LU LETTUCE HYDROPONIC NFT - HEINEN 1994 EXP 6705
+
+*GENERAL
+@PEOPLE
+M. Heinen
+@ADDRESS
+DLO-Instituut voor Agrobiologisch en Bodemvruchtbaarheidsonderzoek, Haren, NL
+@SITE
+Greenhouse, Wageningen University, The Netherlands
+
+*TREATMENTS                        -------------FACTOR LEVELS------------
+@N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM HS HC
+  11 0 0 SITONIA ActDose            1  1  0  1  1  1  0  0  0  0  0  1  1  1  1
+  21 0 0 phdrift                    1  1  0  1  1  1  0  0  0  0  0  1  1  1  2
+  31 0 0 nodose                     1  1  0  1  1  1  0  0  0  0  0  1  1  1  3
+  41 0 0 phmgd_nodose               1  1  0  1  1  1  0  0  0  0  0  1  1  1  4
+  51 0 0 phmgd_dose20               1  1  0  1  1  1  1  0  0  0  0  1  1  1  5
+
+*CULTIVARS
+@C CR INGENO CNAME
+ 1 LU LU0004 SITONIA
+
+*FIELDS
+@L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
+ 1 WAGA0001 WAGA9101   -99   -99   -99   -99   -99   -99 -99    -99  -99        Hydroponic_NFT_Wageningen
+@L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
+ 1             -99             -99       -99               -99   -99   -99   -99   -99   -99
+
+*INITIAL CONDITIONS
+@C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
+ 1    LU 91153   -99   -99     1     1   -99   -99   -99   -99   -99   -99 Hydroponic - No Soil
+
+*PLANTING DETAILS
+@P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
+ 1 91154   -99  15.6  15.6     T     R  23.5     0     2   2.2     2    15   -99     4                        NFT Transplants 3wk
+
+*IRRIGATION (AUTOMATIC)
+@I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
+ 1   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*FERTILIZERS (INORGANIC)
+@F FDATE  FMCD  FACD  FDEP  FAMN  FAMP  FAMK  FAMC  FAMO  FOCD FERNAME
+ 1 91180 FE008 AP001     0   3.00  0.53  3.17     0     0 -99   DAS26
+ 1 91183 FE008 AP001     0   5.00  0.89  5.28     0     0 -99   DAS29
+ 1 91186 FE008 AP001     0  11.00  1.95 11.62     0     0 -99   DAS32
+ 1 91189 FE008 AP001     0  13.00  2.31 13.74     0     0 -99   DAS35
+ 1 91191 FE008 AP001     0  20.00  3.55 21.14     0     0 -99   DAS37
+ 1 91193 FE008 AP001     0  22.00  3.90 23.25     0     0 -99   DAS39
+ 1 91195 FE008 AP001     0  24.00  4.26 25.37     0     0 -99   DAS41
+ 1 91197 FE008 AP001     0  25.50  4.52 26.95     0     0 -99   DAS43
+ 1 91199 FE008 AP001     0  27.50  4.88 29.07     0     0 -99   DAS45
+ 1 91201 FE008 AP001     0  29.00  5.15 30.65     0     0 -99   DAS47
+ 1 91203 FE008 AP001     0  31.00  5.50 32.76     0     0 -99   DAS49
+*RESIDUES
+@R  RDATE  RCOD  RAMT  RESN  RESP  RESK  RINP  RDEP  RMET RENAME
+ 1    -99   -99   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*CHEMICAL APPLICATIONS
+@C  CDATE CHCOD CHAMT  CHME CHDEP   CHT..CHNAME
+ 1    -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*TILLAGE
+@T  TDATE TIMPL  TDEP TNAME
+ 1    -99   -99   -99 Not used in hydroponics
+
+*ENVIRONMENT MODIFICATIONS
+@E  ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
+ 1 91154 R14.5 A 0.0 A   0 A   0 A 0.0 R 709 A   0 A   0 CO2_709ppm
+
+*HARVEST DETAILS
+@H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
+ 1 91203 GS000     C     A   -99   -99 Final harvest week 7
+
+*HYDROPONIC SOLUTION
+@  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC    CHLEN    CHSPC
+   1      72.8      0.86     6.00      8.0     15.0        82.2      0.0      11.7     126.2    326.5     23.5
+
+! NOTE: System volume = 168.0 L (measured, cv=1.3%)
+! NOTE: Final system volume = 176.4 L (5% increase due to root mat water retention)
+! NOTE: Gully geometry (Heinen et al. 1991): 12 gullies x 326.5 cm long x 23.5 cm wide x 4.0 cm deep, slope 1:75 (S-facing)
+! NOTE: Greenhouse area = 9.21 m2 (12 x 3.265 m x 0.235 m), derived from gully geometry
+! NOTE: PPOP = 15.64 plants/m2 (156,400/ha); 144 plants / 9.21 m2 = 15.6; in-row spacing ~27.2 cm (326.5 / 12)
+! NOTE: SOLVOL = 18.2 mm = 168 L / 9.21 m2; CHLEN = 326.5 cm; CHSPC = 23.5 cm from gully geometr
+
+*HYDROPONIC CONTROL
+@  L  AUTO_PH  AUTO_VOL  AUTO_CONC  AUTO_O2
+   1     Y        Y         Y          Y
+   2     N        Y         Y          Y
+   3     N        Y         N          Y
+   4     Y        Y         N          Y
+   5     Y        Y         N          Y
+! pH acid: 0.1 M HNO3; pH base: 0.1 M KOH
+! Water level: automatic constant level in supply tank
+! Nutrient dosing: MANUAL daily at 16:00h based on measured NO3 and uptake ratios
+
+*SIMULATION CONTROLS
+@N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
+ 1 GE              1     1     S 91154  2150 Heinen1994 Exp6705 NFT
+@N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
+ 1 OP              Y     Y     N     Y     Y     N     N     N     M
+@N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
+ 1 ME              M     M     E     R     S     L     Y     1     G     S     2
+@N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
+ 1 MA              R     N     R     N     R
+@N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
+ 1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     Y     N     N     A
+
+@  AUTOMATIC MANAGEMENT
+@N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
+ 1 PL          91154 91154    40   100    30    40    10
+@N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
+ 1 IR             30    50   100 GS000 IR001    10   -99
+@N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF
+ 1 NI             30    50    25 FE001 GS000
+@N RESIDUES    RIPCN RTIME RIDEP
+ 1 RE            100     1    20
+@N HARVEST     HFRST HLAST HPCNP HPCNR
+ 1 HA              0 91365   100     0
+

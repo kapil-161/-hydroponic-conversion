@@ -1,0 +1,98 @@
+*EXP.DETAILS: VKGA2301LU LETTUCE HYDROPONIC NFT - 3CV LOW EC + REX HIGH EC
+
+*GENERAL
+@PEOPLE
+Kapil Bhattarai
+@ADDRESS
+University of Florida, Gainesville, FL
+@SITE
+Controlled Environment Growth Chamber
+
+*TREATMENTS                        -------------FACTOR LEVELS------------
+@N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM HS HC
+  11 0 0 REX EC1.2                  1  1  0  1  1  1  0  0  0  0  0  1  1  1  1
+  21 0 0 MUIR EC1.2                 2  1  0  1  1  1  0  0  0  0  0  1  1  1  1
+  31 0 0 SKYPHOS EC1.2              3  1  0  1  1  1  0  0  0  0  0  1  1  1  1
+  41 0 0 REX EC1.6                  1  1  0  1  1  1  0  0  0  0  0  1  1  2  1
+
+*CULTIVARS
+@C CR INGENO CNAME
+ 1 LU LU0001 REX
+ 2 LU LU0002 MUIR
+ 3 LU LU0003 SKYPHOS
+
+*FIELDS
+@L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
+ 1 VKGA0001 VKGA2301   -99   -99   -99   -99   -99   -99 -99    -99  -99        Hydroponic_NFT
+@L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
+ 1             -99             -99       -99                50   -99   -99   -99   -99   -99
+
+*INITIAL CONDITIONS
+@C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
+ 1    LU 23090   -99   -99     1     1   -99   -99   -99   -99   -99   -99 Hydroponic - No Soil
+
+*PLANTING DETAILS
+@P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
+ 1 23091   -99  12.3  12.3     T     R    29     0     5    24    14    20   -99     3                        NFT Transplants
+
+*IRRIGATION (AUTOMATIC)
+@I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
+ 1   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*FERTILIZERS (AUTOMATIC)
+@F  FMCD  FAMP  FAMK  FAMD  FAMLC FMOC  FNOP
+ 1   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*RESIDUES
+@R  RDATE  RCOD  RAMT  RESN  RESP  RESK  RINP  RDEP  RMET RENAME
+ 1    -99   -99   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*CHEMICAL APPLICATIONS
+@C  CDATE CHCOD CHAMT  CHME CHDEP   CHT..CHNAME
+ 1    -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*TILLAGE
+@T  TDATE TIMPL  TDEP TNAME
+ 1    -99   -99   -99 Not used in hydroponics
+
+*ENVIRONMENT MODIFICATIONS
+@E  ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
+ 1 23091 R16.5   -99   -99   -99   -99 R 600   -99   -99 CO2 supplemented >600ppm
+
+*HARVEST DETAILS
+@H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
+ 1 23126 GS000     C     A   -99   -99 Harvest
+
+*HYDROPONIC SOLUTION
+@  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC    CHLEN    CHSPC
+   1      20.0       1.20     5.90      6.0     22.7       110.0         6.9       30.0      190.0    183.0     15.0
+   2      20.0       1.60     5.90      6.0     22.7       130.0         8.7       51.0      260.0    183.0     15.0
+
+*HYDROPONIC CONTROL
+@  L  AUTO_PH  AUTO_VOL  AUTO_CONC  AUTO_O2
+   1     Y        Y         Y          Y
+
+*SIMULATION CONTROLS
+@N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
+ 1 GE              1     1     S 23091  2150 NFT Lettuce 3cv+RexHiEC
+@N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
+ 1 OP              Y     Y     N     Y     Y     N     N     N     M
+@N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
+ 1 ME              M     M     E     R     S     L     Y     1     G     S     2
+@N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
+ 1 MA              R     N     N     N     R
+@N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
+ 1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     Y     N     N     A
+
+@  AUTOMATIC MANAGEMENT
+@N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
+ 1 PL          23091 23091    40   100    30    40    10
+@N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
+ 1 IR             30    50   100 GS000 IR001    10   -99
+@N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF
+ 1 NI             30    50    25 FE001 GS000
+@N RESIDUES    RIPCN RTIME RIDEP
+ 1 RE            100     1    20
+@N HARVEST     HFRST HLAST HPCNP HPCNR
+ 1 HA              0 02001   100     0
+

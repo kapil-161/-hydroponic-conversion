@@ -1,0 +1,35 @@
+$BATCH(LETTUCE)
+!
+! Directory    : /Applications/DSSAT48/Lettuce
+! Command Line : /Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 B DSSBatch.v48
+! Crop         : Lettuce (Hydroponic NFT)
+! Experiments  : UFGA2201.LUX (Skyphos x 4 temps, 4 trt)
+!              : UFGA2402.LUX (Waldmanns Green x 4 temps, 4 trt)
+!              : WAGA9101.LUX (Wageningen NFT, 1 trt)
+! Total        : 9 treatments across 3 experiments
+!
+! --- UFGA2201: Skyphos x Temperature (Kapil Bhattarai) ---
+! TRT 9  : Skyphos @ 24C
+! TRT 10 : Skyphos @ 26C
+! TRT 11 : Skyphos @ 28C
+! TRT 12 : Skyphos @ 30C
+!
+! --- UFGA2402: Waldmanns Green x Temperature (Donald Coon) ---
+! TRT 2  : Waldmanns GR @ 21C
+! TRT 4  : Waldmanns GR @ 25C
+! TRT 6  : Waldmanns GR @ 31C
+! TRT 8  : Waldmanns GR @ 34C
+!
+! --- WAGA9101: Wageningen NFT (Silberbush/Bar-Yosef) ---
+! TRT 1  : NFT lettuce, CO2=709ppm
+!
+@FILEX                                                                                        TRTNO     RP     SQ     OP     CO
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       9      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      10      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      11      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                      12      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2402.LUX                                                       2      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2402.LUX                                                       4      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2402.LUX                                                       6      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2402.LUX                                                       8      1      0      1      0
+/Applications/DSSAT48/Lettuce/WAGA9101.LUX                                                       1      1      0      1      0

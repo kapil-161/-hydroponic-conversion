@@ -1,0 +1,9 @@
+$BATCH(LETTUCE)
+!
+! Rex-only batch for UFGA2201 (TRT 1-4)
+!
+@FILEX                                                                                        TRTNO     RP     SQ     OP     CO
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       1      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       2      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       3      1      0      1      0
+/Applications/DSSAT48/Lettuce/UFGA2201.LUX                                                       4      1      0      1      0
