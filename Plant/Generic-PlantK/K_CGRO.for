@@ -13,8 +13,8 @@
      &    CROP, FILECC, MDATE, PCNVEG, PConc_Veg, PLTPOP, !Input
      &    RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
      &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
-     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
-     &    WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, VSTAGE,       !Input
+     &    WLIDOT, WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,    !Input
      &    SENESCE,                                        !I/O
      &    KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &    KStres1, KStres2, KUptake, FracRts)             !Output
@@ -42,7 +42,7 @@
       REAL KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed
       REAL KShut_kg, KRoot_kg, KShel_kg, KSeed_kg
       REAL PhFrac1, PhFrac2
-      REAL KStres1, KStres2, SeedFrac, VegFrac
+      REAL KStres1, KStres2, SeedFrac, VegFrac, VSTAGE
       REAL WTLF, STMWT, RTWT, SHELWT, SDWT
       REAL Leaf_kg, Stem_kg, Root_kg, Shel_kg, Seed_kg
       REAL ShutMob, ShelMob, RootMob
@@ -160,12 +160,14 @@
           PestSeed = SWIDOT * 10.
          ENDIF
 
-!       PhFrac1 is the fraction of physiological time which has
-!         occurred between emergence and first seed.
-!       PhFrac2 is the fraction of physiological time which has
-!         occurred between first seed and physiological maturity.
-        PhFrac1 = VegFrac
-        PhFrac2 = SeedFrac
+!       For K% stage interpolation, use VSTAGE-based fractions.
+!       VegFrac/SeedFrac stay 0 for lettuce (never flowers), causing flat K%.
+!       VSTAGE advances 0→66 over the crop cycle:
+!         PhFrac1 = 0→1 as VSTAGE 0→13  (transplant → peak K% at ~DAS 15)
+!         PhFrac2 = 0→1 as VSTAGE 13→50 (peak → stable K% at harvest)
+!       KCLeafOpt(1,2,3) in SPE set to match Heinen 1994 SHKPD pattern.
+        PhFrac1 = MIN(1.0, MAX(0.0, VSTAGE / 13.0))
+        PhFrac2 = MIN(1.0, MAX(0.0, (VSTAGE - 13.0) / 37.0))
       ENDIF
 
       CALL K_PLANT(DYNAMIC, ISWPOT,                       !I Control

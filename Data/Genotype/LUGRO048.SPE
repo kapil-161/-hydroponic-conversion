@@ -4,15 +4,19 @@
  40.00 68.00  0.65                         PARMAX,PHTMAX,KCAN
   80.0  2.09 .0105                         CCMP,CCMAX,CCEFF; CO2 EFFECT ON PGCAN
   1.20  3.50  20.0  20.0   QDR             FNPGN(4),TYPPGN-LEAF N EFFECT ON PG
-  8.0   26.0  34.0  46.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
- -10.0   0.0  26.0  34.0  42.0  55.0       XLMAXT (6 VALUES)
-   0.0   0.0   1.0   0.7   0.0   0.0       YLMAXT (6 VALUES)
-! XLMAXT/YLMAXT recalibrated 2026-04-12 using UFGA2201 (Rex 24-30C) and UFGA2402 (BG23+WG 21-34C)
-! Peak at 26C; YLMAXT=0.70 at 34C, 0.0 at 42C
-! Fits: TMAX=27C->0.963(obs~1.0), TMAX=33C->0.737(obs~0.843), TMAX=36C->0.525(obs~0.518)
-! NOTE: residual 30C bias confounded by March planting (DAYLA=11.8h) vs July at 28C (13.5h)
-!   Real lab used constant 16.5h LED photoperiod; model uses ambient — known limitation
- -6.00 10.00  50.0  60.0   QDR             FNPGL(4),TYPPGL-TMIN EFFECT-LEAF PG
+  2.00  12.0  28.0  42.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
+   0.0   4.0  35.0  40.0  46.0  55.0       XLMAXT (6 VALUES)
+   0.0   0.0   1.0   0.8   0.0   0.0       YLMAXT (6 VALUES)
+! XLMAXT/YLMAXT calibrated 2026-04-13 using Skyphos (UFGA2201 TRT9-12, 24-30C),
+!   Waldmanns Green (UFGA2402 TRT2,4,6,8, 21-34C), Sitonia (WAGA9101, ~20C avg)
+! Basis: Jmax Topt for C3 crops at elevated CO2 is 35-40C (Sage, 2007; Crafts-Brandner & Salvucci, 2000)
+!   Lettuce base temp Tb=4C (literature); X2=4C per Bonnes et al. (2019) range 3.5-4.5C
+!   Optimum plateau 35-40C; Y4=0.8 (moderate decline above Topt); zero at 46C (PS II damage)
+! Normalization at 30C: TEMPMX(21C)=0.654, TEMPMX(28C)=0.923, TEMPMX(34C)=1.154
+! FNPGL X1 raised 10->15C: chilling threshold for lettuce leaf Pmax (Kleinhenz & Schnitzler, 2004)
+!   WAGA9101 TMIN=7C -> CHILL=0.855; chamber treatments TMIN>=18C -> CHILL=1.0 (no effect)
+! FNPGT widened to (2,12,28,42): inactive for PHOTO=L (leaf option); retained for completeness
+ -6.00 15.00  50.0  60.0   QDR             FNPGL(4),TYPPGL-TMIN EFFECT-LEAF PG
  .1460  0.15  0.80   2.0                   PGEFF SCV KDIF, LFANGB
  .0035 .0001 .5000  3.50 1.030             SLWREF,SLWSLO,NSLOPE,LNREF,PGREF
 

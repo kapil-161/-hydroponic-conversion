@@ -597,8 +597,8 @@ C     Initialize pest coupling point and damage variables
      &    CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
      &    RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
      &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
-     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
-     &    WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, VSTAGE,       !Input
+     &    WLIDOT, WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,    !Input
      &    SENESCE,                                        !I/O
      &    KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &    KStres1, KStres2, KUptake, FracRts)             !Output
@@ -904,8 +904,8 @@ C-----------------------------------------------------------------------
      &      CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
      &      RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
      &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
-     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
-     &      WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, VSTAGE,       !Input
+     &      WLIDOT, WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,    !Input
      &      SENESCE,                                        !I/O
      &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &      KStres1, KStres2, KUptake, FracRts)             !Output
@@ -1079,8 +1079,8 @@ C-----------------------------------------------------------------------
      &    CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
      &    RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
      &    ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
-     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
-     &    WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &    SKi_AVAIL, STMWT, SWIDOT, VegFrac, VSTAGE,       !Input
+     &    WLIDOT, WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,    !Input
      &    SENESCE,                                        !I/O
      &    KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &    KStres1, KStres2, KUptake, FracRts)             !Output
@@ -1408,8 +1408,8 @@ C-----------------------------------------------------------------------
      &      CROP, FILECC, MDATE, PCNVEG, PConc_Shut, PLTPOP,!Input
      &      RLV, RootMob, RTDEP, RTWT, SDWT, SeedFrac,      !Input
      &      ShelMob, SHELWT, ShutMob, SOILPROP,             !Input
-     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, WLIDOT,      !Input
-     &      WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,            !Input
+     &      SKi_AVAIL, STMWT, SWIDOT, VegFrac, VSTAGE,       !Input
+     &      WLIDOT, WRIDOT, WSHIDT, WSIDOT, WTLF, YRPLT,    !Input
      &      SENESCE,                                        !I/O
      &      KConc_Shut, KConc_Root, KConc_Shel, KConc_Seed, !Output
      &      KStres1, KStres2, KUptake, FracRts)             !Output

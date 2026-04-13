@@ -159,9 +159,108 @@ Always edit both installed and repo copies together.
 
 ---
 
+## Priority 9 — SPE Temperature Parameter Calibration (FNPGT, XLMAXT/YLMAXT, FNPGL, XSLATM)
+
+**Status:** ACTIVE — start here in new conversation
+
+**Background:** Current XLMAXT (`-10, 4, 18, 24, 36, 45`) causes near-zero biomass at 31–34°C (TRT7=496, TRT8=44 g/m²) and large overprediction at cool temps (WAGA=4954 vs obs=1045 g/m² at 35 DAS). Need to calibrate all 4 SPE temperature parameters jointly against 9-treatment batch.
+
+**Batch file to use:** `DSSBatch.v48` — but update TRT1–4 (Rex) → TRT9–12 (Skyphos) in UFGA2201 before calibrating. Skyphos is preferred for temperature response calibration (highest biomass, clearest signal).
+
+**Observed data (g/m² = kg/ha ÷ 10, PPOP=12.3 plants/m²):**
+
+| Run | Experiment | TRT | Cultivar | Temp | Obs CWAM (g/m²) |
+|-----|-----------|-----|----------|------|-----------------|
+| 1 | UFGA2201 | 9 | Skyphos | 24°C | 149.4 |
+| 2 | UFGA2201 | 10 | Skyphos | 26°C | 167.5 |
+| 3 | UFGA2201 | 11 | Skyphos | 28°C | 176.1 |
+| 4 | UFGA2201 | 12 | Skyphos | 30°C | 146.6 |
+| 5 | UFGA2402 | 2 | WG | 21°C | 113.4 |
+| 6 | UFGA2402 | 4 | WG | 25°C | 182.6 |
+| 7 | UFGA2402 | 6 | WG | 31°C | 148.1 |
+| 8 | UFGA2402 | 8 | WG | 34°C | 91.2 |
+| 9 | WAGA9101 | 1 | Sitonia | ~20°C | 104.5 (35 DAS) |
+
+**Calibration sequence:**
+
+1. **Update DSSBatch.v48** — replace UFGA2201 TRT1–4 with TRT9–12 (Skyphos)
+2. **XLMAXT/YLMAXT** — highest priority; controls leaf Pmax shape across hourly temps
+   - Fix peak (X3) at 25–26°C; widen upper decline so 31–34°C not zeroed out
+   - Key bounds: X2 (0–8°C), X3 (18–24°C), X4 (24–30°C), X5 (34–42°C), Y4 (0.5–0.9)
+3. **FNPGT** — widen optimum from current 15–18°C to cover 20–30°C experimental range
+   - Key bounds: FNPGT[2] (18–22°C), FNPGT[3] (28–34°C)
+4. **FNPGL** — only if WAGA9101 still overpredicted after Steps 2–3 (TMIN=7°C there)
+5. **XSLATM/YSLATM** — defer unless LAI bias remains after Steps 2–4
+
+**Metric:** RMSE across all 9 treatments on CWAM (g/m²)
+
+**Run command:**
+```bash
+cd /Applications/DSSAT48/Lettuce && /Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 B DSSBatch.v48
+```
+
+**Files to edit:**
+- `/Applications/DSSAT48/Genotype/LUGRO048.SPE` + `Data/Genotype/LUGRO048.SPE`
+- Always edit both installed and repo copies together.
+
+---
+
+## Priority 8 — Re-calibrate Rex and Waldmanns Green after Day-length Fix
+
+**Status:** ACTIVE — start here in new conversation
+
+**Background:** Day-length confound was previously listed as unfixable. It has now been fixed by adding `EDAY R16.5` to all experiment LUX files (2026-04-13). This forces constant 16.5h photoperiod matching the actual LED growth chamber conditions. All large biases previously attributed to day-length confound are now expected to shrink or reverse.
+
+**Previous biases caused by day-length confound (before fix):**
+- Rex_24°C: +25% (Apr, was 13.1h ambient vs 16.5h actual)
+- Rex_30°C: −37% (Mar, was 11.8h ambient vs 16.5h actual)
+- WG_31°C: −29% (Apr, 13.1h)
+- WG_34°C: −52% (May, 13.8h)
+
+**Step 1 — Re-evaluate current performance (before any parameter changes)**
+Run `DSSBatch.v48` (Rex TRT 1–4 + WG TRT 2,4,6,8 + WAGA TRT 1) and read `Summary.OUT`. Record new Sim vs Obs CWAM for all treatments. Compare to the bias table above — day-length treatments should improve substantially.
+
+**Step 2 — Decide what still needs calibration**
+After re-evaluating, identify which treatments remain poorly fit. These will be genuine temperature response or cultivar parameter issues (not day-length artifacts).
+
+**Step 3 — Calibration sequence (if needed)**
+
+*Temperature response (SPE — species level, affects all cultivars):*
+- Use Rex 24/26/28/30°C shape to assess XLMAXT/YLMAXT and FNPGT
+- Use WG 21/25/31/34°C to extend the range (especially 31/34°C high-temp decline)
+- Only adjust if the *shape* of response is wrong across temperatures (not just one outlier)
+
+*Cultivar parameters (CUL — cultivar specific):*
+- Rex: SLAVR=320, LFMAX=0.690 — calibrated at 28°C. Check if still valid across all temps.
+- Waldmanns Green: SLAVR unchanged, LFMAX=0.650 — only 21°C was well-fit before. Re-evaluate.
+- Calibrate at the temperature closest to optimum (~24–26°C) first, then check shape.
+
+**Key constraint:** Do not re-tune SLAVR/LFMAX to compensate for temperature response errors — fix temperature response (SPE) first.
+
+**Accept/reject criteria (unchanged):**
+| Experiment | Variable | Target |
+|-----------|----------|--------|
+| WAGA9101 trt1 | CWAD harvest | ±5% of 2862 kg/ha |
+| UFGA2201 Rex | CWAD NRMSE | < 25%, d-stat > 0.85 |
+| UFGA2402 WG | CWAD NRMSE | < 25%, d-stat > 0.85 |
+
+**Files to edit:**
+- `/Applications/DSSAT48/Genotype/LUGRO048.CUL` + `Data/Genotype/LUGRO048.CUL`
+- `/Applications/DSSAT48/Genotype/LUGRO048.SPE` + `Data/Genotype/LUGRO048.SPE`
+- Always edit both installed and repo copies together.
+
+**Run command:**
+```bash
+cd /Applications/DSSAT48/Lettuce && /Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 B DSSBatch.v48
+```
+
+**Read output from:** `/Applications/DSSAT48/Lettuce/Summary.OUT`
+
+---
+
 ## Known Acceptable Limitations (Do Not Fix)
 
-- **Day-length confound (all experiments):** Lab used constant 16.5h LED; model uses ambient day length from outdoor weather. Treatments at different months have different DAYLA (11.8–13.5h). Causes systematic biases correlated with planting month. Not fixable by parameter tuning.
+- **Day-length confound:** FIXED 2026-04-13 — all LUX files now have `EDAY R16.5`. No longer a limitation.
 - **CO2 response artifact (UFGA2402 25°C):** 1060 ppm CO2 in 25°C treatment vs 830 ppm in 21°C; model over-amplifies the difference. BG23/WG calibrated to 21°C (+2–3%); 25°C overshoot accepted.
 - **Early-season biomass lag (DAS 1–14 post-transplant):** Structural CROPGRO limitation. d-stats for concentration variables at early time points are unreliable and should not drive parameter changes.
 - **P solution NRMSE=73.8% in WAGA9101:** Observed P rises sharply at DAS 43–50 (likely a manual dosing event in Heinen 1994). Not a model failure.

@@ -418,15 +418,10 @@
           N2K = N2K_min
           P2K = P2K_min
         ENDIF
-!       Apply physiological ratio constraints to hydroponic uptake
-!       (same throttle as soil mode — prevents toxic K accumulation
-!       when N or P are limiting)
-        IF (N2K .GT. 1.E-6 .AND. N2K .LT. N2K_min) THEN
-          KUptakeProf = KUptakeProf * (N2K / N2K_min)
-        ENDIF
-        IF (P2K .GT. 1.E-6 .AND. P2K .LT. P2K_min) THEN
-          KUptakeProf = KUptakeProf * (P2K / P2K_min)
-        ENDIF
+!       N:K and P:K ratio guards are soil-mode heuristics — NOT applied in
+!       hydroponic mode. SOLKi already handles kinetics via M-M kinetics.
+!       For lettuce, P2K ≈ 0.35%/8.5% = 0.041, far below SPE P2K_min (0.08-0.10),
+!       causing a positive-feedback K% crash (more K → lower P2K → less uptake).
       ELSE
 !       Soil mode - calculate K uptake from soil
         CALL K_Uptake (DYNAMIC,

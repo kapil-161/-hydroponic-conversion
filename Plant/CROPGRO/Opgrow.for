@@ -415,10 +415,10 @@ C-----------------------------------------------------------------------
             WRITE (NOUTDG,314, ADVANCE='NO') 
      &        EXW_AV, PCNLP, SHELPC, HIP, NINT(PODWTD*10.),
      &        NINT((PODWTD+PODWT)*10.), SLAP, CANHT, CANWH, (DWNOD*10.),
-     &        (RTDEP/100.), NINT(TRLV), (RLV(I),I=1,N_LYR)
+     &        (RTDEP/100.), TRLV, (RLV(I),I=1,N_LYR)
   314       FORMAT (1X,F6.3,1X,F7.2,2(1X,F6.2),
      &        2(1X,I6),1X,F6.1,2(1X,F6.2),1X,F6.1,1X,F6.2,
-     &        I7,11(1X,F7.2))
+     &        1X,F6.2,11(1X,F7.2))
 
             WRITE (NOUTDG,316) 
      &        NINT(CUMSENSURF), NINT(CUMSENSOIL)   
