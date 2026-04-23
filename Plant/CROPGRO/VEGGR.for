@@ -348,9 +348,6 @@ C     Stage 2 (severe): PCNL <= FNINLG*100 -> full stress, growth stops
      &    FNINLG .GT. 0.0) THEN
         N_CONC_STRESS = MIN(1.0, MAX(0.0,
      &      (PCNL/100.0 - FNINLG) / (FNINL - FNINLG)))
-        WLDOTN = WLDOTN * N_CONC_STRESS
-        WSDOTN = WSDOTN * N_CONC_STRESS
-        WRDOTN = WRDOTN * N_CONC_STRESS
       ELSE
         N_CONC_STRESS = 1.0
       ENDIF

@@ -451,6 +451,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL CANHT, CANWH, DXR57, EXCESS,
      &    PLTPOP, RNITP, SLAAD, XPOD
         REAL BIOMAS
+        REAL NSTRES_CONC
         INTEGER NR5, iSTAGE, iSTGDOY
         CHARACTER*10 iSTNAME
       END TYPE PlantType
@@ -581,6 +582,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL AUTO_O2            ! Auto O2 control flag (1.0=pin to init, 0.0=dynamic)
         REAL DO2_INIT           ! Initial DO2 for AUTO_O2 pinning (mg/L)
         REAL ROOT_RESP          ! Root respiration rate (g CO2/m2/day)
+        REAL TRLV               ! Total root length density (cm root/cm2 soil)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -782,6 +784,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('RNITP') ; Value = SAVE_data % PLANT % RNITP
         Case ('SLAAD') ; Value = SAVE_data % PLANT % SLAAD
         Case ('XPOD')  ; Value = SAVE_data % PLANT % XPOD
+        Case ('NSTRES_CONC'); Value = SAVE_data % PLANT % NSTRES_CONC
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -918,6 +921,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('AUTO_O2');     Value = SAVE_data % HYDRO % AUTO_O2
         Case ('DO2_INIT');    Value = SAVE_data % HYDRO % DO2_INIT
         Case ('ROOT_RESP');   Value = SAVE_data % HYDRO % ROOT_RESP
+        Case ('TRLV');        Value = SAVE_data % HYDRO % TRLV
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -988,6 +992,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('RNITP');  SAVE_data % PLANT % RNITP  = Value
         Case ('SLAAD');  SAVE_data % PLANT % SLAAD  = Value
         Case ('XPOD');   SAVE_data % PLANT % XPOD   = Value
+        Case ('NSTRES_CONC'); SAVE_data % PLANT % NSTRES_CONC = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1114,6 +1119,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('AUTO_O2');     SAVE_data % HYDRO % AUTO_O2 = Value
         Case ('DO2_INIT');    SAVE_data % HYDRO % DO2_INIT = Value
         Case ('ROOT_RESP');   SAVE_data % HYDRO % ROOT_RESP = Value
+        Case ('TRLV');        SAVE_data % HYDRO % TRLV = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
