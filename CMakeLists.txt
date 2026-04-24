@@ -13,7 +13,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
    						"CMakeCache.txt and CMakeFiles\n")
 endif("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
-PROJECT(DSSAT-CSM Fortran)
+PROJECT(DSSAT-CSM Fortran CXX)
 
 ##########################################################################################
 # DSSAT_VERSION
@@ -76,6 +76,8 @@ ENDIF(NOT CMAKE_Fortran_COMPILER_SUPPORTS_F90)
 # RELEASE, and TESTING.  You should  review this file and make sure the flags
 # are to your liking.
 INCLUDE(${CMAKE_MODULE_PATH}/SetFortranFlags.cmake)
+SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # There is an error in CMAKE with this flag for pgf90.  Unset it
 GET_FILENAME_COMPONENT(FCNAME ${CMAKE_Fortran_COMPILER} NAME)
@@ -139,6 +141,8 @@ set(
         "InputModule/COMIBS.blk"
         "InputModule/COMSOI.blk"
         "InputModule/COMSWI.blk"
+        "FlexibleIO/Interface/FInterface.f90"
+        "InputModule/CY4KWTH.f90"
         "InputModule/input_sub.for"
         "InputModule/INSOIL.for"
         "InputModule/INSTGE.for"
@@ -162,6 +166,7 @@ set(
         "InputModule/optempy2k.for"
         "InputModule/PATH.for"
         "InputModule/WEATHR_Inp.for"
+        "InputModule/WTHFDIR.for"
         "InputModule/WTHSET.for"
         "InputModule/SECLI.for"
         "InputModule/SECROP.for"
@@ -666,6 +671,7 @@ set(
         "Hydroponic/HYDRO_FERT.for"
         "Weather/CO2VAL.for"
         "Weather/HMET.for"
+        "Weather/HR2DLY.for"
         "Weather/IPWTH_alt.for"
         "Weather/OPWEATH.for"
         "Weather/ModForecast.f90"
@@ -674,7 +680,22 @@ set(
         "Weather/WGEN.for"
         "Weather/WTHMOD.for"
 )
+set(
+    CXX_SRC_LIST
+        "FlexibleIO/Data/FlexibleIO.cpp"
+        "FlexibleIO/Interface/CInterface.cpp"
+        "FlexibleIO/Input/IPWTHDCSV.cpp"
+        "FlexibleIO/Input/IPWTHDTXT.cpp"
+        "FlexibleIO/Input/IPWTHHTXT.cpp"
+)
+
+ADD_LIBRARY(Flexio ${CXX_SRC_LIST})
+
 ADD_EXECUTABLE(${EXECUTABLE_NAME} ${source_list})
+
+SET_TARGET_PROPERTIES(${EXECUTABLE_NAME} PROPERTIES LINKER_LANGUAGE Fortran)
+
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME} Flexio)
 
 foreach(source IN LISTS source_list)
     get_filename_component(source_path "${source}" PATH)

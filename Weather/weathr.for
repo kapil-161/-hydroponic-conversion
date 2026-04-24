@@ -55,7 +55,7 @@ C=======================================================================
      &  DAYLEN, CO2VAL, SOLAR, CALC_TDEW, HMET, OPWEATH, TWILIGHT
       SAVE
 
-      CHARACTER*1  MEWTH, RNMODE, ISWHYDRO
+      CHARACTER*1  MEWTH, RNMODE
       CHARACTER*6  ERRKEY
       CHARACTER*12 FILEW, FILEWC, FILEWG
       CHARACTER*78 MESSAGE(10)
@@ -64,8 +64,7 @@ C=======================================================================
 
       INTEGER DOY, MULTI, NEV, RUN, YEAR, YRDOY, YRSIM, YYDDD
       INTEGER RSEED1, RSEED(4), REPNO
-      INTEGER DYNAMIC, YREND, IH
-      REAL PAR_FLAT, RADHR_FLAT, HS_H
+      INTEGER DYNAMIC, YREND
 
 !     Yield forecast variables
       INTEGER FYRDOY, FYRSIM, INCDAT, WDATE, WYEAR
@@ -165,7 +164,8 @@ C=======================================================================
 
 !       Initialize read from file for 'M', 'G' weather options and also for
 !         RNMODE = 'Y' (yield forecast mode) regardless of weather option
-        IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G')THEN
+        IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G' .OR.
+     &      MEWTH .EQ. 'H' .OR. MEWTH .EQ. 'C')THEN
           CALL IPWTH(CONTROL2, ERRKEY,
      &      CCO2, DCO2, FILEW, FILEWC, FILEWG, FILEWW,    !Output
      &      MEWTH, OZON7, PAR,                            !Output
@@ -295,40 +295,18 @@ c                   available.
       ENDIF
 
 C     Calculate hourly weather data.
-      CALL HMET(
+      CALL HMET(YRDOY,
      &    CLOUDS, DAYL, DEC, ISINB, PAR, REFHT,           !Input
      &    SNDN, SNUP, S0N, SRAD, TDEW, TMAX,              !Input
-     &    TMIN, WINDHT, WINDSP, XLAT,                     !Input
+     &    TMIN, WINDHT, WINDSP, XLAT, MEWTH,              !Input
      &    AMTRH, AZZON, BETA, FRDIFP, FRDIFR, PARHR,      !Output
      &    RADHR, RHUMHR, TAIRHR, TAVG, TDAY, TGRO,        !Output
      &    TGROAV, TGRODY, WINDHR)                         !Output
 
-      ISWHYDRO = ISWITCH % ISWHYDRO
-      IF (ISWHYDRO .EQ. 'Y') THEN
-        TAVG = (TMAX + TMIN) / 2.0
-        TDAY = TAVG
-        TGROAV = TAVG
-        TGRODY = TAVG
-        TAIRHR = TAVG
-        TGRO   = TAVG
-        PAR_FLAT   = PAR  * 1.0E6 / (DAYL * 3600.0)
-        RADHR_FLAT = SRAD * 1.0E6 / (DAYL * 3600.0)
-        DO IH = 1, TS
-          HS_H = REAL(IH)
-          IF (HS_H .GT. SNUP .AND. HS_H .LE. SNUP + DAYL) THEN
-            PARHR(IH)  = PAR_FLAT
-            RADHR(IH)  = RADHR_FLAT
-          ELSE
-            PARHR(IH)  = 0.0
-            RADHR(IH)  = 0.0
-          ENDIF
-        ENDDO
-      ENDIF
-
 C     Compute daily normal temperature.
       TA = TAV - SIGN(1.0,XLAT) * TAMP * COS((DOY-20.0)*RAD)
 
-      CALL OpWeath(CONTROL, ISWITCH,
+      CALL OpWeath(CONTROL, ISWITCH, 
      &    CLOUDS, CO2, DAYL, FYRDOY, OZON7, PAR, RAIN,    !Daily values
      &    SRAD, TAVG, TDAY, TDEW, TGROAV, TGRODY,         !Daily values
      &    TMAX, TMIN, TWILEN, WINDSP, WEATHER)            !Daily values
@@ -365,7 +343,8 @@ C     Compute daily normal temperature.
 !       Get weather data by normal means    
 !-----------------------------------------------------------------------
 C       Read new weather record.
-        IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G' ) THEN
+        IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G' .OR.
+     &      MEWTH .EQ. 'H' .OR. MEWTH .EQ. 'C')THEN
           CALL IPWTH(CONTROL2, ERRKEY,
      &      CCO2, DCO2, FILEW, FILEWC, FILEWG, FILEWW,    !Output
      &      MEWTH, OZON7, PAR,                            !Output
@@ -454,35 +433,13 @@ c                   available.
       WEATHER % CPRED  = WEATHER % CPRED + RAIN
             
 C     Calculate hourly weather data.
-      CALL HMET(
+      CALL HMET(YRDOY,
      &    CLOUDS, DAYL, DEC, ISINB, PAR, REFHT,           !Input
      &    SNDN, SNUP, S0N, SRAD, TDEW, TMAX,              !Input
-     &    TMIN, WINDHT, WINDSP, XLAT,                     !Input
+     &    TMIN, WINDHT, WINDSP, XLAT, MEWTH,              !Input
      &    AMTRH, AZZON, BETA, FRDIFP, FRDIFR, PARHR,      !Output
      &    RADHR, RHUMHR, TAIRHR, TAVG, TDAY, TGRO,        !Output
      &    TGROAV, TGRODY, WINDHR)                         !Output
-
-      ISWHYDRO = ISWITCH % ISWHYDRO
-      IF (ISWHYDRO .EQ. 'Y') THEN
-        TAVG = (TMAX + TMIN) / 2.0
-        TDAY = TAVG
-        TGROAV = TAVG
-        TGRODY = TAVG
-        TAIRHR = TAVG
-        TGRO   = TAVG
-        PAR_FLAT   = PAR  * 1.0E6 / (DAYL * 3600.0)
-        RADHR_FLAT = SRAD * 1.0E6 / (DAYL * 3600.0)
-        DO IH = 1, TS
-          HS_H = REAL(IH)
-          IF (HS_H .GT. SNUP .AND. HS_H .LE. SNUP + DAYL) THEN
-            PARHR(IH)  = PAR_FLAT
-            RADHR(IH)  = RADHR_FLAT
-          ELSE
-            PARHR(IH)  = 0.0
-            RADHR(IH)  = 0.0
-          ENDIF
-        ENDDO
-      ENDIF
 
 C     Compute daily normal temperature.
       TA = TAV - SIGN(1.0,XLAT) * TAMP * COS((DOY-20.0)*RAD)
@@ -506,7 +463,8 @@ C-----------------------------------------------------------------------
 !***********************************************************************
       ELSEIF (DYNAMIC .EQ. SEASEND) THEN
 !-----------------------------------------------------------------------
-      IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G') THEN
+        IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'G' .OR.
+     &      MEWTH .EQ. 'H' .OR. MEWTH .EQ. 'C')THEN
         CALL IPWTH(CONTROL, ERRKEY,
      &    CCO2, DCO2, FILEW, FILEWC, FILEWG, FILEWW,      !Output
      &    MEWTH, OZON7, PAR,                              !Output

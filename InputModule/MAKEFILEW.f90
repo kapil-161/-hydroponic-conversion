@@ -263,6 +263,20 @@
       ELSEIF (WTHER .EQ. 'S' .OR. WTHER .EQ. 'W') THEN
          WRITE (FILEW(1:12),'(A4,A8)') WSTA,'.CLI    '
          PROCOD = 'CLD'
+      ELSEIF (WTHER .EQ. 'H') THEN
+        IF (WSTA(5:5) .EQ. BLANK) THEN
+          WRITE (FILEW(1:12),'(A4,I2.2,A6)') WSTA,YR,'01.WTH'
+        ELSE
+          WRITE (FILEW(1:12),'(A8,A4)') WSTA,'.WTH'
+        ENDIF
+        PROCOD = 'WED'
+      ELSEIF (WTHER .EQ. 'C') THEN
+        IF (WSTA(5:5) .EQ. BLANK) THEN
+          WRITE (FILEW(1:12),'(A4,I2.2,A6)') WSTA,YR,'01.CSV'
+        ELSE
+          WRITE (FILEW(1:12),'(A8,A4)') WSTA,'.CSV'
+        ENDIF
+        PROCOD = 'WED'
       ELSE
          CALL ERROR (ERRKEY,16,FILEX,LINEXP)
       ENDIF

@@ -725,8 +725,9 @@ C-----------------------------------------------------------------------
          WRITE (FILEWC(1:12),77) WSTA,'.CLI    '
          PROCODC = 'CLD'
       ENDIF
-!     Measured weather data
-      IF (MEWTH .EQ. 'M' .OR. RNMODE .EQ. 'Y') THEN
+!     Measured, hourly, or CSV weather data
+      IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'H' .OR. MEWTH .EQ. 'C'
+     &    .OR. RNMODE .EQ. 'Y') THEN
          IF (WSTA1(4:4) .EQ. BLANK) THEN
            IF (YEAR .LT. 2000) THEN
              YR = YEAR - 1900
@@ -747,7 +748,8 @@ C-----------------------------------------------------------------------
       DO I = 1, 3
         SELECT CASE (I)
           CASE (1)
-            IF (MEWTH .EQ. 'M' .OR. RNMODE .EQ. 'Y') THEN
+            IF (MEWTH .EQ. 'M' .OR. MEWTH .EQ. 'H' .OR. MEWTH .EQ. 'C'
+     &          .OR. RNMODE .EQ. 'Y') THEN
               FILE_CHECK = FILEW
               PROCOD = PROCODW
             ELSE
