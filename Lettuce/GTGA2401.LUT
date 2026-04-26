@@ -1,0 +1,51 @@
+*EXP. DATA (T): GTGA2401LU Lettuce N-level time-course observed data
+! Source: Sharkey et al. (2024) Agriculture 14:1358, Table 3 (mean values)
+! Nominal dates: seeding 23001 (Jan 1 2023), transplant 23014 (Jan 14 2023)
+! All 6 N treatments ran concurrently in same chamber (21.5C, 12h LED, DLI=14.69 mol/m2/d)
+! TRNO mapping:
+!   1 = 11  mg N/L (8%  MSS)
+!   2 = 25  mg N/L (19% MSS)
+!   3 = 33  mg N/L (25% MSS)
+!   4 = 66  mg N/L (50% MSS)
+!   5 = 132 mg N/L (100% MSS baseline)
+!   6 = 264 mg N/L (200% MSS)
+! FWGP = fresh weight per plant (g/plant) from Table 3
+! CWAD = canopy dry weight (kg/ha) = DW(g/plant) x 16 plants/m2 x 10
+! DATE = DSSAT YYDDD; DAS = days after seeding (DAT = DAS - 14)
+@TRNO  DATE DAS    FWGP   CWAD
+   1 23028  28    0.96   12.8
+   1 23032  32    1.85   22.4
+   1 23035  35    4.29   49.6
+   1 23039  39    9.68  156.8
+   1 23042  42   15.10  168.0
+   1 23046  46   32.57  313.6
+   2 23028  28    3.20   38.4
+   2 23032  32    7.04   76.8
+   2 23035  35    7.37   73.6
+   2 23039  39   18.46  156.8
+   2 23042  42   43.07  369.6
+   2 23046  46   56.62  480.0
+   3 23028  28    1.13   14.4
+   3 23032  32    4.13   36.8
+   3 23035  35    5.61   56.0
+   3 23039  39   18.79  150.4
+   3 23042  42   33.51  299.2
+   3 23046  46   47.73  400.0
+   4 23028  28    2.00   20.8
+   4 23032  32    9.94   91.2
+   4 23035  35   11.20   99.2
+   4 23039  39   28.74  232.0
+   4 23042  42   71.63  553.6
+   4 23046  46   92.53  707.2
+   5 23028  28    2.61   33.6
+   5 23032  32   13.07  140.8
+   5 23035  35   27.63  278.4
+   5 23039  39   86.81  728.0
+   5 23042  42  128.71 1020.8
+   5 23046  46  250.73 1936.0
+   6 23028  28    1.53   19.2
+   6 23032  32    4.00   46.4
+   6 23035  35    7.84   92.8
+   6 23039  39   20.23  230.4
+   6 23042  42   39.64  491.2
+   6 23046  46   74.11  816.0
