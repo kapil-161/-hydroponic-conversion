@@ -35,9 +35,9 @@ Controlled Environment Growth Chamber - ZipGrow Vertical NFT
 
 *PLANTING DETAILS
 ! PPOP=16 plants/m2; PLRS=25cm; 8 plants/ZipGrow tower; PAGE=14d from seeding
-! PLWT=2mg DW per seedling at DAS14 (transplant); PENV=21.5C chamber temp
+! PLWT=2.2mg DW per seedling at DAS14 (transplant; paper: 2.198mg); PENV=21.5C chamber temp
 @P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
- 1 23014   -99    16    16     T     R    25     0     5     2    14  21.5   -99     3                        Bibb transplant nominal Jan14-2023
+ 1 23014   -99    16    16     T     R    25     0     5   2.2    14  21.5   -99     3                        Bibb transplant nominal Jan14-2023
 
 *IRRIGATION AND WATER MANAGEMENT
 @I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
@@ -58,7 +58,7 @@ Controlled Environment Growth Chamber - ZipGrow Vertical NFT
 *ENVIRONMENT MODIFICATIONS
 ! Growth chamber: constant 21.5C; 12h LED photoperiod DLI=14.69 mol/m2/d; CO2 ambient (~400ppm, uncontrolled)
 ! Temperature overridden to constant 21.5C via EMAX/EMIN; light from ATGA2401 hourly WTH file
-! ATGA2401.WTH must be a synthetic file: SRAD=0.268 MJ/m2/h for 12h (7-18h), 0 otherwise; TMAX=TMIN=21.5C
+! ATGA2401.WTH: SRAD=0.591 MJ/m2/h for 12h (7-18h), 0 otherwise; TMAX=TMIN=21.5C
 @E  ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
  1 23014   -99   -99 A21.5 A21.5 A 0.0 R 400 A   0 A   0  Chamber_21.5C_LED
 
@@ -78,7 +78,7 @@ Controlled Environment Growth Chamber - ZipGrow Vertical NFT
    3      50.0       1.40     6.00     8.0     21.5        33.1         0.0      109.9      210.0    152.0     19.0
    4      50.0       1.40     6.00     8.0     21.5        64.9         1.2       31.0      210.0    152.0     19.0
    5      50.0       1.50     6.00     8.0     21.5       125.6         6.6       31.0      210.0    152.0     19.0
-   6      50.0       2.20     6.00     8.0     21.5       191.4        72.6       31.0      218.4    152.0     19.0
+   6      50.0       2.20     6.00     8.0     21.5       191.7        72.8       31.0      218.4    152.0     19.0
 
 *HYDROPONIC CONTROL
 ! AUTO_CONC=Y: solution replaced via water changes (DAT 7,14,18,21,23,25,28,30)
