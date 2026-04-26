@@ -35,10 +35,10 @@
         CALL fio % get('WTH', YRDOY, H, 'TMIN',HTMIN)
         CALL fio % get('WTH', YRDOY, H, 'RAIN',HRAIN)
         
-        !Solar Radiation conversion from W/m2/hour to MJ/m2/hour (1 W/m2 * 3600s = 0.0036 MJ/m2)
-        SRADMJ = HSRAD * 0.0036
-        !J/m2/s the same unit as W m^-2
-        SRADJ  = HSRAD
+        !SRAD in hourly WTH file is in MJ/m2/h; sum directly for daily total
+        SRADMJ = HSRAD
+        !SRADJ must be in W/m2 (J/m2/s) for HMET/HPAR; convert MJ/m2/h -> W/m2
+        SRADJ  = HSRAD * 1.0E6 / 3600.0
         CALL fio % set('WTH', YRDOY, H, 'SRADJ',SRADJ)
 
         DSRAD = DSRAD + SRADMJ
