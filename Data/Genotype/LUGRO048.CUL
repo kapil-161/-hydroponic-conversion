@@ -68,11 +68,11 @@ LU0003 SKYPHOS      4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0
 ! CALIBRATION STATUS: INITIAL ESTIMATE — needs GLUE calibration against GTGA2401 data
 ! ECO#=LU0405 (BUTTERHEAD-NA): warm-adapted, LED chamber; OPTBI=18C, SLOBI=0.035
 ! EM-FL=55: harvest at DAS46 (DAT32) without triggering heading
-! LFMAX=0.950: ambient CO2 (~400ppm); lower than CO2-enriched NA types (1.0-1.3)
-! SLAVR=355: moderate butterhead SLA; DM%~4.8-5.0% consistent with paper
+! LFMAX=1.381: GLUE-calibrated vs Sharkey 2024 T5 (132 mg N/L) final harvest CWAM
+! SLAVR=319: GLUE-calibrated; reduced from initial 355 toward more compact Bibb leaf
 ! SIZLF=215: medium-large Bibb leaf; FW=250.7g/plant at optimal N
 ! =============================================================================
-LU0301 BIBB          1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 0.950  355. 215.0 0.001 0.002  21.0  1.00  11.0  10.0 0.180 0.020
+LU0301 BIBB         1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 1.381  319. 215.0 0.001 0.003  21.0  1.00  11.0  10.0 0.180 0.020
 
 
 ! =============================================================================

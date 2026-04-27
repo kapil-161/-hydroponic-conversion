@@ -145,13 +145,16 @@
 
 
 !*HYDROPONIC NUTRIENT UPTAKE PARAMETERS (SILBERBUSH 2005 BASELINE)
-  0.0139 0.210 0.0184 0.755    JMAX_NO3, KM_NO3, JMAX_NH4, KM_NH4 (mg/cm/d, mg/L) [Silberbush 2005 baseline]
+  16.82  2.94 22.27  10.56    JMAX_NO3, KM_NO3, JMAX_NH4, KM_NH4 (mg/cm/d, mg/L) [Silberbush 2005 HATS; unit-corrected from nmol/cm/s]
+! Unit conversion: Vmax[nmol/cm/s]*MW[g/mol]*1000*86400*1e-9 = mg/cm/d
+!   NO3-N: 13.9 nmol/cm/s = 16.82 mg N/cm/d; HATS Km=0.21 mmol/L = 2.94 mg N/L
+!   NH4-N: 18.4 nmol/cm/s = 22.27 mg N/cm/d; HATS Km=0.75 mmol/L = 10.56 mg N/L
 
 !*SOLPI HYDROPONIC P UPTAKE PARAMETERS (SILBERBUSH 2005 BASELINE)
-  0.00284 0.155                JMAX_P, KM_P (mg/cm/d, mg/L) [Silberbush 2005 baseline]
+  7.60 0.155                  JMAX_P, KM_P (mg/cm/d, mg/L) [Silberbush 2005; unit-corrected: 2.84 nmol/cm/s = 7.60 mg P/cm/d]
 
 !*SOLKI HYDROPONIC K UPTAKE PARAMETERS (SILBERBUSH 2005 BASELINE)
-  0.0173 0.497                 JMAX_K, KM_K (mg/cm/d, mg/L) [Silberbush 2005 baseline]
+  58.44 0.497                 JMAX_K, KM_K (mg/cm/d, mg/L) [Silberbush 2005; unit-corrected: 17.3 nmol/cm/s = 58.44 mg K/cm/d]
 
 !*PHSTR HYDROPONIC pH STRESS PARAMETERS (Gaussian uptake inhibition by pH deviation)
   5.75  0.80  0.80  0.50  1.00       PH_OPT, PH_SCALE_NO3, PH_SCALE_NH4, PH_SCALE_P, PH_SCALE_K
