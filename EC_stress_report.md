@@ -1,7 +1,7 @@
 ---
 title: "Electrical Conductivity and EC Stress in Hydroponic Lettuce: Mechanisms, Dose–Response Functions, and Implementation in the DSSAT Hydroponic Model"
 author: "Kapil Bhattarai"
-date: "April 2026"
+date: "April 2026 (revised)"
 bibliography: references
 csl: apa
 ---
@@ -183,11 +183,13 @@ Table 1 summarizes the behavior of the two EC stress functions across the EC ran
 
 The SOLEC subroutine is a dedicated EC management module within the DSSAT hydroponic modeling framework. It is called at each daily timestep during the RATE and INTEGR phases of the DSSAT cropping system model simulation loop. SOLEC calculates the current solution EC from tracked nutrient concentrations, computes EC stress factors, and makes these factors available via the ModuleData shared memory structure to all nutrient uptake and plant growth modules.
 
-EC is estimated from the sum of tracked dissolved ions (NO₃⁻, NH₄⁺, P, K⁺) using the empirical approximation:
+EC is estimated from tracked dissolved ions using ionic molar conductivity at 25 °C:
 
-$$EC_{CALC} = \frac{(C_{NO_3} + C_{NH_4} + C_P + C_K) \times 2.5}{640}$$
+$$EC_{CALC} = \sum_i \frac{C_i}{MW_i} \cdot z_i \cdot \lambda_i \times 10^{-3}$$
 
-where concentrations are in mg L⁻¹ and the factor 2.5 accounts for unmeasured counter-ions (Ca²⁺, Mg²⁺, SO₄²⁻) that contribute to total EC in a typical balanced nutrient solution. This approach follows the methodology described by Sonneveld and Voogt (2009) for practical EC estimation in recirculating systems.
+where *C*_i is the concentration of ion *i* in mg L⁻¹, *MW*_i is the molecular weight (g mol⁻¹), *z*_i is the ionic valence (equivalents per mole), *λ*_i is the equivalent ionic conductance (S cm² eq⁻¹) at 25 °C, and the factor 10⁻³ converts mS cm⁻¹ to dS m⁻¹. Tracked ions and their conductances are: NO₃⁻ (71.8), NH₄⁺ (73.5), H₂PO₄⁻ at pH 6 (33.0), K⁺ (73.5), Ca²⁺ (59.5 per eq), Mg²⁺ (53.1 per eq), SO₄²⁻ (80.0 per eq), and Fe²⁺ (27.0 per eq).
+
+This approach replaces the earlier four-ion empirical approximation (which used a fixed factor of 2.5 for unmeasured counter-ions) with a physically rigorous calculation using standard electrochemistry tables. For the Sharkey et al. (2024) GTGA2401 experiment, initial EC values were computed directly from the Table 1 ionic concentrations, yielding: TRT1 = 1.13, TRT2 = 1.14, TRT3 = 1.19, TRT4 = 1.28, TRT5 = 1.62, TRT6 = 2.32 dS m⁻¹. Treatments 1–5 fall within or just below the optimal range (1.2–1.8 dS m⁻¹), confirming that only TRT6 (264 mg N L⁻¹) experiences EC stress at initial conditions.
 
 ## 6.2 EC Stress Computation
 
@@ -200,9 +202,17 @@ During the RATE phase, SOLEC evaluates the current EC against the optimal range 
 
 When Na⁺ data are unavailable — the common case in experimental datasets that report only total EC — the total EC-based stress (Section 5.2.3) is applied uniformly to all nutrients.
 
-## 6.3 Stress Factor Application
+## 6.3 EC Stress Applied to Photosynthesis
 
-SOLEC stores seven stress factors in the ModuleData shared memory (Table 2), where they are retrieved by the nutrient uptake modules at each timestep.
+In addition to nutrient uptake suppression, the ECSTRESS_JMAX_NO3 factor is applied directly to canopy gross photosynthesis (PG) in CROPGRO when hydroponic mode is active (ISWHYDRO = 'Y'). This reflects the physiological basis that ion-specific inhibition of NO₃⁻ transport reduces the nitrogen supply to leaves, thereby lowering Jₘₐₓ and limiting carbon assimilation. The stress is applied after the light-limited and Rubisco-limited photosynthesis calculation (MEPHO = 'L', leaf-level hourly method):
+
+$$PG = PG_{unlimited} \times f_{EC,NO_3}$$
+
+This linkage ensures that EC stress reduces both nutrient uptake and photosynthetic carbon gain simultaneously, which is consistent with observations that high salinity reduces both leaf N content and net photosynthesis in lettuce (Munns & Tester, 2008).
+
+## 6.4 Stress Factor Application
+
+SOLEC stores seven stress factors in the ModuleData shared memory (Table 2), where they are retrieved by the nutrient uptake and plant growth modules at each timestep.
 
 **Table 2**
 
@@ -217,6 +227,7 @@ SOLEC stores seven stress factors in the ModuleData shared memory (Table 2), whe
 | ECSTRESS_KM_NO3 | f_Km,NO3 | Kₘ of NO₃⁻ uptake (HYDRO_NUTRIENT) | Na competitive inhibition |
 | ECSTRESS_ROOT | f_EC,root | Root growth (CROPGRO) | Na morphological or EC total |
 | ECSTRESS_LEAF | f_EC,leaf | Leaf expansion (CROPGRO) | Na morphological or EC total |
+| ECSTRESS_JMAX_NO3 | f_EC,NO3 | Gross photosynthesis PG (CROPGRO) | EC linear/exponential (via ModuleData GET) |
 
 The effective nutrient uptake rate for each ion *I* is computed as:
 
@@ -224,9 +235,17 @@ $$U_I = \frac{J_{max,I} \cdot f_{EC,I} \cdot (C_I - C_{min,I})}{K_{m,I} \cdot f_
 
 where *C*_min is the minimum solution concentration below which uptake ceases (Silberbush et al., 2005), and the pH-dependent availability factor *f*_pH and Kₘ factor *f*_pH,Km are supplied by the SOLPH module. This formulation integrates the EC stress, pH stress, and O₂ stress mechanisms in a single Michaelis–Menten framework consistent with Silberbush et al. (2005).
 
-## 6.4 Feed-and-Drift Management
+## 6.5 Feed-and-Drift Management: AUTO_CONC Modes
 
-The SOLEC INTEGR phase also implements an automated replenishment algorithm (AUTO_CONC flag). When EC falls below EC_OPT_LOW, indicating that nutrient depletion has brought the solution below the deficiency threshold, the module rescales all nutrient concentrations to restore EC to EC_OPT_HIGH. This mimics the management practice of adding fresh nutrient solution to the reservoir when the solution becomes depleted — a standard protocol in commercial NFT and deep water culture systems (Bugbee, 2004; Sonneveld & Voogt, 2009). When AUTO_CONC is disabled, the simulation operates in pure depletion mode, allowing EC to drift freely with uptake and transpiration dynamics, as modeled by Silberbush et al. (2005).
+The SOLEC INTEGR phase implements an automated replenishment algorithm controlled by the AUTO_CONC flag in the `*HYDROPONIC CONTROL` section of the experiment file. Two replenishment modes are supported:
+
+**AUTO_CONC = O (Optimum mode):** When EC falls below EC_OPT_LOW (1.2 dS m⁻¹), the module rescales all nutrient concentrations to restore EC to EC_OPT_HIGH (1.8 dS m⁻¹). This mimics standard commercial NFT and deep water culture management where solution is replenished to maintain an optimal nutrient window (Bugbee, 2004; Sonneveld & Voogt, 2009).
+
+**AUTO_CONC = I (Initial EC mode):** The module calculates EC_CALC_INIT — the formula-derived EC at the start of simulation — and replenishes solution whenever EC_CALC falls below 99% of EC_CALC_INIT, restoring EC to the initial value. This mode is used for experiments where the researcher intends to maintain the initial nutrient recipe throughout the crop cycle (e.g., the 264 mg N L⁻¹ treatment in Sharkey et al. (2024), TRT6, which has an initial EC of 2.32 dS m⁻¹). This prevents the simulation from drifting to the optimal range and thereby eliminating the intended EC stress treatment.
+
+**AUTO_CONC = N (No replenishment):** The simulation operates in pure depletion mode, allowing EC to drift freely with uptake and transpiration dynamics, as modeled by Silberbush et al. (2005).
+
+The distinction between O and I modes is critical for experimental validation: using O-mode for a high-EC treatment would erroneously remove the EC stress the experiment was designed to impose, while I-mode correctly maintains the experimental condition.
 
 ---
 
@@ -238,7 +257,7 @@ The most significant conceptual shift is the treatment of sub-optimal EC. Classi
 
 For high EC stress, the exponential decay form is mathematically justified as an approximation to the upper limb of the van Genuchten–Gupta sigmoid (van Genuchten & Hoffman, 1984), and its parameterization (*k* = 0.277 dS⁻¹ m, EC₅₀ = 4.3 dS m⁻¹) is consistent with published *G*_50 values for lettuce (Shannon & Grieve, 1999; Akter et al., 2026). The exponential form has the practical advantage of providing a smooth, differentiable stress function that is numerically stable in iterative simulation, unlike the discontinuous Maas–Hoffman threshold model.
 
-A limitation of the current implementation is that EC is estimated from only four tracked ions (NO₃⁻, NH₄⁺, P, K⁺), while actual solution EC also includes contributions from Ca²⁺, Mg²⁺, SO₄²⁻, Na⁺, and Cl⁻. The empirical factor of 2.5 used to approximate unmeasured counter-ions introduces uncertainty in EC estimation, particularly in experiments where the solution recipe deviates from a typical nutrient balance. Future model development should track Ca, Mg, and SO₄ as dynamic state variables with their own uptake kinetics (Silberbush et al., 2005), which would both improve EC estimation accuracy and enable the Ca:cation ratio suppression of root growth described in Silberbush et al. (2005).
+The model now uses a physically rigorous EC calculation from molar ionic conductivities (Section 6.1), replacing the earlier empirical four-ion approximation. When experiment-specific ionic concentrations are available (e.g., from a published nutrient recipe), the initial EC can be computed exactly using the molar conductivity method. A remaining limitation is that Ca²⁺, Mg²⁺, and SO₄²⁻ are tracked as initial values but not updated dynamically with their own uptake kinetics. Future model development should track these ions as dynamic state variables (Silberbush et al., 2005), which would both improve EC estimation accuracy over the crop cycle and enable the Ca:cation ratio suppression of root growth described in Silberbush et al. (2005).
 
 A second limitation is the treatment of Na⁺ and Cl⁻ as static inputs rather than dynamically accumulated variables. Silberbush et al. (2005) demonstrated that Na⁺ accumulation through the recirculating system is the primary driver of progressive EC rise and the resulting K⁺ depletion in realistic production scenarios. Passive Na⁺ and Cl⁻ uptake, proportional to solution concentration above a critical threshold, should be incorporated in future model versions to accurately simulate salinity buildup over the crop cycle.
 
