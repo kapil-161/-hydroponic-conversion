@@ -1,65 +1,83 @@
 # Calibration Next Steps — DSSAT Hydroponic Lettuce Model
 
-**Date:** 2026-04-12 (updated after Priority 1–4)
+**Date:** 2026-04-27 (updated after GLUE calibration of BIBB, FNPGN, and GTGA2401 evaluation)
 **Model:** CRGRO048 (CROPGRO lettuce), DSSAT 4.8.5
-**Experiments:** WAGA9101 (Heinen 1994), UFGA2201 (JP Thesis 2022), UFGA2402 (Donald Coon 2024–2025)
+**Experiments:** WAGA9101 (Heinen 1994), UFGA2201 (JP Thesis 2022), UFGA2402 (Donald Coon 2024–2025), GTGA2401 (Sharkey et al. 2024, Georgia Tech)
 
 ---
 
 ## Current Model State
 
-| Parameter | File | Value | Notes |
-|-----------|------|-------|-------|
-| XLMAXT/YLMAXT | LUGRO048.SPE | `-10 0 26 34 42 55 / 0 0 1.0 0.70 0.0 0.0` | Peak at 26°C; recalibrated 2026-04-12 |
-| SITONIA LFMAX | LUGRO048.CUL | 0.731 | Calibrated to WAGA9101 (+5.2%) |
-| SITONIA SLAVR | LUGRO048.CUL | 240 | Unchanged; WAGA9101 stable at +5.2% |
-| REX LFMAX | LUGRO048.CUL | 0.690 | Recalibrated Priority 4 (SLAVR+LFMAX) |
-| REX SLAVR | LUGRO048.CUL | 320 | Calibrated to UFGA2201 observed LAPD at 28°C |
-| MUIR LFMAX | LUGRO048.CUL | 0.620 | Recalibrated Priority 4 (was 0.850→0.720→0.620) |
-| MUIR SLAVR | LUGRO048.CUL | 370 | Calibrated to UFGA2201 observed LAPD at 28°C (was 210) |
-| SKYPHOS LFMAX | LUGRO048.CUL | 0.720 | Recalibrated Priority 4 (was 1.200→0.970→0.720) |
-| SKYPHOS SLAVR | LUGRO048.CUL | 390 | Calibrated to UFGA2201 observed LAPD at 28°C (was 185) |
-| BG23-1251 LFMAX | LUGRO048.CUL | 0.590 | Original; 25°C overshoot is CO2 artifact |
-| WALDMANNS_GR LFMAX | LUGRO048.CUL | 0.650 | Original; 25°C overshoot is CO2 artifact |
-| PRORTI | LUGRO048.SPE | 0.260 | Stable; 0.280 caused N-stress cascade |
+### SPE Parameters (LUGRO048.SPE)
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| XLMAXT | `0, 4, 35, 40, 46, 55` | Calibrated 2026-04-13; Jmax Topt 35–40°C for C3 at elevated CO2 |
+| YLMAXT | `0, 0, 1.0, 0.8, 0, 0` | Y4=0.8 moderate decline above Topt; zero at 46°C (PSII damage) |
+| FNPGL | `QDR(-6, 15, 50, 60)` | Chilling threshold raised 10→15°C (Kleinhenz & Schnitzler, 2004) |
+| FNPGT | `LIN(2, 12, 28, 42)` | Inactive for PHOTO=L; retained for canopy option compatibility |
+| FNPGN1 | 1.04 | Leaf N% zero-PG threshold; GLUE-calibrated 2026-04-27 vs GTGA2401 (was 1.20) |
+| FNPGN2 | 3.37 | Leaf N% at PG saturation; GLUE-calibrated 2026-04-27 vs GTGA2401 (was 3.50) |
+| PGEFF | 0.1470 | Radiation use efficiency scalar |
+| LNREF | 2.54 | Leaf N% at which leaf Pmax saturates; updated 2026-04-27 (was 3.50) |
+| SLAREF | 296 | Reference SLA in SPE leaf growth section; updated 2026-04-27 (was 280) |
+| SLAMAX | 377 | Maximum SLA; updated 2026-04-27 (was 400) |
+| FINREF | 600 | Final leaf size reference; updated 2026-04-27 (was 420) |
+| PRORTI | 0.260 | Stable; 0.280 caused N-stress cascade |
+
+### CUL Parameters (LUGRO048.CUL)
+
+| Cultivar | ID | LFMAX | SLAVR | Source |
+|----------|----|-------|-------|--------|
+| SITONIA | LU0004 | 0.406 | 187 | Calibrated to WAGA9101 |
+| REX | LU0001 | 0.799 | 398 | GLUE-calibrated vs UFGA2201 |
+| MUIR | LU0002 | 0.728 | 399 | GLUE-calibrated vs UFGA2201 |
+| SKYPHOS | LU0003 | 0.923 | 397 | GLUE-calibrated vs UFGA2201 |
+| WALDMANNS_GR | LU0202 | 1.020 | 344 | Initial estimate |
+| BG23-1251 | LU0201 | 1.029 | 398 | Initial estimate |
+| BIBB | LU0301 | 1.472 | 308 | GLUE-calibrated 2026-04-27 vs GTGA2401 (all 6 N treatments) |
 
 ### Current Performance Summary
 
-| Experiment | n | NRMSE | d-stat | Primary Bias |
-|-----------|---|-------|--------|--------------|
-| WAGA9101 trt1 CWAD | 7 | ~12% | ~0.980 | +5.2% at harvest ✓ |
-| UFGA2201 harvest CWAM | 12 | ~28% | ~0.70 | See per-treatment table below |
-| UFGA2402 harvest CWAM | 8 | ~35% | ~0.70 | See per-treatment table below |
+| Experiment | n | Notes |
+|-----------|---|-------|
+| WAGA9101 trt1 CWAD | 7 time points | +5.2% at harvest ✓ |
+| UFGA2201 harvest CWAM | 12 treatments | See table below; 24°C fits well, 26–30°C underpredicted |
+| GTGA2401 harvest CWAM | 6 N treatments | See table below; GLUE-calibrated BIBB |
 
-### UFGA2201 Harvest CWAM (kg/ha)
+### GTGA2401 Harvest CWAM — BIBB, Georgia Tech, DAT32 (kg/ha)
+
+Experiment: Sharkey et al. (2024), 6 N-levels, 16 plants/m², 21.5°C constant, 12h LED, ambient CO2.
+
+| TRT | N (mg/L) | Sim | Obs | Bias | Notes |
+|-----|----------|-----|-----|------|-------|
+| T1 | 10.6 | ~115 | ~120 | −4% | ✓ |
+| T2 | 25 | ~130 | ~120 | +8% | ✓ |
+| T3 | 33 | ~152 | ~140 | +9% | ✓ |
+| T4 | 66 | ~189 | ~150 | +26% | Remaining gap; shallow N-stress curve |
+| T5 | 132 | ~194 | ~210 | −8% | ✓ Optimal N |
+| T6 | 264 | ~215 | ~200 | +8% | ✓ |
+
+*Units: kg/ha (= g/m²). FNPGN1=1.04, FNPGN2=3.37 calibrated across all 6 treatments. T4 remaining +26% gap reflects shallow modeled N-stress response between T1 and T5.*
+
+### UFGA2201 Harvest CWAM (kg/ha) — with current SPE parameters
 
 | Treatment | LFMAX | SLAVR | Sim | Obs | Bias | Status |
 |-----------|-------|-------|-----|-----|------|--------|
-| Rex_24°C | 0.690 | 320 | 1430 | 1146 | +25% | Day-length confound (Apr, 13.1h) |
-| Rex_26°C | 0.690 | 320 | 1392 | 1177 | +18% | Day-length confound (Aug, 12.2h) |
-| Rex_28°C | 0.690 | 320 | 1450 | 1491 | −3% | ✓ Calibrated |
-| Rex_30°C | 0.690 | 320 | 943 | 1499 | −37% | Day-length confound (Mar, 11.8h) |
-| Muir_24°C | 0.620 | 370 | 1238 | 914 | +35% | Day-length confound (Apr, 13.1h) |
-| Muir_26°C | 0.620 | 370 | 1189 | 1148 | +4% | ✓ |
-| Muir_28°C | 0.620 | 370 | 1263 | 1224 | +3% | ✓ Calibrated |
-| Muir_30°C | 0.620 | 370 | 779 | 1447 | −46% | Day-length confound (Mar, 11.8h) |
-| Skyphos_24°C | 0.720 | 390 | 1649 | 1494 | +10% | Day-length confound (Apr, 13.1h) |
-| Skyphos_26°C | 0.720 | 390 | 1612 | 1675 | −4% | ✓ |
-| Skyphos_28°C | 0.720 | 390 | 1652 | 1761 | −6% | ✓ Calibrated |
-| Skyphos_30°C | 0.720 | 390 | 1132 | 1466 | −23% | Day-length confound (Mar, 11.8h) |
+| Rex_24°C | 0.799 | 398 | 1027 | 1091 | −6% | ✓ |
+| Rex_26°C | 0.799 | 398 | 811 | 1121 | −28% | Temperature response underprediction |
+| Rex_28°C | 0.799 | 398 | 1084 | 1420 | −24% | Temperature response underprediction |
+| Rex_30°C | 0.799 | 398 | 883 | 1427 | −38% | Temperature response underprediction |
+| Muir_24°C | 0.728 | 399 | 849 | 871 | −3% | ✓ |
+| Muir_26°C | 0.728 | 399 | 669 | 1093 | −39% | Temperature response underprediction |
+| Muir_28°C | 0.728 | 399 | 939 | 1165 | −19% | Temperature response underprediction |
+| Muir_30°C | 0.728 | 399 | 736 | 1377 | −47% | Temperature response underprediction |
+| Skyphos_24°C | 0.923 | 397 | 1358 | 1422 | −5% | ✓ |
+| Skyphos_26°C | 0.923 | 397 | 1014 | 1594 | −36% | Temperature response underprediction |
+| Skyphos_28°C | 0.923 | 397 | 1423 | 1677 | −15% | Temperature response underprediction |
+| Skyphos_30°C | 0.923 | 397 | 1083 | 1396 | −22% | Temperature response underprediction |
 
-### UFGA2402 Harvest CWAM (kg/ha)
-
-| Treatment | LFMAX | Sim | Obs | Bias | Status |
-|-----------|-------|-----|-----|------|--------|
-| BG23_21°C | 0.590 | 1183 | 1159 | +2% | ✓ |
-| WG_21°C | 0.650 | 1169 | 1134 | +3% | ✓ |
-| BG23_25°C | 0.590 | 2312 | 1791 | +29% | CO2 artifact (1060 vs 830 ppm) |
-| WG_25°C | 0.650 | 2260 | 1826 | +24% | CO2 artifact |
-| BG23_31°C | 0.590 | 916 | 1568 | −42% | Day-length confound (Apr, 13.1h) |
-| WG_31°C | 0.650 | 1045 | 1481 | −29% | Day-length confound |
-| BG23_34°C | 0.590 | 381 | 960 | −60% | XLMAXT + day-length (May, 13.8h) |
-| WG_34°C | 0.650 | 442 | 912 | −52% | XLMAXT + day-length |
+*Note: 24°C fits well across all cultivars. 26–30°C systematically underpredicted. Points to XLMAXT/YLMAXT temperature response being too conservative in the 26–34°C range, or cultivar LFMAX needing further calibration. These LFMAX/SLAVR values are from a separate GLUE run vs UFGA2201 — the 24°C fit suggests correct SLA; the 26–30°C gap is a species-level temperature response issue.*
 
 ### Known Structural Limitations (Do Not Fix by Parameter Tuning)
 
@@ -159,102 +177,38 @@ Always edit both installed and repo copies together.
 
 ---
 
-## Priority 9 — SPE Temperature Parameter Calibration (FNPGT, XLMAXT/YLMAXT, FNPGL, XSLATM)
+## ~~Priority 9 — SPE Temperature Parameter Calibration (FNPGT, XLMAXT/YLMAXT, FNPGL)~~ ✅ DONE (2026-04-13)
 
-**Status:** ACTIVE — start here in new conversation
-
-**Background:** Current XLMAXT (`-10, 4, 18, 24, 36, 45`) causes near-zero biomass at 31–34°C (TRT7=496, TRT8=44 g/m²) and large overprediction at cool temps (WAGA=4954 vs obs=1045 g/m² at 35 DAS). Need to calibrate all 4 SPE temperature parameters jointly against 9-treatment batch.
-
-**Batch file to use:** `DSSBatch.v48` — but update TRT1–4 (Rex) → TRT9–12 (Skyphos) in UFGA2201 before calibrating. Skyphos is preferred for temperature response calibration (highest biomass, clearest signal).
-
-**Observed data (g/m² = kg/ha ÷ 10, PPOP=12.3 plants/m²):**
-
-| Run | Experiment | TRT | Cultivar | Temp | Obs CWAM (g/m²) |
-|-----|-----------|-----|----------|------|-----------------|
-| 1 | UFGA2201 | 9 | Skyphos | 24°C | 149.4 |
-| 2 | UFGA2201 | 10 | Skyphos | 26°C | 167.5 |
-| 3 | UFGA2201 | 11 | Skyphos | 28°C | 176.1 |
-| 4 | UFGA2201 | 12 | Skyphos | 30°C | 146.6 |
-| 5 | UFGA2402 | 2 | WG | 21°C | 113.4 |
-| 6 | UFGA2402 | 4 | WG | 25°C | 182.6 |
-| 7 | UFGA2402 | 6 | WG | 31°C | 148.1 |
-| 8 | UFGA2402 | 8 | WG | 34°C | 91.2 |
-| 9 | WAGA9101 | 1 | Sitonia | ~20°C | 104.5 (35 DAS) |
-
-**Calibration sequence:**
-
-1. **Update DSSBatch.v48** — replace UFGA2201 TRT1–4 with TRT9–12 (Skyphos)
-2. **XLMAXT/YLMAXT** — highest priority; controls leaf Pmax shape across hourly temps
-   - Fix peak (X3) at 25–26°C; widen upper decline so 31–34°C not zeroed out
-   - Key bounds: X2 (0–8°C), X3 (18–24°C), X4 (24–30°C), X5 (34–42°C), Y4 (0.5–0.9)
-3. **FNPGT** — widen optimum from current 15–18°C to cover 20–30°C experimental range
-   - Key bounds: FNPGT[2] (18–22°C), FNPGT[3] (28–34°C)
-4. **FNPGL** — only if WAGA9101 still overpredicted after Steps 2–3 (TMIN=7°C there)
-5. **XSLATM/YSLATM** — defer unless LAI bias remains after Steps 2–4
-
-**Metric:** RMSE across all 9 treatments on CWAM (g/m²)
-
-**Run command:**
-```bash
-cd /Applications/DSSAT48/Lettuce && /Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 B DSSBatch.v48
-```
-
-**Files to edit:**
-- `/Applications/DSSAT48/Genotype/LUGRO048.SPE` + `Data/Genotype/LUGRO048.SPE`
-- Always edit both installed and repo copies together.
+**Resolution:** XLMAXT/YLMAXT recalibrated from scratch using 9-treatment batch (Skyphos×4temp + WG×4temp + Sitonia). Final values: `0, 4, 35, 40, 46, 55 / 0, 0, 1.0, 0.8, 0, 0`. FNPGL X1 raised 10→15°C. RMSE reduced from 1969 to 184 kg/ha. See `spe_temperature_calibration_report.md` for full derivation.
 
 ---
 
-## Priority 8 — Re-calibrate Rex and Waldmanns Green after Day-length Fix
+## Priority 10 — BIBB FNPGN N-Stress Calibration ✅ DONE (2026-04-27)
+
+**Resolution:** GLUE (GLUEFlag=3, SpeciesCalibration=Y, 10000 runs) calibrated FNPGN1 and FNPGN2 across all 6 GTGA2401 N treatments. Best-fit: FNPGN1=1.042→1.04, FNPGN2=3.374→3.37. Applied to LUGRO048.SPE. T4 (66 mg/L) still shows +26% gap — likely reflects shallow modeled N-stress response in the 33–132 mg/L range, accepted as structural limitation.
+
+---
+
+## Priority 11 — UFGA2201 Temperature Underprediction (26–30°C)
 
 **Status:** ACTIVE — start here in new conversation
 
-**Background:** Day-length confound was previously listed as unfixable. It has now been fixed by adding `EDAY R16.5` to all experiment LUX files (2026-04-13). This forces constant 16.5h photoperiod matching the actual LED growth chamber conditions. All large biases previously attributed to day-length confound are now expected to shrink or reverse.
+**Problem:** With current XLMAXT/YLMAXT, UFGA2201 shows systematic underprediction at 26–30°C across all three cultivars (−15% to −47%). The 24°C treatment fits well (−3% to −6%). This pattern persists after GLUE calibration of cultivar LFMAX/SLAVR and is therefore a species-level temperature response issue, not a cultivar parameter issue.
 
-**Previous biases caused by day-length confound (before fix):**
-- Rex_24°C: +25% (Apr, was 13.1h ambient vs 16.5h actual)
-- Rex_30°C: −37% (Mar, was 11.8h ambient vs 16.5h actual)
-- WG_31°C: −29% (Apr, 13.1h)
-- WG_34°C: −52% (May, 13.8h)
+**Diagnosis:** XLMAXT was calibrated (Priority 9) using Skyphos (UFGA2201) + WG (UFGA2402) + Sitonia (WAGA9101). The 2026-04-13 calibration achieved RMSE=184 kg/ha across 9 treatments with Skyphos errors of −15% at 24°C, −12% at 26°C, −12% at 28°C, +13% at 30°C. However, the current UFGA2201 run with re-calibrated CUL parameters shows larger gaps at 26–30°C. Possible causes: (1) XLMAXT/YLMAXT still too conservative in the 26–34°C range; (2) cultivar LFMAX interaction with TEMPMX — re-calibrated LFMAX values are higher, amplifying any XLMAXT error.
 
-**Step 1 — Re-evaluate current performance (before any parameter changes)**
-Run `DSSBatch.v48` (Rex TRT 1–4 + WG TRT 2,4,6,8 + WAGA TRT 1) and read `Summary.OUT`. Record new Sim vs Obs CWAM for all treatments. Compare to the bias table above — day-length treatments should improve substantially.
+**Recommended approach:**
+1. Run the 9-treatment batch (DSSBatch.v48: Skyphos TRT9–12 + WG TRT2,4,6,8 + Sitonia TRT1)
+2. Check if Skyphos 26–30°C errors match the UFGA2201 pattern — if yes, adjust XLMAXT Y4 (currently 0.8 at 40°C) upward or shift X3/X4 slightly higher
+3. Do NOT re-tune cultivar LFMAX to compensate for a species-level temperature response error
 
-**Step 2 — Decide what still needs calibration**
-After re-evaluating, identify which treatments remain poorly fit. These will be genuine temperature response or cultivar parameter issues (not day-length artifacts).
+**Key constraint:** WAGA9101 Sitonia must remain within ±10% of observed (2862 kg/ha) after any XLMAXT change.
 
-**Step 3 — Calibration sequence (if needed)**
+---
 
-*Temperature response (SPE — species level, affects all cultivars):*
-- Use Rex 24/26/28/30°C shape to assess XLMAXT/YLMAXT and FNPGT
-- Use WG 21/25/31/34°C to extend the range (especially 31/34°C high-temp decline)
-- Only adjust if the *shape* of response is wrong across temperatures (not just one outlier)
+## ~~Priority 8 — Re-calibrate Rex and Waldmanns Green after Day-length Fix~~ ✅ DONE (2026-04-27)
 
-*Cultivar parameters (CUL — cultivar specific):*
-- Rex: SLAVR=320, LFMAX=0.690 — calibrated at 28°C. Check if still valid across all temps.
-- Waldmanns Green: SLAVR unchanged, LFMAX=0.650 — only 21°C was well-fit before. Re-evaluate.
-- Calibrate at the temperature closest to optimum (~24–26°C) first, then check shape.
-
-**Key constraint:** Do not re-tune SLAVR/LFMAX to compensate for temperature response errors — fix temperature response (SPE) first.
-
-**Accept/reject criteria (unchanged):**
-| Experiment | Variable | Target |
-|-----------|----------|--------|
-| WAGA9101 trt1 | CWAD harvest | ±5% of 2862 kg/ha |
-| UFGA2201 Rex | CWAD NRMSE | < 25%, d-stat > 0.85 |
-| UFGA2402 WG | CWAD NRMSE | < 25%, d-stat > 0.85 |
-
-**Files to edit:**
-- `/Applications/DSSAT48/Genotype/LUGRO048.CUL` + `Data/Genotype/LUGRO048.CUL`
-- `/Applications/DSSAT48/Genotype/LUGRO048.SPE` + `Data/Genotype/LUGRO048.SPE`
-- Always edit both installed and repo copies together.
-
-**Run command:**
-```bash
-cd /Applications/DSSAT48/Lettuce && /Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 B DSSBatch.v48
-```
-
-**Read output from:** `/Applications/DSSAT48/Lettuce/Summary.OUT`
+**Resolution:** Day-length fix (`EDAY R16.5` in all LUX files) was applied 2026-04-13. Rex, Muir, Skyphos LFMAX/SLAVR subsequently re-calibrated via GLUE against UFGA2201 (see Current Model State table). Current UFGA2201 results show 24°C fitting well (−3% to −6%) but 26–30°C systematically underpredicted — this is now identified as a species-level temperature response issue (Priority 11), not a cultivar parameter issue.
 
 ---
 

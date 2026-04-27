@@ -76,7 +76,7 @@ C========================================================================
       REAL PROLFG, PRORTG, PROSTG
       REAL NRATIO,NGRVEG,NADRAT,NLEFT
       REAL NGRVGG, NGRLFG,NGRSTG,NGRRTG
-      REAL PCNL, N_CONC_STRESS
+      REAL PCNL
       CHARACTER*1 ISWHYDRO
       REAL PROLFT,PROSTT,PRORTT
       REAL VGRDEM, SUPPN, PGLEFT, LSTR, CSAVEV
@@ -191,8 +191,7 @@ C========================================================================
       FNINLG = 0.0
       FNINRG = 0.0
       FNINSG = 0.0
-      CALL PUT('PLANT','NSTRES_CONC', 1.0)
-      NADLF  = 0.0  
+      NADLF  = 0.0
       NADRT  = 0.0  
       NADST  = 0.0  
       NGRLF  = 0.0  
@@ -291,11 +290,6 @@ C-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       KSTRES = KStres2
 
-!     Debug output for stress factors (print daily)
-      WRITE(*,300) NSTRES, PStres2, KStres2, SUPPN, NDMNEW
-300   FORMAT(' STRESS: N=',F4.2,' P2=',F4.2,' K=',F4.2,
-     &       ' N_sup=',F5.2,' N_dem=',F5.2)
-
 !     Partitioning to roots increases under water, N, P, or K stress
       FRRT  = ATOP * (1.0 - (MIN(TURFAC, NSTRES, PStres2, KStres2))) *
      &                    (1.0 - FRRT) + FRRT
@@ -339,24 +333,10 @@ C     Plants maintain functional balance: reduced root growth -> reduced leaf ex
       IF (ECSTRESS_LEAF .LT. 0.1) ECSTRESS_LEAF = 1.0
       WLDOTN = WLDOTN * ECSTRESS_LEAF
 
-C     Apply tissue N concentration stress in hydroponic mode (Seginer 2003)
-C     Mimics two-stage N stress: stress only when tissue N drops below optimal
-C     PCNL = current leaf N% ; FNINL = optimal N fraction ; FNINLG = minimum N fraction
-C     Stage 1 (mild): PCNL between FNINL*100 and FNINLG*100 -> partial stress
-C     Stage 2 (severe): PCNL <= FNINLG*100 -> full stress, growth stops
-      IF (ISWHYDRO .EQ. 'Y' .AND. FNINL .GT. FNINLG .AND.
-     &    FNINLG .GT. 0.0) THEN
-        N_CONC_STRESS = MIN(1.0, MAX(0.0,
-     &      (PCNL/100.0 - FNINLG) / (FNINL - FNINLG)))
-      ELSE
-        N_CONC_STRESS = 1.0
-      ENDIF
-      CALL PUT('PLANT','NSTRES_CONC', N_CONC_STRESS)
-
       IF (MOD(DAS, 5) .EQ. 0) THEN
-         WRITE(*,'(A,I4,A,F6.3,A,F6.3,A,F8.4)') 'VEGGR DAS:', DAS,
+         WRITE(*,'(A,I4,A,F6.3,A,F8.4)') 'VEGGR DAS:', DAS,
      &    ' ECSTRESS_LEAF:', ECSTRESS_LEAF,
-     &    ' N_CONC_STRESS:', N_CONC_STRESS, ' WLDOTN:', WLDOTN
+     &    ' WLDOTN:', WLDOTN
       ENDIF
 
 C-----------------------------------------------------------------------

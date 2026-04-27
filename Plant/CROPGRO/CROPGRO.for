@@ -111,6 +111,7 @@ C=======================================================================
      &    PAR, PCNL, PCNRT, PCNST, PCTMAT
       REAL PLIGLF, PLIGNO, PLIGRT, PLIGST
       REAL PODWTD, PG, PCLSD, PCCSD, PCNSD, PCNSH, PODWT
+      REAL ECSTRESS_JMAX_NO3  ! EC stress factor for photosynthesis (hydroponic)
       REAL PODNO
       REAL PGAVL, PLTPOP, PCARSH, PCH2O, PLIPSH,
      &    PLIGSD, PLIGSH, PMINSD, PMINSH, POASD, POASH,
@@ -479,11 +480,16 @@ C-----------------------------------------------------------------------
           CALL GET('SPAM', 'AGEFAC', AGEFAC)
           CALL GET('SPAM', 'PG'    , PG)
         ELSEIF (MEPHO .EQ. 'C') THEN
-          CALL PHOTO(CONTROL, 
+          CALL PHOTO(CONTROL,
      &    BETN, CO2, DXR57, EXCESS, KCAN, KC_SLOPE,       !Input
      &    NR5, PAR, PStres1, SLPF, RNITP, SLAAD,          !Input
      &    SWFAC, TDAY, XHLAI, XPOD,                       !Input
      &    AGEFAC, PG)                                     !Output
+        ENDIF
+        IF (ISWHYDRO .EQ. 'Y') THEN
+          CALL GET('HYDRO', 'ECSTRESS_JMAX_NO3', ECSTRESS_JMAX_NO3)
+          IF (ECSTRESS_JMAX_NO3 .GT. 0.0 .AND.
+     &        ECSTRESS_JMAX_NO3 .LT. 1.0) PG = PG * ECSTRESS_JMAX_NO3
         ENDIF
       ENDIF
 
@@ -764,11 +770,16 @@ C-----------------------------------------------------------------------
           CALL GET('SPAM', 'AGEFAC', AGEFAC)
           CALL GET('SPAM', 'PG'    , PG)
         ELSEIF (MEPHO .EQ. 'C') THEN
-          CALL PHOTO(CONTROL, 
+          CALL PHOTO(CONTROL,
      &    BETN, CO2, DXR57, EXCESS, KCAN, KC_SLOPE,       !Input
      &    NR5, PAR, PStres1, SLPF, RNITP, SLAAD,          !Input
      &    SWFAC, TDAY, XHLAI, XPOD,                       !Input
      &    AGEFAC, PG)                                     !Output
+        ENDIF
+        IF (ISWHYDRO .EQ. 'Y') THEN
+          CALL GET('HYDRO', 'ECSTRESS_JMAX_NO3', ECSTRESS_JMAX_NO3)
+          IF (ECSTRESS_JMAX_NO3 .GT. 0.0 .AND.
+     &        ECSTRESS_JMAX_NO3 .LT. 1.0) PG = PG * ECSTRESS_JMAX_NO3
         ENDIF
       ENDIF
 

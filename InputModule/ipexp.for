@@ -948,7 +948,8 @@ C       ModuleData PUT/GET only works reliably with REAL variables
         AUTO_O2_R = 0.0
         IF (AUTO_PH .EQ. 'Y') AUTO_PH_R = 1.0
         IF (AUTO_VOL .EQ. 'Y') AUTO_VOL_R = 1.0
-        IF (AUTO_CONC .EQ. 'Y') AUTO_CONC_R = 1.0
+        IF (AUTO_CONC .EQ. 'Y' .OR. AUTO_CONC .EQ. 'O') AUTO_CONC_R=1.0
+        IF (AUTO_CONC .EQ. 'I') AUTO_CONC_R = 2.0
         IF (AUTO_O2 .EQ. 'Y') AUTO_O2_R = 1.0
         CALL PUT('HYDRO','AUTO_PH',AUTO_PH_R)
         CALL PUT('HYDRO','AUTOPH',AUTO_PH_R)

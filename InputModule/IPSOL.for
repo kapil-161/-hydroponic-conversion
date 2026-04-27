@@ -60,7 +60,7 @@ C     'Y' = maintain constant value from experiment file
 C     Note: AUTO_EC removed - EC always drifts naturally with nutrient uptake
       AUTO_PH = 'N'
       AUTO_VOL = 'N'
-      AUTO_CONC = 'N'  ! Concentration: N=deplete, Y=maintain constant
+      AUTO_CONC = 'N'  ! Concentration: N=deplete, O=replenish to optimum, I=replenish to initial
       AUTO_O2 = 'N'    ! O2: N=dynamic DO2, Y=pin DO2 to initial value
 
       REWIND(LUNEXP)
@@ -114,8 +114,9 @@ C-----------------------------------------------------------------------
 C     Read *HYDROPONIC CONTROL section (optional)
 C     Format: @  L  AUTO_PH  AUTO_VOL  AUTO_CONC
 C             1     Y        Y         N
-C     AUTO_CONC: Y = feed-and-drift: deplete naturally, replenish when EC
-C                    drops below EC_OPT_LOW (refills to EC_OPT_HIGH)
+C     AUTO_CONC: O = replenish to optimum range (EC_OPT_LOW→EC_OPT_HIGH)
+C                I = replenish to initial EC (EC_INIT)
+C                Y = alias for O (backward compatibility)
 C                N = pure depletion, no replenishment
 C     If section not found, use defaults (all 'N' = allow drift)
 C-----------------------------------------------------------------------
@@ -144,10 +145,11 @@ C             Error reading - use defaults (AUTO_O2 may be missing in old files)
               WRITE(*,*) 'IPSOL: Error reading HYDROPONIC CONTROL,',
      &                   ' using defaults (N)'
             ELSE
-C             Validate flags (must be Y or N)
+C             Validate flags
               IF (AUTO_PH .NE. 'Y' .AND. AUTO_PH .NE. 'N') AUTO_PH = 'N'
               IF (AUTO_VOL.NE. 'Y' .AND. AUTO_VOL.NE. 'N') AUTO_VOL= 'N'
-              IF (AUTO_CONC.NE.'Y' .AND. AUTO_CONC.NE.'N') AUTO_CONC='N'
+              IF (AUTO_CONC.NE.'O' .AND. AUTO_CONC.NE.'I' .AND.
+     &            AUTO_CONC.NE.'Y' .AND. AUTO_CONC.NE.'N') AUTO_CONC='N'
               IF (AUTO_O2 .NE. 'Y' .AND. AUTO_O2 .NE. 'N') AUTO_O2 = 'N'
             ENDIF
           ENDIF
@@ -189,7 +191,7 @@ C-----------------------------------------------------------------------
  110  FORMAT (' HYDROPONIC CONTROL SETTINGS:',
      &        /,'   AUTO_PH  : ',A1,' (Y=constant, N=drift)',
      &        /,'   AUTO_VOL : ',A1,' (Y=constant, N=drift)',
-     &        /,'   AUTO_CONC: ',A1,' (Y=feed-and-drift EC, N=deplete)',
+     &        /,'   AUTO_CONC: ',A1,' (O=replenish to optimum, I=replenish to initial, N=deplete)',
      &        /,'   AUTO_O2  : ',A1,' (Y=pin DO2 to initial, N=dynamic)',
      &        /,'   (EC always drifts naturally with nutrient uptake)',/)
 

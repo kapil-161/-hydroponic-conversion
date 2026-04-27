@@ -55,8 +55,6 @@ C=======================================================================
 
 !     Added with P module
       REAL PStres1
-!     N concentration stress (hydroponic mode, from VEGGR via ModuleData)
-      REAL N_CONC_STRESS
 
 !-----------------------------------------------------------------------
 !     Define constructed variable types based on definitions in
@@ -197,9 +195,6 @@ C-----------------------------------------------------------------------
       PG =  PTSMAX * SLPF * PGFAC * TPGFAC * E_FAC *
      &            PGSLW * PRATIO * PGLFMX * SWFAC
 
-!     Apply tissue N concentration stress to PG (hydroponic mode, Seginer 2003)
-      CALL GET('PLANT','NSTRES_CONC', N_CONC_STRESS)
-      IF (N_CONC_STRESS .LT. 1.0) PG = PG * N_CONC_STRESS
 
 !From WDB (chp 10/21/03):
 !        PG = PG * MIN(SWFAC ,2*(1-SATFAC) )

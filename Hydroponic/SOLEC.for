@@ -55,8 +55,10 @@ C     Variables for EC/nutrient calculation
       LOGICAL EC_PROVIDED, NUTRIENTS_PROVIDED
 
 C     Feed-and-drift management
-      REAL AUTO_CONC_R   ! Auto concentration flag (1.0=Y feed-and-drift, 0.0=N deplete)
-      REAL FEED_SCALE    ! Scale factor to replenish concentrations to EC_OPT_HIGH
+      REAL AUTO_CONC_R   ! Auto concentration flag (numeric: 0=N, 1=O optimum, 2=I initial)
+      CHARACTER*1 AUTO_CONC_MODE  ! 'N'=deplete, 'O'=replenish to optimum, 'I'=replenish to initial
+      REAL FEED_SCALE    ! Scale factor to replenish nutrient concentrations
+      REAL EC_FEED_TARGET ! EC target for replenishment (EC_OPT_HIGH or EC_INIT)
 
 C     EC Stress variables - ballast ions (Na, Cl)
       REAL NA_CONC       ! Sodium concentration (mg/L or mol/m3)
@@ -85,9 +87,9 @@ C     EC Stress parameters for EC-based stress (high AND low)
       REAL EC_STRESS_HIGH ! Stress factor from high EC (>EC_OPT_HIGH)
       REAL EC_STRESS_TOTAL ! Combined EC stress factor (0-1)
 
-C     EC threshold fractions and stress curve params — read from SPE
-      REAL EC_FRAC_LOW   ! Fraction of EC_INIT for replenish trigger
-      REAL EC_FRAC_HIGH  ! Fraction of EC_INIT for replenish target
+C     EC threshold absolutes and stress curve params — read from SPE
+      REAL EC_ABS_LOW    ! Absolute lower bound of optimal EC range (dS/m)
+      REAL EC_ABS_HIGH   ! Absolute upper bound of optimal EC range (dS/m)
       REAL EC_STRESS_MIN ! Minimum stress factor at EC=0 (low-EC curve)
       REAL EC_STRESS_SLP ! Slope of low-EC linear stress curve
       REAL EC_DECAY_K    ! Exponential decay constant for high-EC stress
@@ -116,8 +118,10 @@ C     File reading for SPE parameters
       INTEGER DYNAMIC
       SAVE EC_INIT, NO3_INIT, NH4_INIT, P_INIT, K_INIT, SOLVOL_INIT
       SAVE C_NA0_5, K_INHIB_NO3, K_INHIB_K, K_INHIB_P
-      SAVE EC_OPT_LOW, EC_OPT_HIGH, AUTO_CONC_R
-      SAVE EC_FRAC_LOW, EC_FRAC_HIGH, EC_STRESS_MIN, EC_STRESS_SLP
+      SAVE EC_OPT_LOW, EC_OPT_HIGH, AUTO_CONC_R, AUTO_CONC_MODE
+      REAL EC_CALC_INIT  ! Formula-derived EC at initialization (dS/m)
+      SAVE EC_CALC_INIT
+      SAVE EC_ABS_LOW, EC_ABS_HIGH, EC_STRESS_MIN, EC_STRESS_SLP
       SAVE EC_DECAY_K
 
 C-----------------------------------------------------------------------
@@ -154,7 +158,7 @@ C-----------------------------------------------------------------------
         IF (FOUND_LOC .EQ. 0) CALL ERROR('SOLEC ',42,FILECC_LOC,0)
         LNUM_TMP = 0
         CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
-        READ(C80_TMP,*,IOSTAT=ERR_LOC) EC_FRAC_LOW, EC_FRAC_HIGH
+        READ(C80_TMP,*,IOSTAT=ERR_LOC) EC_ABS_LOW, EC_ABS_HIGH
         IF (ERR_LOC .NE. 0) CALL ERROR('SOLEC ',ERR_LOC,FILECC_LOC,0)
         CALL IGNORE(LUNCRP_LOC, LNUM_TMP, ISECT_TMP, C80_TMP)
         READ(C80_TMP,*,IOSTAT=ERR_LOC) EC_STRESS_MIN, EC_STRESS_SLP,
@@ -178,9 +182,15 @@ C       If not set in experiment file, will default to 0.0
         CALL GET('HYDRO','NA_CONC',NA_CONC)
         CALL GET('HYDRO','CL_CONC',CL_CONC)
 
-C       Get AUTO_CONC flag: Y=feed-and-drift, N=pure depletion
+C       Get AUTO_CONC flag: O=replenish to optimum, I=replenish to initial, N=deplete
         CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
-        IF (AUTO_CONC_R .LT. 0.5) AUTO_CONC_R = 0.0
+        IF (AUTO_CONC_R .GT. 1.5) THEN
+          AUTO_CONC_MODE = 'I'   ! 2.0 => initial EC mode
+        ELSE IF (AUTO_CONC_R .GT. 0.5) THEN
+          AUTO_CONC_MODE = 'O'   ! 1.0 => optimum EC mode
+        ELSE
+          AUTO_CONC_MODE = 'N'   ! 0.0 => no replenishment
+        ENDIF
 
 C       Note: AUTO_EC removed - EC always drifts naturally
 
@@ -286,6 +296,7 @@ C         Use 0.0 for any missing nutrients (-99)
             WRITE(*,*) '  Calculated from nutrients=',EC_CALC,' dS/m'
             WRITE(*,*) '  Using provided EC, nutrients as-is'
           ENDIF
+          EC_CALC_INIT = EC_CALC  ! formula-derived EC from initial nutrients
         ENDIF
 
 C-----------------------------------------------------------------------
@@ -295,12 +306,9 @@ C       APPROACH: Use total EC deviation from optimal range
 C       This is simpler and more practical than Na-based stress
 C       Works even when Na concentration is not measured
 C-----------------------------------------------------------------------
-C       Optimal EC range: derived from EC_TARGET so the model works for any
-C       experiment recipe, not just those near 1.5 dS/m.
-C       Feed-and-drift: replenish when EC drops to 85% of target; refill to 115%.
-C       Stress thresholds: below 70% of target is deficiency; above 200% is toxicity.
-        EC_OPT_LOW  = EC_INIT * EC_FRAC_LOW   ! replenish trigger
-        EC_OPT_HIGH = EC_INIT * EC_FRAC_HIGH  ! replenish target
+C       Optimal EC range: fixed absolute thresholds from SPE (dS/m), independent of EC_INIT
+        EC_OPT_LOW  = EC_ABS_LOW
+        EC_OPT_HIGH = EC_ABS_HIGH
         IF (EC_OPT_LOW  .LT. 0.1) EC_OPT_LOW  = 0.1
         IF (EC_OPT_HIGH .LT. 0.2) EC_OPT_HIGH = 0.2
 
@@ -308,6 +316,7 @@ C       Na stress params (C_NA0_5, K_INHIB_NO3, K_INHIB_K, K_INHIB_P) read from 
 
         EC_TARGET = EC_INIT
         EC_CALC = EC_INIT
+        EC_CALC_INIT = EC_CALC  ! updated below if nutrients provided
 
 C       Save initial nutrient concentrations for EC-based management
         NO3_INIT = NO3_CONC
@@ -504,39 +513,46 @@ C       Recalculate EC from post-depletion concentrations
         IF (EC_CALC .LT. 0.1) EC_CALC = 0.1
 
 C-----------------------------------------------------------------------
-C       FEED-AND-DRIFT MANAGEMENT (AUTO_CONC=Y)
-C       When EC drops below lower optimum, replenish to upper optimum.
-C       Simulates grower adding fresh nutrient solution to the reservoir.
+C       FEED-AND-DRIFT MANAGEMENT
+C       AUTO_CONC=O: replenish when EC < EC_OPT_LOW, refill to EC_OPT_HIGH
+C       AUTO_CONC=I: replenish when EC < EC_CALC_INIT*0.99, refill to EC_CALC_INIT
+C         Uses formula-derived EC (not file EC) to avoid mismatch issues
 C-----------------------------------------------------------------------
-        IF (AUTO_CONC_R .GT. 0.5 .AND. EC_CALC .LT. EC_OPT_LOW) THEN
-C         Scale initial concentrations to reach EC_OPT_HIGH.
-C         Base the scale on the EC actually derived from initial nutrients
-C         (not EC_INIT from the experiment file, which may differ from
-C          the formula-derived EC due to unmeasured counter-ions).
-          TotalIons = (NO3_INIT+NH4_INIT+P_INIT+K_INIT) * 2.5
-          EC_RATIO = TotalIons / EC_FACTOR   ! EC formula gives for init conc
-          IF (EC_RATIO .GT. 0.1) THEN
-            FEED_SCALE = EC_OPT_HIGH / EC_RATIO
-          ELSE
-            FEED_SCALE = 1.0
+        IF (AUTO_CONC_MODE .EQ. 'O') THEN
+          EC_FEED_TARGET = EC_OPT_HIGH
+        ELSE IF (AUTO_CONC_MODE .EQ. 'I') THEN
+          EC_FEED_TARGET = EC_CALC_INIT
+        ENDIF
+
+        IF (AUTO_CONC_MODE .NE. 'N') THEN
+          IF ((AUTO_CONC_MODE .EQ. 'O' .AND. EC_CALC .LT. EC_OPT_LOW)
+     &   .OR. (AUTO_CONC_MODE .EQ. 'I' .AND.
+     &         EC_CALC .LT. EC_CALC_INIT * 0.99)) THEN
+C           Scale initial concentrations proportionally to reach feed target.
+            TotalIons = (NO3_INIT+NH4_INIT+P_INIT+K_INIT) * 2.5
+            EC_RATIO = TotalIons / EC_FACTOR
+            IF (EC_RATIO .GT. 0.1) THEN
+              FEED_SCALE = EC_FEED_TARGET / EC_RATIO
+            ELSE
+              FEED_SCALE = 1.0
+            ENDIF
+            NO3_CONC = NO3_INIT * FEED_SCALE
+            NH4_CONC = NH4_INIT * FEED_SCALE
+            P_CONC   = P_INIT   * FEED_SCALE
+            K_CONC   = K_INIT   * FEED_SCALE
+            CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
+            CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
+            CALL PUT('HYDRO','P_CONC',P_CONC)
+            CALL PUT('HYDRO','K_CONC',K_CONC)
+
+C           Recalculate EC after replenishment
+            TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
+            EC_CALC = TotalIons / EC_FACTOR
+
+            WRITE(*,310) AUTO_CONC_MODE, EC_CALC, EC_FEED_TARGET
+ 310        FORMAT(' SOLEC: FEED EVENT (mode=',A1,') => EC=',F5.2,
+     &             ' dS/m (target=',F5.2,' dS/m)')
           ENDIF
-          NO3_CONC = NO3_INIT * FEED_SCALE
-          NH4_CONC = NH4_INIT * FEED_SCALE
-          P_CONC   = P_INIT   * FEED_SCALE
-          K_CONC   = K_INIT   * FEED_SCALE
-          CALL PUT('HYDRO','NO3_CONC',NO3_CONC)
-          CALL PUT('HYDRO','NH4_CONC',NH4_CONC)
-          CALL PUT('HYDRO','P_CONC',P_CONC)
-          CALL PUT('HYDRO','K_CONC',K_CONC)
-
-C         Recalculate EC after replenishment
-          TotalIons = (NO3_CONC + NH4_CONC + P_CONC + K_CONC) * 2.5
-          EC_CALC = TotalIons / EC_FACTOR
-
-          WRITE(*,310) EC_OPT_LOW, EC_OPT_HIGH, EC_CALC
- 310      FORMAT(' SOLEC: FEED EVENT - EC below',F4.2,' dS/m,',
-     &           ' replenished to target',F4.2,' dS/m',
-     &           ' => EC=',F5.2,' dS/m')
         ENDIF
 
 C       Calculate EC deviation from target for monitoring
