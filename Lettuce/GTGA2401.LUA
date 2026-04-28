@@ -8,14 +8,16 @@
 !   5 = 132 mg N/L (100% MSS) — 6 = 264 mg N/L (200% MSS)
 ! CWAM = shoot dry weight at harvest (kg/ha) = DW(g/plant) x 16 pl/m2 x 10
 ! FWAM = shoot fresh weight at harvest (kg/ha) = FW(g/plant) x 16 pl/m2 x 10
-! Peak biomass at 100% MSS (Trt 5): FW=250.7g, DW=12.1g; 200% MSS shows inhibition
-! CWAM = DW(g/plant) x 16 pl/m2 x 10 = kg/ha; Source: Sharkey 2024 Table 3
-! T1: 3.4g x 160=544; T2: 5.0x160=800; T3: 5.7x160=912; T4: 8.5x160=1360; T5: 12.1x160=1936; T6: 10.4x160=1664
-! FWAM: FW(g/plant) x 160; FW from Sharkey Table 3 (T5 confirmed 250.7g)
+! DW from Sharkey 2024 Table 3 (bottom row, DAT32):
+! T1: 1.96g x 160=313.6; T2: 3.00x160=480.0; T3: 2.50x160=400.0
+! T4: 4.42x160=707.2; T5: 12.10x160=1936.0; T6: 5.10x160=816.0
+! FW from Sharkey 2024 Table 3 (top row, DAT32):
+! T1: 32.57x160=5211.2; T2: 56.62x160=9059.2; T3: 47.73x160=7636.8
+! T4: 92.53x160=14804.8; T5: 250.73x160=40116.8; T6: 74.11x160=11857.6
 @TRNO     DATE    CWAM    FWAM
-     1   23046   544.0   5216.0
-     2   23046   800.0   9056.0
-     3   23046   912.0  10624.0
-     4   23046  1360.0  18192.0
-     5   23046  1936.0  40112.0
-     6   23046  1664.0  19216.0
+     1   23046   313.6   5211.2
+     2   23046   480.0   9059.2
+     3   23046   400.0   7636.8
+     4   23046   707.2  14804.8
+     5   23046  1936.0  40116.8
+     6   23046   816.0  11857.6

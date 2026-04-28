@@ -28,33 +28,33 @@ Controlled Environment Growth Chamber
 
 *FIELDS
 @L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
- 1 UFGB0001 UFGB2401   -99   -99   -99   -99   -99   -99 -99    -99         -99 Hydroponic NFT Chamber
+ 1 UFGB0001 DCHO2402   -99   -99   -99   -99   -99   -99 -99    -99         -99 Hydroponic NFT Chamber
 @L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
  1             -99             -99       -99                50   -99   -99   -99   -99   -99
 
 *INITIAL CONDITIONS
 @C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
- 1    LU 24347   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t1=21.25C g3 transplanted Dec12-2024
- 2    LU 24347   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t1=21.25C g3 transplanted Dec12-2024
- 3    LU 25031   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t2=24.75C g6 transplanted Jan31-2025
- 4    LU 25031   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t2=24.75C g6 transplanted Jan31-2025
- 5    LU 25108   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t3=30.75C g9 transplanted Apr18-2025
- 6    LU 25108   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t3=30.75C g9 transplanted Apr18-2025
- 7    LU 25143   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t4=33.75C g12 transplanted May23-2025
- 8    LU 25143   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t4=33.75C g12 transplanted May23-2025
+ 1    LU 24001   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t1=21.25C g3 transplanted Dec12-2024
+ 2    LU 24001   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t1=21.25C g3 transplanted Dec12-2024
+ 3    LU 24043   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t2=24.75C g6 transplanted Jan31-2025
+ 4    LU 24043   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t2=24.75C g6 transplanted Jan31-2025
+ 5    LU 24085   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t3=30.75C g9 transplanted Apr18-2025
+ 6    LU 24085   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t3=30.75C g9 transplanted Apr18-2025
+ 7    LU 24127   -99   -99     1     1   -99   -99   -99   -99   -99   -99 BG23 t4=33.75C g12 transplanted May23-2025
+ 8    LU 24127   -99   -99     2     1   -99   -99   -99   -99   -99   -99 WG   t4=33.75C g12 transplanted May23-2025
 
 *PLANTING DETAILS
 ! PPOP=16 plants/m2, PLRS=25cm row spacing (25x25cm = 16/m2), PAGE=14 days seedling age at transplant
 ! PLWT = variety-specific dry weight at DAS14 (from biomass_complete_dataset.csv)
 @P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
- 1 24347   -99    16    16     T     R    25     0     5    39    14    22   -99     3                        BG23 t1 Transplant Dec12-2024 g3 (DW 39mg)
- 2 24347   -99    16    16     T     R    25     0     5    28    14    22   -99     3                        WG   t1 Transplant Dec12-2024 g3 (DW 28mg)
- 3 25031   -99    16    16     T     R    25     0     5    61    14    25   -99     3                        BG23 t2 Transplant Jan31-2025 g6 (DW 61mg)
- 4 25031   -99    16    16     T     R    25     0     5    43    14    25   -99     3                        WG   t2 Transplant Jan31-2025 g6 (DW 43mg)
- 5 25108   -99    16    16     T     R    25     0     5    23    14    31   -99     3                        BG23 t3 Transplant Apr18-2025 g9 (DW 23mg)
- 6 25108   -99    16    16     T     R    25     0     5    19    14    31   -99     3                        WG   t3 Transplant Apr18-2025 g9 (DW 19mg)
- 7 25143   -99    16    16     T     R    25     0     5    24    14    34   -99     3                        BG23 t4 Transplant May23-2025 g12 (DW 24mg)
- 8 25143   -99    16    16     T     R    25     0     5    21    14    34   -99     3                        WG   t4 Transplant May23-2025 g12 (DW 21mg)
+ 1 24001   -99    16    16     T     R    25     0     5    39    14    22   -99     3                        BG23 t1 Transplant Dec12-2024 g3 (DW 39mg)
+ 2 24001   -99    16    16     T     R    25     0     5    28    14    22   -99     3                        WG   t1 Transplant Dec12-2024 g3 (DW 28mg)
+ 3 24043   -99    16    16     T     R    25     0     5    61    14    25   -99     3                        BG23 t2 Transplant Jan31-2025 g6 (DW 61mg)
+ 4 24043   -99    16    16     T     R    25     0     5    43    14    25   -99     3                        WG   t2 Transplant Jan31-2025 g6 (DW 43mg)
+ 5 24085   -99    16    16     T     R    25     0     5    23    14    31   -99     3                        BG23 t3 Transplant Apr18-2025 g9 (DW 23mg)
+ 6 24085   -99    16    16     T     R    25     0     5    19    14    31   -99     3                        WG   t3 Transplant Apr18-2025 g9 (DW 19mg)
+ 7 24127   -99    16    16     T     R    25     0     5    24    14    34   -99     3                        BG23 t4 Transplant May23-2025 g12 (DW 24mg)
+ 8 24127   -99    16    16     T     R    25     0     5    21    14    34   -99     3                        WG   t4 Transplant May23-2025 g12 (DW 21mg)
 
 *IRRIGATION AND WATER MANAGEMENT
 @I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
@@ -88,20 +88,20 @@ Controlled Environment Growth Chamber
 ! t3: day=33.25->33C, night=28.25->28C
 ! t4: day=36.25->36C, night=31.25->31C
 @E ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
- 1 24347 R18.0 R10.8 R  24 R  19 A 0.0 R 405 A   0 A   0 t1_21.25C_g3_Dec2024
- 2 25031 R18.0 R10.8 R  27 R  22 A 0.0 R 635 A   0 A   0 t2_24.75C_g6_Jan2025
- 3 25108 R18.0 R10.8 R  33 R  28 A 0.0 R 545 A   0 A   0 t3_30.75C_g9_Apr2025
- 4 25143 R18.0 R10.8 R  36 R  31 A 0.0 R 494 A   0 A   0 t4_33.75C_g12_May2025
+ 1 24001   -99   -99   -99   -99 A 0.0 R 405 A   0 A   0 t1_21.25C_g3_Dec2024
+ 2 24043   -99   -99   -99   -99 A 0.0 R 635 A   0 A   0 t2_24.75C_g6_Jan2025
+ 3 24085   -99   -99   -99   -99 A 0.0 R 545 A   0 A   0 t3_30.75C_g9_Apr2025
+ 4 24127   -99   -99   -99   -99 A 0.0 R 494 A   0 A   0 t4_33.75C_g12_May2025
 
 *HARVEST DETAILS
 ! All harvests at DAS 21 from transplanting (= DAS 35 from seeding)
 ! Final biomass (g FW/plant): t1 BG=182.5 WG=149.2, t2 BG=245.6 WG=225.7
 !                              t3 BG=157.0 WG=146.7,  t4 BG=68.1  WG=66.5
 @H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
- 1 25002 GS000     C     A   -99   -99 t1 Harvest DAS35 Jan02-2025 g3
- 2 25052 GS000     C     A   -99   -99 t2 Harvest DAS35 Feb21-2025 g6
- 3 25129 GS000     C     A   -99   -99 t3 Harvest DAS35 May09-2025 g9
- 4 25164 GS000     C     A   -99   -99 t4 Harvest DAS35 Jun13-2025 g12
+ 1 24022 GS000     C     A   -99   -99 t1 Harvest DAS21 Jan22-2025 g3
+ 2 24064 GS000     C     A   -99   -99 t2 Harvest DAS21 Mar05-2025 g6
+ 3 24106 GS000     C     A   -99   -99 t3 Harvest DAS21 Apr16-2025 g9
+ 4 24148 GS000     C     A   -99   -99 t4 Harvest DAS21 May28-2025 g12
 
 *HYDROPONIC SOLUTION
 ! Standard nutrient solution (EC 1.5 dS/m, Hoagland-based); solution temp tracks air temp
@@ -117,11 +117,11 @@ Controlled Environment Growth Chamber
 
 *SIMULATION CONTROLS
 @N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
- 1 GE              1     1     S 24347  2150 DC Lettuce Temp x Variety
+ 1 GE              1     1     S 24001  2150 DC Lettuce Temp x Variety
 @N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
  1 OP              Y     Y     N     Y     Y     N     N     N     M
 @N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
- 1 ME              M     M     E     R     S     L     Y     1     G     S     2
+ 1 ME              H     M     E     R     S     L     Y     1     G     S     2
 @N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
  1 MA              R     N     N     N     R
 @N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
@@ -129,7 +129,7 @@ Controlled Environment Growth Chamber
 
 @  AUTOMATIC MANAGEMENT
 @N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
- 1 PL          24347 25143    40   100    30    40    10
+ 1 PL          24001 24127    40   100    30    40    10
 @N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
  1 IR             30    50   100 GS000 IR001    10     1
 @N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF

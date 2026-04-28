@@ -1,4 +1,4 @@
-*EXP.DETAILS: UFGA2201LU LETTUCE HYDROPONIC NFT - TEMPERATURE X CULTIVAR TEST-jp
+*EXP.DETAILS: UFGA2230LU LETTUCE HYDROPONIC NFT - 30C TEMPERATURE GROUP
 
 *GENERAL
 @PEOPLE
@@ -10,18 +10,9 @@ IhingerHof Research Station
 
 *TREATMENTS                        -------------FACTOR LEVELS------------
 @N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM HS HC
- 1 1 0 0 Rex_24C                  1  1  0  1  1  1  1  0  0  0  1  1  1  1  1
- 2 1 0 0 Rex_26C                  1  1  0  1  2  1  0  0  0  0  2  2  1  2  1
- 3 1 0 0 Rex_28C                  1  1  0  1  3  1  0  0  0  0  3  3  1  3  1
- 4 1 0 0 Rex_30C                  1  1  0  1  4  1  0  0  0  0  4  4  1  4  1
- 5 1 0 0 Muir_24C                 2  1  0  2  1  1  0  0  0  0  1  1  1  1  1
- 6 1 0 0 Muir_26C                 2  1  0  2  2  1  0  0  0  0  2  2  1  2  1
- 7 1 0 0 Muir_28C                 2  1  0  2  3  1  0  0  0  0  3  3  1  3  1
- 8 1 0 0 Muir_30C                 2  1  0  2  4  1  0  0  0  0  4  4  1  4  1
- 9 1 0 0 Skyphos_24C              3  1  0  3  1  1  0  0  0  0  1  1  1  1  1
-10 1 0 0 Skyphos_26C              3  1  0  3  2  1  0  0  0  0  2  2  1  2  1
-11 1 0 0 Skyphos_28C              3  1  0  3  3  1  0  0  0  0  3  3  1  3  1
-12 1 0 0 Skyphos_30C              3  1  0  3  4  1  0  0  0  0  4  4  1  4  1
+ 1 1 0 0 Rex_30C                  1  1  0  1  1  1  0  0  0  0  1  1  1  1  1
+ 2 1 0 0 Muir_30C                 2  1  0  2  1  1  0  0  0  0  1  1  1  1  1
+ 3 1 0 0 Skyphos_30C              3  1  0  3  1  1  0  0  0  0  1  1  1  1  1
 
 *CULTIVARS
 @C CR INGENO CNAME
@@ -37,16 +28,13 @@ IhingerHof Research Station
 
 *INITIAL CONDITIONS
 @C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
- 1    LU 22097   -99   -99     1     1   -99   -99   -99   -99   -99   -99 Hydroponic - Rex
- 2    LU 22097   -99   -99     2     1   -99   -99   -99   -99   -99   -99 Hydroponic - Muir
- 3    LU 22097   -99   -99     3     1   -99   -99   -99   -99   -99   -99 Hydroponic - Skyphos
+ 1    LU 22061   -99   -99     1     1   -99   -99   -99   -99   -99   -99 Hydroponic - Rex
+ 2    LU 22061   -99   -99     2     1   -99   -99   -99   -99   -99   -99 Hydroponic - Muir
+ 3    LU 22061   -99   -99     3     1   -99   -99   -99   -99   -99   -99 Hydroponic - Skyphos
 
 *PLANTING DETAILS
 @P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
- 1 22103   -99  12.3  12.3     T     R    29     0     5     5     7    20   -99     3                        E1_24C_Apr13
- 2 22243   -99  12.3  12.3     T     R    29     0     5     5     7    20   -99     3                        E2_26C_Aug31
- 3 22195   -99  12.3  12.3     T     R    29     0     5     5     7    20   -99     3                        E3_28C_Jul14
- 4 22061   -99  12.3  12.3     T     R    29     0     5     5     7    20   -99     3                        E4_30C_Mar02
+ 1 22061   -99  12.3  12.3     T     R    29     0     5     5     7    20   -99     3                        E4_30C_Mar02
 
 *IRRIGATION (AUTOMATIC)
 @I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
@@ -54,9 +42,7 @@ IhingerHof Research Station
 
 *FERTILIZERS (INORGANIC)
 @F FDATE  FMCD  FACD  FDEP  FAMN  FAMP  FAMK  FAMC  FAMO  FOCD FERNAME
- 1 22108 FE017 AP001     0   5.0   0.5   2.5     0     0 -99   Event1_Apr18
- 1 22115 FE017 AP001     0   4.0   0.4   2.0     0     0 -99   Event2_Apr25
- 1 22122 FE017 AP001     0   4.0   0.4   2.0     0     0 -99   Event3_May02
+ 1    -99   -99   -99   -99   -99   -99   -99     0     0 -99 Not used
 
 *RESIDUES
 @R  RDATE  RCOD  RAMT  RESN  RESP  RESK  RINP  RDEP  RMET RENAME
@@ -71,28 +57,16 @@ IhingerHof Research Station
  1    -99   -99   -99 Not used in hydroponics
 
 *ENVIRONMENT MODIFICATIONS
-! Growth chamber: temp and SRAD from hourly WTH file; CO2 from measurements
-! CO2: measured per experimental group (709/743/706/770 ppm)
 @E  ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
- 1 22061   -99   -99   -99   -99 A 0.0 R 709 A   0 A   0
- 2 22061   -99   -99   -99   -99 A 0.0 R 743 A   0 A   0
- 3 22061   -99   -99   -99   -99 A 0.0 R 706 A   0 A   0
- 4 22061   -99   -99   -99   -99 A 0.0 R 770 A   0 A   0
+ 1 22061   -99   -99   -99   -99 A 0.0 R 800 A  -9 A   0
 
 *HARVEST DETAILS
 @H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
- 1 22131 GS000     C     A   -99   -99 E1_24C_May11
- 2 22271 GS000     C     A   -99   -99 E2_26C_Sep28
- 3 22223 GS000     C     A   -99   -99 E3_28C_Aug11
- 4 22089 GS000     C     A   -99   -99 E4_30C_Mar30
+ 1 22089 GS000     C     A   -99   -99 E4_30C_Mar30
 
-!Modification in experiment file for hydroponics settings
 *HYDROPONIC SOLUTION
 @  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC    CHLEN    CHSPC
    1      50.0       1.50     5.75     8.0     20.0       150.0        12.0       40.0      250.0    183.0     15.0
-   2      50.0       1.50     5.75     8.0     20.0       150.0        12.0       40.0      250.0    183.0     15.0
-   3      50.0       1.50     5.75     8.0     20.0       150.0        12.0       40.0      250.0    183.0     15.0
-   4      50.0       1.50     5.75     8.0     20.0       150.0        12.0       40.0      250.0    183.0     15.0
 
 *HYDROPONIC CONTROL
 @  L  AUTO_PH  AUTO_VOL  AUTO_CONC  AUTO_O2
@@ -100,7 +74,7 @@ IhingerHof Research Station
 
 *SIMULATION CONTROLS
 @N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
- 1 GE              1     1     S 22061  2150 NFT Temp x Cultivar Test
+ 1 GE              1     1     S 22061  2150 NFT 30C (Mar transplant)
 @N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
  1 OP              Y     Y     N     Y     Y     N     N     N     M
 @N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
@@ -112,7 +86,7 @@ IhingerHof Research Station
 
 @  AUTOMATIC MANAGEMENT
 @N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
- 1 PL          22055 22055    40   100    30    40    10
+ 1 PL          22062 22062    40   100    30    40    10
 @N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
  1 IR             30    50   100 GS000 IR001    10   -99
 @N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF
@@ -120,4 +94,4 @@ IhingerHof Research Station
 @N RESIDUES    RIPCN RTIME RIDEP
  1 RE            100     1    20
 @N HARVEST     HFRST HLAST HPCNP HPCNR
- 1 HA              0 02001   100     0
+ 1 HA              0 22365   100     0

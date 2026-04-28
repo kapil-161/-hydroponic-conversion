@@ -37,7 +37,7 @@
 
 @VAR#  VRNAME.......... EXPNO   ECO#  CSDL PPSEN EM-FL FL-SH FL-SD SD-PM FL-LF LFMAX SLAVR SIZLF  XFRT WTPSD SFDUR SDPDV PODUR THRSH SDPRO SDLIP
 !Coefficient #                           1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18
-!Calibration                             N     N     P     P     P     P     N     G     G     N     P     G     N     N     N     N     N     N
+!Calibration                             N     N     P     P     P     P     N     N     N     N     P     N     N     N     N     N     N     N
 
 ! MINIMA/MAXIMA updated to encompass all lettuce cultivar entries (vegetative harvest):
 !   EM-FL  : 35-90 ptd   — vegetative harvest (35-40 d) to heading types (80+ d)
@@ -65,14 +65,14 @@ LU0003 SKYPHOS      4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0
 !         Chamber: 21.5C constant, 12h LED DLI=14.69 mol/m2/d, CO2 ambient (~400ppm)
 !         Harvest at DAT32 (DAS46); 6 N-levels (11-264 mg N/L)
 !         Optimal (132 mg N/L): FW=250.7g DW=12.1g per plant at 16pl/m2
-! CALIBRATION STATUS: INITIAL ESTIMATE — needs GLUE calibration against GTGA2401 data
+! CALIBRATION STATUS: GLUE-CALIBRATED 2026-04-27 against GTGA2401 (6 N-level treatments)
 ! ECO#=LU0405 (BUTTERHEAD-NA): warm-adapted, LED chamber; OPTBI=18C, SLOBI=0.035
 ! EM-FL=55: harvest at DAS46 (DAT32) without triggering heading
-! LFMAX=1.381: GLUE-calibrated vs Sharkey 2024 T5 (132 mg N/L) final harvest CWAM
-! SLAVR=319: GLUE-calibrated; reduced from initial 355 toward more compact Bibb leaf
+! LFMAX=1.472: GLUE Round 3 (growth only, N on, all 6 treatments); ambient CO2 (~400ppm)
+! SLAVR=308: GLUE Round 3; DM%~4.8-5.0% consistent with paper
 ! SIZLF=215: medium-large Bibb leaf; FW=250.7g/plant at optimal N
 ! =============================================================================
-LU0301 BIBB         1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 1.381  319. 215.0 0.001 0.003  21.0  1.00  11.0  10.0 0.180 0.020
+LU0301 BIBB         1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 1.472  308. 215.0 0.001 0.003  21.0  1.00  11.0  10.0 0.180 0.020
 
 
 ! =============================================================================

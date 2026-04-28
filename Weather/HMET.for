@@ -62,7 +62,7 @@ C=======================================================================
       REAL CLOUDS, DAYL, DEC,
      &  HS,ISINB,PAR,REFHT,S0N,SRAD,SNDN,SNUP,HSRAD,
      &  TAVG,TDAY,TDEW,TGROAV,TGRODY,TINCR,TMAX,TMIN,HTMAX,HTMIN,
-     &  RH,VPSAT,WINDAV,WINDHT,WINDSP,
+     &  HTDEW,HTDEW_SUM,RH,VPSAT,WINDAV,WINDHT,WINDSP,
      &  XLAT
       PARAMETER (TINCR=24./TS)
 
@@ -71,6 +71,7 @@ C     Initialize
       TAVG = 0.0
       TDAY = 0.0
       NDAY = 0
+      HTDEW_SUM = 0.0
       WINDAV = WINDSP / 86.4 * (REFHT/WINDHT)**0.2
 
 C     Loop to compute hourly weather data.
@@ -88,13 +89,16 @@ C       Calculate sun angles and hourly weather variables.
           CALL HTEMP(
      &      DAYL, HS, SNDN, SNUP, TMAX, TMIN,               !Input
      &      TAIRHR(H))                                      !Output
+          RH = VPSAT(TDEW) / VPSAT(TAIRHR(H)) * 100.0
         ELSE
           CALL fio % get('WTH', YRDOY, H, 'TMAX', HTMAX)
           CALL fio % get('WTH', YRDOY, H, 'TMIN', HTMIN)
+          CALL fio % get('WTH', YRDOY, H, 'TDEW', HTDEW)
           TAIRHR(H) = (HTMAX + HTMIN) / 2
+          RH = VPSAT(HTDEW) / VPSAT(TAIRHR(H)) * 100.0
+          HTDEW_SUM = HTDEW_SUM + HTDEW
         ENDIF
-        
-        RH = VPSAT(TDEW) / VPSAT(TAIRHR(H)) * 100.0
+
         RHUMHR(H) = MIN(RH,100.0)
 
         CALL HWIND(
@@ -125,7 +129,11 @@ C       Calculate sun angles and hourly weather variables.
         ENDIF
 
       ENDDO
-      
+
+      IF (MEWTH .EQ. 'H' .AND. HTDEW_SUM .GT. -900.0) THEN
+        TDEW = HTDEW_SUM / REAL(TS)
+      ENDIF
+
       TAVG = TAVG / REAL(TS)
       TDAY = TDAY / REAL(NDAY)
 

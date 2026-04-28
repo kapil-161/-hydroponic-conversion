@@ -3,7 +3,7 @@
 !*PHOTOSYNTHESIS PARAMETERS
  40.00 68.00  0.65                         PARMAX,PHTMAX,KCAN
   80.0  2.09 .0105                         CCMP,CCMAX,CCEFF; CO2 EFFECT ON PGCAN
-  1.20  3.50  20.0  20.0   QDR             FNPGN(4),TYPPGN-LEAF N EFFECT ON PG
+  1.04  2.57  20.0  20.0   QDR             FNPGN(4),TYPPGN-LEAF N EFFECT ON PG
   2.00  12.0  28.0  42.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
    0.0   4.0  35.0  40.0  46.0  55.0       XLMAXT (6 VALUES)
    0.0   0.0   1.0   0.8   0.0   0.0       YLMAXT (6 VALUES)
@@ -17,8 +17,8 @@
 !   WAGA9101 TMIN=7C -> CHILL=0.855; chamber treatments TMIN>=18C -> CHILL=1.0 (no effect)
 ! FNPGT widened to (2,12,28,42): inactive for PHOTO=L (leaf option); retained for completeness
  -6.00 15.00  50.0  60.0   QDR             FNPGL(4),TYPPGL-TMIN EFFECT-LEAF PG
- .1460  0.15  0.80   2.0                   PGEFF SCV KDIF, LFANGB
- .0035 .0001 .5000  3.50 1.030             SLWREF,SLWSLO,NSLOPE,LNREF,PGREF
+ .1470  0.15  0.80   2.0                   PGEFF SCV KDIF, LFANGB
+ .0035 .0001 .5000  2.54 1.030             SLWREF,SLWSLO,NSLOPE,LNREF,PGREF
 
    0.0  .001  .002  .003 .0035  .004  .005  .006  .008  .010  XPGSLW(1-10)
   .162  .679  .867  .966 1.000 1.027 1.069 1.100 1.141 1.167  YPGSLW(1-10)
@@ -64,8 +64,8 @@
   0.70                                FRLFMX
 
 !*LEAF GROWTH PARAMETERS
-  420.  280.  50.0   5.0   0.0        FINREF,SLAREF,SIZREF,VSSINK,EVMODC
-  400. 200.0 -.048  1.50  1.00        SLAMAX,SLAMIN,SLAPAR,TURSLA,NSLA
+  600.  296.  50.0   5.0   0.0        FINREF,SLAREF,SIZREF,VSSINK,EVMODC
+  377. 200.0 -.048  1.50  1.00        SLAMAX,SLAMIN,SLAPAR,TURSLA,NSLA
 
    0.0   1.0   2.0   3.0   4.0   5.0  XVGROW(1-6), VSTAGE VALUES
    0.0  13.0  32.0  59.0  97.0 151.0  YVREF(1-6), LEAF AREA VALUES,CM2
@@ -162,7 +162,7 @@
   0.0005                             BGALKAL (mol/L background alkalinity of irrigation water)
 
 !*ECSTR HYDROPONIC EC STRESS PARAMETERS
-  0.85  1.15                         EC_FRAC_LOW, EC_FRAC_HIGH (fractions of initial EC for thresholds)
+  1.20  1.80                         EC_ABS_LOW, EC_ABS_HIGH (absolute optimal EC range in dS/m)
   0.30  0.70  0.277                  EC_STRESS_MIN, EC_STRESS_SLOPE, EC_DECAY_K (stress curve params)
   30.0  50.0  0.023  0.0022          C_NA0_5 (mol/m3), K_INHIB_NO3, K_INHIB_K, K_INHIB_P (Na stress)
 
