@@ -59,7 +59,6 @@ C=======================================================================
       CHARACTER*1  MEEVP, MEINF, MEPHO, MESEV, METMP
       CHARACTER*2  CROP
       CHARACTER*6, PARAMETER :: ERRKEY = "SPAM  "
-!      CHARACTER*78 MSG(2)
 
       INTEGER DYNAMIC, L, NLAYR
 
@@ -69,6 +68,7 @@ C=======================================================================
       REAL EF, EM, EO, EP, ES, ET, EVAP
       REAL TRWU, TRWUP, U
       REAL EOS, EOP, WINF, MSALB, ET_ALB
+      REAL ECSTRESS_TRANSP
       REAL XLAT, TAV, TAMP, SRFTEMP
       REAL EORATIO, KSEVAP, KTRANS
 
@@ -112,7 +112,6 @@ C=======================================================================
       TYPE (MulchType)   MULCH
       TYPE (WeatherType) WEATHER
 
-!     Transfer values from constructed data types into local variables.
       CROP    = CONTROL % CROP
       DYNAMIC = CONTROL % DYNAMIC
 
@@ -195,8 +194,7 @@ C=======================================================================
 !     ---------------------------------------------------------
       IF (MEEVP .NE.'Z') THEN   !LPM 02dec14 use values from ETPHOT
         IF (ISWHYDRO .EQ. 'Y') THEN
-!         HYDROPONIC MODE: Use solution temperature instead of soil temperature
-!         Solution temperature is stored in ModuleData, use air temp as proxy if not available
+!         HYDROPONIC MODE: Use air temperature for root zone
           DO L = 1, NLAYR
             ST(L) = TAVG  ! Use average air temperature for root zone
           ENDDO
@@ -557,13 +555,24 @@ C=======================================================================
 !         ACTUAL TRANSPIRATION
 !-----------------------------------------------------------------------
           IF (ISWHYDRO .EQ. 'Y') THEN
-!           HYDROPONIC MODE: Water is unlimited, so actual = potential
-!           EP should equal EOP (demand-based, no water stress)
-!           Don't restrict by XHLAI to avoid chicken-egg problem
+!           Refresh hydroponic EC stress before computing actual
+!           transpiration so today's osmotic penalty affects EP.
+            CALL GET('HYDRO','NO3_CONC',NO3_CONC)
+            CALL GET('HYDRO','NH4_CONC',NH4_CONC)
+            CALL GET('HYDRO','P_CONC',P_CONC)
+            CALL GET('HYDRO','K_CONC',K_CONC)
+            CALL SOLEC(CONTROL, ISWITCH,
+     &        NO3_CONC, NH4_CONC, P_CONC, K_CONC,
+     &        EC_CALC, EC_TARGET)
+!           HYDROPONIC MODE: Water is unlimited but high EC causes osmotic
+!           stress (stomatal closure), reducing actual below potential
+            ECSTRESS_TRANSP = 1.0
+            CALL GET('HYDRO','ECSTRESS_TRANSP',ECSTRESS_TRANSP)
+            IF (ECSTRESS_TRANSP .LT. 1.E-6) ECSTRESS_TRANSP = 1.0
             IF (EOP .GT. 1.E-6) THEN
-              EP = EOP    ! Actual = potential (unlimited water supply)
-              WRITE(*,*) 'HYDRO EP: EOP=',EOP,' EP=',EP,
-     &                   ' (demand-based)'
+              EP = EOP * ECSTRESS_TRANSP
+              WRITE(*,*) 'HYDRO EP: EOP=',EOP,' ECSTRESS_TRANSP=',
+     &                   ECSTRESS_TRANSP,' EP=',EP
             ELSE
               EP = 0.0
               WRITE(*,*) 'HYDRO EP=0: EOP=',EOP

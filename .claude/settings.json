@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/kapilbhattarai/-hydroponic-conversion/build/bin/dscsm048 A GTGA2401.LUX)",
+      "mcp__claude_ai_Scholar_Gateway__semanticSearch",
+      "mcp__claude_ai_PubMed__search_articles"
+    ]
+  }
+}

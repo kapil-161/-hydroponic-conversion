@@ -11,7 +11,7 @@ C
 C  12/22/2025 Created for hydroponic EC management
 C  12/22/2025 Added EC stress factor calculations
 C-----------------------------------------------------------------------
-C  Called from: SPAM or main hydroponic routine
+C  Called from: SPAM
 C
 C-----------------------------------------------------------------------
 
@@ -73,6 +73,7 @@ C     EC Stress factors (0.0 to 1.0, where 1.0 = no stress)
       REAL ECSTRESS_KM_NO3    ! Stress factor for NO3 Km (competitive inhibition)
       REAL ECSTRESS_ROOT      ! Stress factor for root growth (morphological)
       REAL ECSTRESS_LEAF      ! Stress factor for leaf expansion (morphological)
+      REAL ECSTRESS_TRANSP    ! Stress factor for transpiration (osmotic, high EC only)
 
 C     EC Stress parameters for Na-based stress (high EC) — read from SPE
       REAL C_NA0_5       ! Na concentration at 50% growth reduction (mol/m3)
@@ -191,8 +192,6 @@ C       Get AUTO_CONC flag: O=replenish to optimum, I=replenish to initial, N=de
         ELSE
           AUTO_CONC_MODE = 'N'   ! 0.0 => no replenishment
         ENDIF
-
-C       Note: AUTO_EC removed - EC always drifts naturally
 
 C-----------------------------------------------------------------------
 C       DETERMINE WHAT IS PROVIDED AND CALCULATE MISSING VALUES
@@ -355,8 +354,8 @@ C       Store initial stress factors in ModuleData (so they're available immedia
       CASE (RATE)
 C-----------------------------------------------------------------------
 C       Calculate current EC based on ion concentrations.
-C       GET from ModuleData (not argument list) so that fertilizer
-C       additions made by HYDRO_FERT in INTEGR are visible here.
+C       GET from ModuleData (not argument list) so post-depletion
+C       concentrations from the previous day's INTEGR are used.
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','NO3_CONC',NO3_CONC)
         CALL GET('HYDRO','NH4_CONC',NH4_CONC)
@@ -459,18 +458,24 @@ C-----------------------------------------------------------------------
           ECSTRESS_ROOT = 1.0 - (0.5 * C_NA_MOL / C_NA0_5)
           ECSTRESS_ROOT = MAX(0.1, MIN(1.0, ECSTRESS_ROOT))
           ECSTRESS_LEAF = ECSTRESS_ROOT
+C         3. OSMOTIC STRESS - Stomatal closure / transpiration reduction
+C         High Na drives osmotic potential; use EC_STRESS_HIGH as proxy
+          ECSTRESS_TRANSP = EC_STRESS_HIGH
 
         ELSE
 C-----------------------------------------------------------------------
-C         No Na data - use EC-based stress for all factors
+C         No Na data - split EC stress by mechanism:
+C         Low EC (nutrient deficiency) → Jmax, root, leaf growth
+C         High EC (osmotic) → transpiration only
 C-----------------------------------------------------------------------
-          ECSTRESS_JMAX_NO3 = EC_STRESS_TOTAL
-          ECSTRESS_JMAX_NH4 = EC_STRESS_TOTAL
-          ECSTRESS_JMAX_K = EC_STRESS_TOTAL
-          ECSTRESS_JMAX_P = EC_STRESS_TOTAL
+          ECSTRESS_JMAX_NO3 = EC_STRESS_LOW
+          ECSTRESS_JMAX_NH4 = EC_STRESS_LOW
+          ECSTRESS_JMAX_K = EC_STRESS_LOW
+          ECSTRESS_JMAX_P = EC_STRESS_LOW
           ECSTRESS_KM_NO3 = 1.0  ! No competitive effect without Na
-          ECSTRESS_ROOT = EC_STRESS_TOTAL
-          ECSTRESS_LEAF = EC_STRESS_TOTAL
+          ECSTRESS_ROOT = EC_STRESS_LOW
+          ECSTRESS_LEAF = EC_STRESS_LOW
+          ECSTRESS_TRANSP = EC_STRESS_HIGH
         ENDIF
 
 C       Store stress factors in ModuleData for use by other modules
@@ -481,27 +486,23 @@ C       Store stress factors in ModuleData for use by other modules
         CALL PUT('HYDRO','ECSTRESS_KM_NO3',ECSTRESS_KM_NO3)
         CALL PUT('HYDRO','ECSTRESS_ROOT',ECSTRESS_ROOT)
         CALL PUT('HYDRO','ECSTRESS_LEAF',ECSTRESS_LEAF)
-        
-C       Debug: Verify ECSTRESS_ROOT is being stored
-        IF (CONTROL % DAS .LE. 5) THEN
-          WRITE(*,*) 'SOLEC RATE: Stored ECSTRESS_ROOT=',ECSTRESS_ROOT
-        ENDIF
+        CALL PUT('HYDRO','ECSTRESS_TRANSP',ECSTRESS_TRANSP)
 
         WRITE(*,200) NO3_CONC, NH4_CONC, P_CONC, K_CONC,
      &               EC_CALC, EC_TARGET, EC_OPT_LOW, EC_OPT_HIGH,
      &               EC_STRESS_LOW, EC_STRESS_HIGH, EC_STRESS_TOTAL,
-     &               ECSTRESS_ROOT, ECSTRESS_JMAX_NO3
+     &               ECSTRESS_ROOT, ECSTRESS_JMAX_NO3, ECSTRESS_TRANSP
  200    FORMAT(' SOLEC: NO3=',F6.1,' NH4=',F6.1,' P=',F6.1,' K=',F6.1,
      &         ' mg/L',
      &         ' => EC=',F5.2,' dS/m (Target=',F5.2,', Opt=',F4.2,
      &         '-',F4.2,')',/,
      &         '   EC Stress: Low=',F5.3,' High=',F5.3,' Total=',F5.3,
-     &         ' => Root=',F5.3,' Jmax_NO3=',F5.3)
+     &         ' => Root=',F5.3,' Jmax_NO3=',F5.3,' Transp=',F5.3)
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
 C       Re-read post-depletion concentrations from ModuleData
-C       (HYDRO_NUTRIENT/SOLPi/SOLKi INTEGR have already run and depleted)
+C       (HYDRO_NUTRIENT INTEGR has already run and depleted concentrations)
         CALL GET('HYDRO','NO3_CONC',NO3_CONC)
         CALL GET('HYDRO','NH4_CONC',NH4_CONC)
         CALL GET('HYDRO','P_CONC',P_CONC)

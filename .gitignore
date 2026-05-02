@@ -70,3 +70,4 @@ Resources/R*
 __pycache__/
 Papers for data/txt_copies/
 txt_copies/
+*.pdf

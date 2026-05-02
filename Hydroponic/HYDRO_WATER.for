@@ -42,7 +42,6 @@ C     Local variables - all in mm
       REAL SOLVOL_INIT_MM ! Initial solution depth (mm) - for AUTO_VOL
       REAL WATER_ADD_MM   ! Water addition from irrigation (mm/d)
       REAL AUTO_VOL_R     ! Auto volume control flag (1.0=Y, 0.0=N)
-C      REAL AUTO_CONC_R  ! removed - transpiration concentration now always applies
       REAL PLANT_UPTAKE_MM ! Plant water uptake (mm/d) - actual
       REAL PLANT_DEMAND_MM ! Plant water demand (mm/d) - from EP
       REAL SOL_EVAP_MM    ! Solution evaporation (mm/d) - minimal
@@ -200,7 +199,7 @@ C       Update solution depth
 C       CRITICAL: Enforce minimum solution volume to prevent crashes
 C       When volume drops below minimum, plants should experience severe stress
 C       but simulation should continue (growth stops, senescence may occur)
-C       Minimum of 2.0 mm prevents numerical instability in nutrient calculations
+C       Minimum of 5.0 mm prevents numerical instability in nutrient calculations
         IF (SOLVOL_MM .LT. 5.0) THEN
           SOLVOL_MM = 5.0  ! Minimum 5.0 mm (5.0 L/m²)
           WRITE(*,'(A)') ' HYDRO_WATER WARNING: Solution volume at '//

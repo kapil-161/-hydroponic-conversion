@@ -11,7 +11,7 @@ C
 C  Timing: INTEGR phase, before HYDRO_WATER, so added nutrients are
 C  subject to the same transpiration concentration step as existing ions.
 C-----------------------------------------------------------------------
-C  Called : SPAM
+C  Called from: SPAM
 C  Calls  : FertTypeRead (via FertType_mod, only if not yet loaded)
 C=======================================================================
 
@@ -61,8 +61,8 @@ C-----------------------------------------------------------------------
 
       CASE (INTEGR)
 C-----------------------------------------------------------------------
-C       Fertilizer additions only apply when AUTO_CONC=N.
-C       When AUTO_CONC=Y, SOLEC manages replenishment automatically.
+C       Fertilizer additions only apply when AUTO_CONC=N (mode 0).
+C       Modes O (1) and I (2) let SOLEC manage replenishment automatically.
 C-----------------------------------------------------------------------
         CALL GET('HYDRO','AUTO_CONC',AUTO_CONC_R)
         IF (AUTO_CONC_R .GT. 0.5) RETURN

@@ -1,0 +1,119 @@
+*EXP.DETAILS: GTGA2401LU LETTUCE HYDROPONIC NFT - NITROGEN LEVELS (SHARKEY ET AL. 2024)
+
+*GENERAL
+@PEOPLE
+Sharkey A., Altman A., Cohen A.R., Groh T., Igou T.K.S., Ferrarezi R.S., Chen Y.
+@ADDRESS
+Georgia Institute of Technology, Atlanta, GA 30332, USA
+@SITE
+Controlled Environment Growth Chamber - ZipGrow Vertical NFT
+@ PAREA  PRNO  PLEN  PLDR  PLSP  PLAY HAREA  HRNO  HLEN  HARM.........
+    -99   -99   -99   -99   -99   -99   -99   -99   -99   -99
+
+*TREATMENTS                        -------------FACTOR LEVELS------------
+@N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM HS HC
+ 1 1 0 0 N11_Bibb                  1  1  0  1  1  1  0  0  0  0  1  1  1  1  1
+ 2 1 0 0 N25_Bibb                  1  1  0  1  1  1  0  0  0  0  1  1  1  2  1
+ 3 1 0 0 N33_Bibb                  1  1  0  1  1  1  0  0  0  0  1  1  1  3  1
+ 4 1 0 0 N66_Bibb                  1  1  0  1  1  1  0  0  0  0  1  1  1  4  1
+ 5 1 0 0 N132_Bibb                 1  1  0  1  1  1  0  0  0  0  1  1  1  5  1
+ 6 1 0 0 N264_Bibb                 1  1  0  1  1  1  0  0  0  0  1  1  1  6  6
+
+*CULTIVARS
+@C CR INGENO CNAME
+ 1 LU LU0301 Bibb
+
+*FIELDS
+@L ID_FIELD WSTA....  FLSA  FLOB  FLDT  FLDD  FLDS  FLST SLTX  SLDP  ID_SOIL    FLNAME
+ 1 ATGA0001 ATGA2401   -99   -99   -99   -99   -99   -99 -99    -99  -99        Hydroponic_NFT_Chamber
+@L ...........XCRD ...........YCRD .....ELEV .............AREA .SLEN .FLWR .SLAS FLHST FHDUR
+ 1             -99             -99       -99                50   -99   -99   -99   -99   -99
+
+*INITIAL CONDITIONS
+@C   PCR ICDAT  ICRT  ICND  ICRN  ICRE  ICWD ICRES ICREN ICREP ICRIP ICRID ICNAME
+ 1    LU 23014   -99   -99     1     1   -99   -99   -99   -99   -99   -99 Bibb lettuce at transplant (all N treatments)
+
+*PLANTING DETAILS
+! PPOP=16 plants/m2; PLRS=25cm; 8 plants/ZipGrow tower; PAGE=14d from seeding
+! PLWT=2.2mg DW per seedling at DAS14 (transplant; paper: 2.198mg); PENV=21.5C chamber temp
+@P PDATE EDATE  PPOP  PPOE  PLME  PLDS  PLRS  PLRD  PLDP  PLWT  PAGE  PENV  PLPH  SPRL                        PLNAME
+ 1 23014   -99    16    16     T     R    25     0     5   2.2    14  21.5   -99     3                        Bibb transplant nominal Jan14-2023
+
+*IRRIGATION AND WATER MANAGEMENT
+@I  IEFF  IDEP  ITHR  IEPT  IOFF  IAME  IAMT IRNAME
+ 1   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*RESIDUES AND ORGANIC FERTILIZER
+@R RDATE  RCOD  RAMT  RESN  RESP  RESK  RINP  RDEP  RMET RENAME
+ 1   -99   -99   -99   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*CHEMICAL APPLICATIONS
+@C CDATE CHCOD CHAMT  CHME CHDEP   CHT..CHNAME
+ 1   -99   -99   -99   -99   -99   -99 Not used in hydroponics
+
+*TILLAGE AND ROTATIONS
+@T TDATE TIMPL  TDEP TNAME
+ 1   -99   -99   -99 Not used in hydroponics
+
+*ENVIRONMENT MODIFICATIONS
+! Growth chamber: constant 21.5C; 12h LED photoperiod DLI=14.69 mol/m2/d; CO2 ambient (~400ppm, uncontrolled)
+! Temperature overridden to constant 21.5C via EMAX/EMIN; light from ATGA2401 hourly WTH file
+! ATGA2401.WTH: SRAD=0.591 MJ/m2/h for 12h (7-18h), 0 otherwise; TMAX=TMIN=21.5C
+@E  ODATE EDAY  ERAD  EMAX  EMIN  ERAIN ECO2  EDEW  EWIND ENVNAME
+ 1 23014   -99   -99 A21.5 A21.5 A 0.0 R 400 A   0 A   0  Chamber_21.5C_LED
+
+*HARVEST DETAILS
+@H HDATE  HSTG  HCOM HSIZE   HPC  HBPC HNAME
+ 1 23046 GS000     C     A   -99   -99 Final harvest DAT32 DAS46 nominal Feb15-2023
+
+*HYDROPONIC SOLUTION
+! Nitrogen treatments from Sharkey et al. (2024) Agriculture 14:1358, Table 1
+! MSS baseline (100%) = 132.24 mg N/L; other nutrients maintained at MSS unless noted
+! P elevated at low-N treatments for pH balancing (H3PO4 used); K elevated at 200%
+! NO3/NH4 split: <=33mgN=0%NH4; 66mgN=1.8%NH4; 132mgN=5%NH4; 264mgN=27.5%NH4
+! EC calculated from Table 1 ionic concentrations using molar conductivity at 25C
+! Ions: NO3,NH4,H2PO4(pH6),K,Ca,Mg,SO4,Fe; lambda_eq (S.cm2/eq) from std tables
+! TRT1:1.126 TRT2:1.137 TRT3:1.194 TRT4:1.280 TRT5:1.619 TRT6:2.322 dS/m
+@  L    SOLVOL(mm)    EC        PH       DO2      TEMP   NO3_CONC  NH4_CONC    P_CONC    K_CONC    CHLEN    CHSPC
+   1      50.0       1.13     6.00     8.0     21.5        10.6         0.0      154.1      210.0    152.0     19.0
+   2      50.0       1.14     6.00     8.0     21.5        25.3         0.0       93.9      210.0    152.0     19.0
+   3      50.0       1.19     6.00     8.0     21.5        33.1         0.0      109.9      210.0    152.0     19.0
+   4      50.0       1.28     6.00     8.0     21.5        64.9         1.2       31.0      210.0    152.0     19.0
+   5      50.0       1.62     6.00     8.0     21.5       125.6         6.6       31.0      210.0    152.0     19.0
+   6      50.0       2.32     6.00     8.0     21.5       191.7        72.8       31.0      218.4    152.0     19.0
+
+*HYDROPONIC CONTROL
+! AUTO_CONC=O: replenish to optimum EC range (EC_OPT_LOW to EC_OPT_HIGH)
+! AUTO_CONC=I: replenish to initial EC (EC_INIT) - use for EC stress experiments
+! AUTO_O2=N: no active aeration (recirculating pump only, no separate aerator)
+@  L  AUTO_PH  AUTO_VOL  AUTO_CONC  AUTO_O2
+   1     Y        Y         I          Y
+   2     Y        Y         I          Y
+   3     Y        Y         I          Y
+   4     Y        Y         I          Y
+   5     Y        Y         I          Y
+   6     Y        Y         I          Y
+
+*SIMULATION CONTROLS
+@N GENERAL     NYERS NREPS START SDATE RSEED SNAME.................... SMODEL
+ 1 GE              1     1     S 23014  2150 Bibb N-Level NFT Sharkey 2024
+@N OPTIONS     WATER NITRO SYMBI PHOSP POTAS DISES  CHEM  TILL   CO2
+ 1 OP              Y     Y     N     N     N     N     N     N     M
+@N METHODS     WTHER INCON LIGHT EVAPO INFIL PHOTO HYDRO NSWIT MESOM MESEV MESOL
+ 1 ME              H     M     E     R     S     L     Y     1     G     S     2
+@N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
+ 1 MA              R     N     N     N     R
+@N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
+ 1 OU              N     Y     Y     1     Y     Y     Y     Y     N     N     N     N     N     A
+
+@  AUTOMATIC MANAGEMENT
+@N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
+ 1 PL          23014 23014    40   100    30    40    10
+@N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF
+ 1 IR             30    50   100 GS000 IR001    10     1
+@N NITROGEN    NMDEP NMTHR NAMNT NCODE NAOFF
+ 1 NI             30    50    25 FE001 GS000
+@N RESIDUES    RIPCN RTIME RIDEP
+ 1 RE            100     1    20
+@N HARVEST     HFRST HLAST HPCNP HPCNR
+ 1 HA              0 02001   100     0

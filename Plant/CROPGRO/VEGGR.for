@@ -205,7 +205,6 @@ C========================================================================
       WLDOTN = 0.0  
       WRDOTN = 0.0  
       WSDOTN = 0.0  
-!     FO/KJB - Running average
       PNSTRES= 1.0
       XNSTRES= 1.0
 
@@ -332,6 +331,7 @@ C     Plants maintain functional balance: reduced root growth -> reduced leaf ex
       CALL GET('HYDRO','ECSTRESS_LEAF',ECSTRESS_LEAF)
       IF (ECSTRESS_LEAF .LT. 0.1) ECSTRESS_LEAF = 1.0
       WLDOTN = WLDOTN * ECSTRESS_LEAF
+
 
       IF (MOD(DAS, 5) .EQ. 0) THEN
          WRITE(*,'(A,I4,A,F6.3,A,F8.4)') 'VEGGR DAS:', DAS,

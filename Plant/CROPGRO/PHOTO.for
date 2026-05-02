@@ -50,6 +50,7 @@ C=======================================================================
      &  TABEX, TDAY, TPGFAC, XHLAI, XPOD
       REAL E_FAC
 
+
       REAL FNPGN(4), FNPGT(4) 
       REAL XPGSLW(15), YPGSLW(15) 
 
@@ -165,24 +166,6 @@ C-----------------------------------------------------------------------
 !***********************************************************************
 !     Daily integration
 !***********************************************************************
-!      ELSEIF (DYNAMIC .EQ. INTEGR) THEN
-!-----------------------------------------------------------------------
-C     Effect of daylength on daily gross PG, computer by KJB with
-C     stand alone model, and used by Ernie Piper in his dissertation
-C     see page 127 for the equation and conditions.  Nornamized to
-C     about 13 hours where the function is 1.00.  Actually
-C     normalized to a bit higher between 13 and 14 hours.
-C
-C     DLFAC = 1.0 + 0.6128 - 0.01786*DAYL + 0.006875*DAYL*DAYL
-C    &        - 0.000247*DAYL*DAYL*DAYL
-C
-C     Compute daily gross photosynthesis (g CH2O/m2/d)
-C-----------------------------------------------------------------------
-!      PG =  PTSMAX * SLPF * PGFAC * TPGFAC * AGEFCC * PGSLW
-
-!      PG =  PTSMAX * SLPF * PGFAC * TPGFAC * MIN(AGEFCC, PSTRES2) * 
-!     &            PGSLW * PRATIO * PGLFMX * SWFAC
-
 !     CHP 05/07/2004 
 !     AGEFCC can be > 1.0, so don't want to use minimum of 
 !     PStres1 and AGEFCC.  (PStres1 is always 1.0 or below).
@@ -195,10 +178,6 @@ C-----------------------------------------------------------------------
       PG =  PTSMAX * SLPF * PGFAC * TPGFAC * E_FAC *
      &            PGSLW * PRATIO * PGLFMX * SWFAC
 
-
-!From WDB (chp 10/21/03):
-!        PG = PG * MIN(SWFAC ,2*(1-SATFAC) )
-!        PGN = PGN * MIN(SWFAC,2*(1-SATFAC) )
 
 C-----------------------------------------------------------------------
 C     9/27/95 KJB added cumulative water stress effect on PG after R5.
@@ -216,10 +195,6 @@ C     12/19/95 Changed scalar to 0.4.  Too strong for peanut.  Also,
 C     2/6/96 Changed scalar to 0.3.  Too strong for 78RF too. Also,
 C     the problem is really with seed growth potential, not as much on PG.
 C-----------------------------------------------------------------------
-C     NEEDS A FUNCTION.  SEE TMIN AND CHILL IN LEAF SUBROUTINE
-C     AND THEN ADD A SCALAR?
-C       COLDSTR =  COLDSTR + DXR57 * (F(TMIN?)*XPOD / PHTHRS(10)
-C       PG = PG * (1.0 - MAX(0.4*CUMSTR,1.0*COLDSTR))
 C-----------------------------------------------------------------------
       IF (DAS .GT. NR5) THEN
         CUMSTR =  CUMSTR + DXR57 * (1.0 - SWFAC) * XPOD / PHTHRS10

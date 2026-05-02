@@ -112,6 +112,7 @@ C=======================================================================
       REAL PLIGLF, PLIGNO, PLIGRT, PLIGST
       REAL PODWTD, PG, PCLSD, PCCSD, PCNSD, PCNSH, PODWT
       REAL ECSTRESS_JMAX_NO3  ! EC stress factor for photosynthesis (hydroponic)
+      REAL NTOXS               ! NH4 toxicity stress factor (hydroponic)
       REAL PODNO
       REAL PGAVL, PLTPOP, PCARSH, PCH2O, PLIPSH,
      &    PLIGSD, PLIGSH, PMINSD, PMINSH, POASD, POASH,
@@ -490,6 +491,9 @@ C-----------------------------------------------------------------------
           CALL GET('HYDRO', 'ECSTRESS_JMAX_NO3', ECSTRESS_JMAX_NO3)
           IF (ECSTRESS_JMAX_NO3 .GT. 0.0 .AND.
      &        ECSTRESS_JMAX_NO3 .LT. 1.0) PG = PG * ECSTRESS_JMAX_NO3
+          CALL GET('HYDRO','NTOXS',NTOXS)
+          IF (NTOXS .GT. 0.01 .AND. NTOXS .LT. 1.0)
+     &      PG = PG * NTOXS
         ENDIF
       ENDIF
 
@@ -780,12 +784,15 @@ C-----------------------------------------------------------------------
           CALL GET('HYDRO', 'ECSTRESS_JMAX_NO3', ECSTRESS_JMAX_NO3)
           IF (ECSTRESS_JMAX_NO3 .GT. 0.0 .AND.
      &        ECSTRESS_JMAX_NO3 .LT. 1.0) PG = PG * ECSTRESS_JMAX_NO3
+          CALL GET('HYDRO','NTOXS',NTOXS)
+          IF (NTOXS .GT. 0.01 .AND. NTOXS .LT. 1.0)
+     &      PG = PG * NTOXS
         ENDIF
       ENDIF
 
 !***********************************************************************
 !***********************************************************************
-!     DAILY INTEGRATION 
+!     DAILY INTEGRATION
 !***********************************************************************
       ELSE IF (DYNAMIC .EQ. INTEGR .AND. CROP .NE. 'FA') THEN
 !***********************************************************************

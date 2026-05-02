@@ -30,9 +30,7 @@ C***********************************************************************
      &    WTNSHO, WTNSO, WTNST, WTNUP)                    !Input
 
 C-----------------------------------------------------------------------
-      USE ModuleDefs     !Definitions of constructed variable types, 
-                         ! which contain control information, soil
-                         ! parameters, hourly weather data.
+      USE ModuleDefs
       IMPLICIT NONE
       EXTERNAL GETLUN, HEADER
       SAVE
@@ -51,10 +49,7 @@ C-----------------------------------------------------------------------
 
       LOGICAL FEXIST
 
-!     The variable "CONTROL" is of type "ControlType".
       TYPE (ControlType) CONTROL
-
-!     The variable "ISWITCH" is of type "SwitchType".
       TYPE (SwitchType) ISWITCH
 !     ------------------------------------------------------------------
       ISWNIT  = ISWITCH % ISWNIT
@@ -93,10 +88,8 @@ C-----------------------------------------------------------------------
 !       Sum N in all plant components that senesced.
         WTNOFF = WTNLO + WTNSO + WTNRO + WTNSHO + WTNSDO + WTNNO
 
-!       Write output to PlantN.bal
         WRITE (LUNPNC,100)
   100   FORMAT (//,
-!     &    3X,'PLANT COMPONENT  HARVEST   SENESCED  TOTAL  BALANCE',/,
      &    3X,'PLANT COMPONENT  HARVEST     LOST*   TOTAL  BALANCE',/,
      &    3X,'---------------  -------- kg[N]/ha -------  -------')
 
@@ -131,7 +124,7 @@ C-----------------------------------------------------------------------
 
   400   FORMAT (3X, 'Seed N At Planting', T37, F9.2,
      &       /, 3X, 'N2 Fixed',           T37, F9.2,
-     &       /, 3X, 'N Uptake from Soil', T37, F9.2,
+     &       /, 3X, 'N Uptake from Solution', T37, F9.2,
      &       /, 3X, 'TOTAL N',            T46, F9.2,/)
 
         WRITE (LUNPNC,'(A,A)') "   * Lost due to senescence, freeze, ",

@@ -496,15 +496,6 @@ C 24 changed to TS by Bruce Kimball on 3Jul17
       CDMVEG = (PGAVL * XFRT - CDMREP) + CDMVEG
 
 !-----------------------------------------------------------------------
-!       This is from documentation:  check no longer needed?? chp
-!-----------------------------------------------------------------------
-!      CDMVEG = MAX(0.0,(1.-XFRT)*PGAVL)
-!      IF (PGAVL * XFRT .GT. CDMREP) THEN
-!        IF(N .LE. NDLEAF) CDMVEG = (PGAVL * XFRT - CDMREP) + CDMVEG
-!      ENDIF
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
       IF (DAS .EQ. NR1) THEN
 !-----------------------------------------------------------------------
 !     Fraction of growth going to leaves and roots decreases
@@ -662,13 +653,8 @@ C 24 changed to TS by Bruce Kimball on 3Jul17
 !    Total N Demand
 !-----------------------------------------------------------------------
       NDMTOT = NDMREP + NDMVEG + NDMOLD
-      IF (MOD(DAS, 5) .EQ. 0) THEN
-          WRITE(*,*) 'DAS: ', DAS, ' NDMNEW: ', NDMNEW, 
-     &               ' NDMOLD: ', NDMOLD, ' TOTAL: ', NDMTOT
-      ENDIF
 !-----------------------------------------------------------------------
 !    Compute Total Demand for C, and Max. C that Could be Mined
-!     CDMTOT not used - chp
 !-----------------------------------------------------------------------
       CDMTOT = CDMREP + CDMVEG + NDMOLD*RNO3C/0.16 
       GDMSD = GDMSDO

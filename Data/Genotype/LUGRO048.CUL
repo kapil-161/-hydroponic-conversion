@@ -37,7 +37,7 @@
 
 @VAR#  VRNAME.......... EXPNO   ECO#  CSDL PPSEN EM-FL FL-SH FL-SD SD-PM FL-LF LFMAX SLAVR SIZLF  XFRT WTPSD SFDUR SDPDV PODUR THRSH SDPRO SDLIP
 !Coefficient #                           1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18
-!Calibration                             N     N     P     P     P     P     N     N     N     N     P     N     N     N     N     N     N     N
+!Calibration                             N     N     G     G     G     G     G     G     G     G     N     N     N     N     N     N     N     N
 
 ! MINIMA/MAXIMA updated to encompass all lettuce cultivar entries (vegetative harvest):
 !   EM-FL  : 35-90 ptd   — vegetative harvest (35-40 d) to heading types (80+ d)
@@ -53,7 +53,7 @@
 LU0202 WALDMANNS_GR 3       . LU0403 12.50 0.000  60.0   9.5  17.0  28.0  42.0 1.020  344. 186.0 0.001 0.002  21.0  1.00  11.0  10.0 0.180 0.020
 LU0201 BG23-1251    3       . LU0405 12.50 0.000  74.9   9.7  15.9  38.0  40.0 1.029  398. 186.0 0.001 0.002  20.0  1.00  10.0  10.0 0.180 0.020
 LU0203 ROMAINE      3       . LU0405 12.50 0.000  60.0  10.0  18.0  30.0  45.0 1.300  300. 170.0 0.001 0.001  22.0  1.00  12.0  10.0 0.180 0.020
-LU0004 SITONIA      1       . LU0401 12.50 0.000  80.0   9.5  17.0  28.5  45.0 0.406  187. 300.0 0.001 0.002  21.0  1.00  11.0  10.0 0.180 0.020
+LU0004 SITONIA      1       . LU0401 12.50 0.000 83.32 6.945 11.17 59.17 40.47 0.269 333.1 207.4 0.001 0.002 21.00 1.000 11.00 10.00 0.180 0.020
 LU0001 REX          4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0.799  398. 186.0 0.001 0.003  20.5  1.00  10.5  10.0 0.180 0.020
 LU0002 MUIR         4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0.728  399. 186.0 0.001 0.004  20.5  1.00  10.5  10.0 0.180 0.020
 LU0003 SKYPHOS      4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0.923  397. 186.0 0.001 0.004  20.5  1.00  10.5  10.0 0.180 0.020
@@ -68,11 +68,13 @@ LU0003 SKYPHOS      4       . LU0405 12.50 0.000  37.0   9.3  18.0  28.2  39.0 0
 ! CALIBRATION STATUS: GLUE-CALIBRATED 2026-04-27 against GTGA2401 (6 N-level treatments)
 ! ECO#=LU0405 (BUTTERHEAD-NA): warm-adapted, LED chamber; OPTBI=18C, SLOBI=0.035
 ! EM-FL=55: harvest at DAS46 (DAT32) without triggering heading
-! LFMAX=1.472: GLUE Round 3 (growth only, N on, all 6 treatments); ambient CO2 (~400ppm)
+! LFMAX=1.989: scaled from 1.472 by 1/0.74 to correct TRT5 under-prediction after NDEF added
 ! SLAVR=308: GLUE Round 3; DM%~4.8-5.0% consistent with paper
 ! SIZLF=215: medium-large Bibb leaf; FW=250.7g/plant at optimal N
 ! =============================================================================
-LU0301 BIBB         1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 1.472  308. 215.0 0.001 0.003  21.0  1.00  11.0  10.0 0.180 0.020
+LU0301 BIBB         1       . LU0405 12.50 0.000  55.0   9.5  17.0  35.0  45.0 1.989  308. 215.0 0.001 0.003  21.0  1.00  11.0  10.0 0.180 0.020
+LU9999 UNIVERSAL     1       . LU0405 12.50 0.000 54.89 9.078 16.44 34.97 40.64 0.891 368.2 193.2 0.001 0.003 20.64 1.000 10.64 10.00 0.180 0.020
+! LU9999: average of LU0001-LU0004, LU0201-LU0202, LU0301 — used for SPE-only GLUE calibration
 
 
 ! =============================================================================

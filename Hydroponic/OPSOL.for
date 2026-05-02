@@ -38,9 +38,6 @@ C     Solution state variables - retrieved from ModuleData
       TYPE (ControlType) CONTROL
       TYPE (SwitchType)  ISWITCH
 
-C-----------------------------------------------------------------------
-C     Get values from control and switch structures
-C-----------------------------------------------------------------------
       DAS      = CONTROL % DAS
       DYNAMIC  = CONTROL % DYNAMIC
       FROP     = CONTROL % FROP
@@ -114,14 +111,12 @@ C     Only proceed if hydroponic mode and output detail requested
       IF (ISWHYDRO .NE. 'Y') RETURN
       IF (IDETW .EQ. 'N') RETURN
 
-C     Initialize DAP
       DAP = 0
 
 C     Get planting date from ModuleData (stored by MGMTOPS)
       CALL GET('MGMT','YRPLT',YRPLT)
 
 C     Only output after planting (same logic as PlantGro.OUT)
-C     Don't write if planting date is invalid (<=0) or if current date is before planting
       IF (YRPLT .LE. 0 .OR. YRDOY .LT. YRPLT) RETURN
 
 C     Calculate DAP (Days After Planting) instead of using DAS
@@ -155,7 +150,6 @@ C       Solution properties
 C       Get date
         CALL YR_DOY(YRDOY, YEAR, DOY)
 
-C       Write daily output (using DAP not DAS to match planting-based output)
         WRITE (NOUTSL,200) YEAR, DOY, DAP,
      &    NO3_CONC, NH4_CONC, P_CONC, K_CONC,          ! mg/L
      &    UNO3, UNH4, UPO4, UK,                        ! kg/ha/d
@@ -215,7 +209,6 @@ C         Solution properties
 C         Get date
           CALL YR_DOY(YRDOY, YEAR, DOY)
 
-C         Calculate DAP for final output
           DAP = MAX(0, TIMDIF(YRPLT, YRDOY))
 
 C         Write final day output
@@ -234,10 +227,6 @@ C     Close file
         CLOSE (NOUTSL)
       ENDIF
 
-C***********************************************************************
-C***********************************************************************
-C     END OF DYNAMIC IF CONSTRUCT
-C***********************************************************************
       ENDIF
 
 C-----------------------------------------------------------------------

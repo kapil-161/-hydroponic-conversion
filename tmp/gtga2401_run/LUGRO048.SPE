@@ -4,7 +4,7 @@
  40.00 68.00  0.65                         PARMAX,PHTMAX,KCAN
   80.0  2.09 .0105                         CCMP,CCMAX,CCEFF; CO2 EFFECT ON PGCAN
   1.04  2.57  20.0  20.0   QDR             FNPGN(4),TYPPGN-LEAF N EFFECT ON PG
-  0.00  10.0  28.0  42.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
+  2.00  12.0  28.0  42.0   LIN             FNPGT(4),TYPPGT-TEMP EFFECT-CANOPY PG
    0.0   4.0  35.0  40.0  46.0  55.0       XLMAXT (6 VALUES)
    0.0   0.0   1.0   0.8   0.0   0.0       YLMAXT (6 VALUES)
 ! XLMAXT/YLMAXT calibrated 2026-04-13 using Skyphos (UFGA2201 TRT9-12, 24-30C),
@@ -145,20 +145,13 @@
 
 
 !*HYDROPONIC NUTRIENT UPTAKE PARAMETERS (SILBERBUSH 2005 BASELINE)
-  0.841  29.400 0.668  31.680 20.0  20.0 10.0    JMAX_NO3, KM_NO3, JMAX_NH4, KM_NH4, KI_NO3, KI_NH4, KI_TIN (mg/cm/d, mg/L)
+  16.82  2.94 22.27  10.56 200.0  40.0 120.0    JMAX_NO3, KM_NO3, JMAX_NH4, KM_NH4, KI_NO3, KI_NH4, KI_TIN (mg/cm/d, mg/L)
 ! Unit conversion: Vmax[nmol/cm/s]*MW[g/mol]*1000*86400*1e-9 = mg/cm/d
 !   NO3-N: 13.9 nmol/cm/s = 16.82 mg N/cm/d; HATS Km=0.21 mmol/L = 2.94 mg N/L
 !   NH4-N: 18.4 nmol/cm/s = 22.27 mg N/cm/d; HATS Km=0.75 mmol/L = 10.56 mg N/L
 !   Ki values activate optional Haldane inhibition at high concentration.
 !   Ki_TIN adds shared inhibition from total inorganic N (NO3+NH4).
 !   NO3 inhibition is weak (Ki=200 mg/L); NH4 inhibition is stronger (Ki=40 mg/L).
-! NH4 toxicity stress: NTOXS = 1/(1+(NH4_SOL/NH4_TOX_K)^NH4_TOX_N)
-!   NH4_TOX_K: NH4 concentration (mg/L) at which NTOXS=0.5 (half-inhibition)
-!   NH4_TOX_N: Hill coefficient (steepness); n=2 gives smooth sigmoidal response
-!   Calibrated: K=138, n=2.0 -> SIM TRT6/TRT5=0.418 (OBS=0.421, Sharkey 2024)
-!   Note: NTOXS daily rate 0.738 at NH4=82.8mg/L; compounding over 33d gives final biomass ratio
- 138.00  2.0                      NH4_TOX_K (mg/L), NH4_TOX_N (Hill coeff)
-
 
 !*SOLPI HYDROPONIC P UPTAKE PARAMETERS (SILBERBUSH 2005 BASELINE)
   7.60 0.155                  JMAX_P, KM_P (mg/cm/d, mg/L) [Silberbush 2005; unit-corrected: 2.84 nmol/cm/s = 7.60 mg P/cm/d]

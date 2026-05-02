@@ -321,11 +321,7 @@ C-----------------------------------------------------------------------
 C     Calculate root length per cm2 soil and initiate growth,
 C     respiration and senescence by layer
 C-----------------------------------------------------------------------
-!      TRTDY = 0.0
-!     1/19/2006 Remove TRTDY and replace with TRLV -- RLV is only updated
-!     once, so yesterday's value is stored in TRLV here.
       DO L = 1,NLAYR
-!       TRTDY = TRTDY + RLV(L) * DLAYR(L) ! cm[root] / cm2[ground]
         RRLF(L)   = 0.0
         RLSEN(L)  = 0.0
         RLGRW(L)  = 0.0

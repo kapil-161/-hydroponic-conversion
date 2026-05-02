@@ -550,6 +550,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL ECSTRESS_KM_NO3    ! Stress factor for NO3 Km (competitive inhibition)
         REAL ECSTRESS_ROOT      ! Stress factor for root growth (morphological)
         REAL ECSTRESS_LEAF      ! Stress factor for leaf expansion (morphological)
+        REAL ECSTRESS_TRANSP    ! Stress factor for transpiration (osmotic, high EC only)
         ! pH stress factors
         REAL PHSTRESS_ROOT      ! pH stress factor for root growth
         REAL PHSTRESS_LEAF      ! pH stress factor for leaf expansion
@@ -583,6 +584,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         REAL DO2_INIT           ! Initial DO2 for AUTO_O2 pinning (mg/L)
         REAL ROOT_RESP          ! Root respiration rate (g CO2/m2/day)
         REAL TRLV               ! Total root length density (cm root/cm2 soil)
+        REAL NTOXS              ! NH4 toxicity stress factor (0-1, 1=no stress)
       End Type HydroType
 
 !     Data which can be transferred between modules
@@ -891,6 +893,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('ECSTRESS_KM_NO3');   Value = SAVE_data % HYDRO % ECSTRESS_KM_NO3
         Case ('ECSTRESS_ROOT');     Value = SAVE_data % HYDRO % ECSTRESS_ROOT
         Case ('ECSTRESS_LEAF');     Value = SAVE_data % HYDRO % ECSTRESS_LEAF
+        Case ('ECSTRESS_TRANSP');   Value = SAVE_data % HYDRO % ECSTRESS_TRANSP
         Case ('PHSTRESS_ROOT');     Value = SAVE_data % HYDRO % PHSTRESS_ROOT
         Case ('PHSTRESS_LEAF');     Value = SAVE_data % HYDRO % PHSTRESS_LEAF
         Case ('PHSTRESS_UPTAKE');   Value = SAVE_data % HYDRO % PHSTRESS_UPTAKE
@@ -922,6 +925,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('DO2_INIT');    Value = SAVE_data % HYDRO % DO2_INIT
         Case ('ROOT_RESP');   Value = SAVE_data % HYDRO % ROOT_RESP
         Case ('TRLV');        Value = SAVE_data % HYDRO % TRLV
+        Case ('NTOXS');       Value = SAVE_data % HYDRO % NTOXS
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
@@ -1089,6 +1093,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('ECSTRESS_KM_NO3');   SAVE_data % HYDRO % ECSTRESS_KM_NO3 = Value
         Case ('ECSTRESS_ROOT');     SAVE_data % HYDRO % ECSTRESS_ROOT = Value
         Case ('ECSTRESS_LEAF');     SAVE_data % HYDRO % ECSTRESS_LEAF = Value
+        Case ('ECSTRESS_TRANSP');   SAVE_data % HYDRO % ECSTRESS_TRANSP = Value
         Case ('PHSTRESS_ROOT');     SAVE_data % HYDRO % PHSTRESS_ROOT = Value
         Case ('PHSTRESS_LEAF');     SAVE_data % HYDRO % PHSTRESS_LEAF = Value
         Case ('PHSTRESS_UPTAKE');   SAVE_data % HYDRO % PHSTRESS_UPTAKE = Value
@@ -1120,6 +1125,7 @@ C             CHP Added TRTNUM to CONTROL variable.
         Case ('DO2_INIT');    SAVE_data % HYDRO % DO2_INIT = Value
         Case ('ROOT_RESP');   SAVE_data % HYDRO % ROOT_RESP = Value
         Case ('TRLV');        SAVE_data % HYDRO % TRLV = Value
+        Case ('NTOXS');       SAVE_data % HYDRO % NTOXS = Value
         Case DEFAULT; ERR = .TRUE.
         END SELECT
 
